@@ -1,0 +1,48 @@
+# --- OS / Editor ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*.tmp
+
+# --- IDEs / Local tooling (do not commit) ---
+.vscode/
+.idea/
+
+# Agent / assistant local state (do not commit)
+.agent/
+.claude/
+.cursor/
+
+# --- Company visual guide (keep local; avoid pushing corporate branding) ---
+03-visual-style-guide.md
+
+# --- BMAD output hygiene ---
+_bmad-output/.archive/
+_bmad-output/project-scan-report.json
+
+# --- Laravel / PHP (future app) ---
+.env
+.env.*
+!.env.example
+
+/vendor/
+composer.phar
+
+storage/*.key
+/public/storage
+/public/hot
+/public/build
+
+.phpunit.result.cache
+.phpunit.cache/
+coverage/
+
+# --- Node (Vite/Bootstrap) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+

@@ -1,0 +1,36 @@
+# Workflow Status
+#
+# This file tracks progress through BMM methodology Analysis, Planning, and Solutioning phases.
+# Implementation phase is tracked separately in sprint-status.yaml
+#
+# STATUS DEFINITIONS:
+# ==================
+# Initial Status (before completion):
+#   - required: Must be completed to progress
+#   - optional: Can be completed but not required
+#   - recommended: Strongly suggested but not required
+#   - conditional: Required only if certain conditions met (e.g., if_has_ui)
+#
+# Completion Status:
+#   - {file-path}: File created/found (e.g., "_bmad-output/prd.md")
+#   - skipped: Optional/conditional workflow that was skipped
+
+generated: "2025-12-25T18:07:08.8574841-06:00"
+last_updated: "2025-12-26T22:15:46.3543716-06:00"
+project: "GATIC"
+project_type: "web_app"
+selected_track: "enterprise"
+field_type: "greenfield"
+workflow_path: "_bmad/bmm/workflows/workflow-status/paths/enterprise-greenfield.yaml"
+workflow_status:
+  brainstorm-project: _bmad-output/analysis/brainstorming-session-2025-12-25.md
+  research: required
+  product-brief: _bmad-output/project-planning-artifacts/product-brief-GATIC-2025-12-26.md
+  prd: required
+  create-ux-design: required
+  create-architecture: required
+  test-design: required
+  validate-architecture: required
+  create-epics-and-stories: required
+  implementation-readiness: required
+  sprint-planning: required

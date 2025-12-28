@@ -44,7 +44,7 @@ development_status:
   epic-1: in-progress
   1-1-repo-inicial-layout-laravel-11-base: done
   1-2-entorno-local-con-sail-mysql-8-seeders-minimos: done
-  1-3-autenticacion-base-breeze-blade-operativa: backlog
+  1-3-autenticacion-base-breeze-blade-operativa: review
   1-4-ui-base-bootstrap-5-sin-tailwind-alineada-a-guia-visual: backlog
   1-5-livewire-3-instalado-e-integrado-en-el-layout: backlog
   1-6-roles-fijos-policies-gates-base-server-side: backlog

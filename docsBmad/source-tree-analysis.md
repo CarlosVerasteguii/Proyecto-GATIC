@@ -18,7 +18,7 @@ Este repositorio hoy está orientado a **planificación y ejecución por Gates**
 ├── .cursor/                     # Config/metadata de Cursor (si aplica)
 ├── .github/                     # Config GitHub (workflows, templates, etc.)
 ├── .vscode/                     # Config VSCode
-├── 03-visual-style-guide.md     # Guía visual corporativa (restricción dura)
+├── 03-visual-style-guide.md     # Guía visual corporativa (referencia de colores/branding; desactualizada)
 └── project-context.md           # Puntero al bible (ver docsBmad/project-context.md)
 ```
 
@@ -50,7 +50,7 @@ Este repositorio hoy está orientado a **planificación y ejecución por Gates**
 ## Notes for Development
 
 - Antes de implementar, seguir el orden de Gates y asegurar CI verde desde Gate 0.
-- UI/estilos deben alinearse a `03-visual-style-guide.md` desde el inicio (evita retrabajo).
+- UI/estilos deben tomar `03-visual-style-guide.md` como referencia de colores/branding desde el inicio (evita retrabajo), sin tratarlo como catálogo rígido.
 
 ---
 

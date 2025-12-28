@@ -51,7 +51,7 @@ Semántica QTY (inventario):
 
 ## Restricciones (no negociables)
 
-- Diseño: **seguir `03-visual-style-guide.md`** (restricción dura).
+- Diseño: usar `03-visual-style-guide.md` solo como referencia de colores/branding corporativo (está desactualizada; no es un catálogo rígido de componentes).
 - Intranet on-prem: priorizar simplicidad operativa y paridad local↔prod (Docker/Sail/Compose).
 - Concurrencia en “Tareas Pendientes”: debe existir lock/claim (ver sección Locks).
 

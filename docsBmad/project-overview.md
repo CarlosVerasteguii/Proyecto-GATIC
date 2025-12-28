@@ -19,7 +19,7 @@ GATIC será un sistema de inventario/activos para operación TI en intranet (on-
 
 - Laravel 11 + PHP 8.2+
 - Livewire 3 + Blade
-- Bootstrap 5 (alineado a `03-visual-style-guide.md`) + Vite/NPM
+- Bootstrap 5 (con branding/colores basados en `03-visual-style-guide.md`) + Vite/NPM
 - MySQL 8
 - Auth: Breeze (Blade) remaquetado a Bootstrap
 - RBAC: roles fijos Admin/Editor/Lector + Policies/Gates (Spatie por validar)

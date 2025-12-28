@@ -12,7 +12,7 @@ Version BMAD (copia): `_bmad-output/project-context.md`.
 
 - Backend: Laravel **11** + PHP **8.2+**
 - DB: MySQL **8.0**
-- UI: Blade + Livewire **3** + Bootstrap **5** (seguir `03-visual-style-guide.md`)
+- UI: Blade + Livewire **3** + Bootstrap **5** (branding/colores basados en `03-visual-style-guide.md`)
 - Auth: Laravel Breeze (Blade) + re-maquetado a Bootstrap (sin registro publico)
 - Queue: driver `database`
 - Tooling: Vite/NPM, Laravel Sail (dev), Docker Compose (prod)

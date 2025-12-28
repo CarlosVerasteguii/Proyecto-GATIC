@@ -62,7 +62,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 - Entorno: intranet/on-prem; paridad local-prod con contenedores.
 - UX: sin WebSockets; preferir polling.
-- Estilo: `docsBmad/project-context.md` define `03-visual-style-guide.md` como restricción dura; el PRD lo menciona como referencia “desactualizada” (requiere alineación).
+- Estilo: `03-visual-style-guide.md` se usa solo como referencia de colores/branding corporativo (está desactualizada); no se trata como catálogo rígido de componentes.
 - Stack objetivo ya definido: Laravel 11 + PHP 8.2+ + MySQL 8; Blade + Livewire 3 + Bootstrap 5; Auth con Breeze (Blade) adaptado a Bootstrap.
 - Operación: queue driver `database`; CI mínimo `pint + phpunit + larastan`; trunk-based; merge solo con CI verde.
 - Soft-delete: retención indefinida hasta purga por Admin.
@@ -168,7 +168,7 @@ php artisan sail:install --with=mysql
 ### Frontend Architecture
 
 - **UI architecture:** MPA server-rendered con Blade + Livewire 3; no SPA.
-- **Styling:** Bootstrap 5 alineado a `03-visual-style-guide.md`.
+- **Styling:** Bootstrap 5 con branding/colores basados en `03-visual-style-guide.md`.
 - **Polling estándar (sin WebSockets):**
   - Badges/estados en listas: ~15s con `wire:poll.visible`.
   - Métricas dashboard: ~60s con `wire:poll.visible`.

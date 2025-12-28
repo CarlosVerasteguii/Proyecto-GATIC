@@ -74,7 +74,7 @@ NFR10: En producción, errores inesperados deben mostrarse con mensaje amigable 
 
 - Stack objetivo (starter): Laravel 11 + PHP 8.2+ + MySQL 8, Blade + Livewire 3 + Bootstrap 5, Auth con Breeze (Blade) adaptado a Bootstrap, build con Vite/NPM.
 - Local dev: Laravel Sail; producción prevista con Docker Compose (Nginx + PHP-FPM) por definir.
-- Diseño (restricción dura): seguir `03-visual-style-guide.md` (usar como guía de colores corporativos).
+- Diseño: usar `03-visual-style-guide.md` solo como referencia de colores/branding corporativo (está desactualizada; no es un catálogo rígido de componentes).
 - Concurrencia Tareas Pendientes: claim preventivo al hacer clic en “Procesar”; read-only para otros; “Solicitar liberación” es informativo en MVP (sin notificaciones).
 - Regla de adopción (movimientos): mínimo obligatorio al registrar un préstamo/asignación/salida es **alias/nombre del receptor + nota/info**; el resto opcional.
 - UX base (Gate 1): layout desktop-first con sidebar colapsable + topbar; skeleton loaders; botón “Cancelar” en búsquedas; toasts con “Deshacer” (~10s); indicador “Actualizado hace Xs”.
@@ -109,7 +109,7 @@ FR21: Epic 5 - Movimientos por cantidad (salida/entrada) con empleado
 FR22: Epic 5 - Kardex/historial para cantidad
 FR23: Epic 6 - Búsqueda de Productos/Activos (nombre/serial/asset_tag)
 FR24: Epic 6 - Filtros por catálogos/estado/disponibilidad
-FR25: Epic 6 - Indicadores de disponibilidad por Producto
+FR25: Epic 3 - Indicadores de disponibilidad por Producto (listado de inventario)
 FR26: Epic 7 - Crear Tarea Pendiente
 FR27: Epic 7 - Editar renglones antes de finalizar
 FR28: Epic 7 - Procesamiento por renglón + finalización parcial
@@ -134,7 +134,7 @@ Permite configurar los catálogos necesarios para clasificar el inventario y man
 
 ### Epic 3: Inventario navegable (Productos/Activos) + ajustes
 Permite crear y mantener Productos y Activos, aplicar reglas de unicidad, consultar detalles y realizar ajustes con motivo.
-**FRs covered:** FR8, FR9, FR10, FR11, FR12, FR13, FR14
+**FRs covered:** FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR25
 
 ### Epic 4: Directorio de Empleados (RPE)
 Permite administrar Empleados (RPE) y seleccionarlos rápidamente como receptores de movimientos.
@@ -146,7 +146,7 @@ Permite asignar/prestar/devolver activos, validar transiciones, registrar movimi
 
 ### Epic 6: Búsqueda y filtros del inventario
 Permite encontrar Productos/Activos por identificadores y filtrar por catálogos/estado, mostrando disponibilidad clara.
-**FRs covered:** FR23, FR24, FR25
+**FRs covered:** FR23, FR24
 
 ### Epic 7: Tareas Pendientes + locks de concurrencia
 Permite crear y procesar tareas por renglón con finalización parcial y exclusividad por lock/claim con override Admin.
@@ -164,7 +164,7 @@ Permite que el equipo TI acceda al sistema y que Admin gestione usuarios/roles p
 
 As a desarrollador del proyecto,
 I want definir el layout del repo e inicializar Laravel 11,
-So that el equipo tenga una base consistente para construir el MVP.
+So that el equipo tenga una base consistente para construir el MVP (Arquitectura).
 
 **Acceptance Criteria:**
 
@@ -182,7 +182,7 @@ So that el equipo tenga una base consistente para construir el MVP.
 
 As a desarrollador del proyecto,
 I want levantar el proyecto en Laravel Sail con MySQL 8 y seeders base,
-So that pueda iterar rápido y reproducir el entorno local de forma consistente.
+So that pueda iterar rápido y reproducir el entorno local de forma consistente (Arquitectura).
 
 **Acceptance Criteria:**
 
@@ -218,7 +218,7 @@ So that pueda acceder de forma segura al sistema (FR1).
 
 As a usuario interno,
 I want que las pantallas base (auth + layout) usen Bootstrap 5 y la guía visual corporativa,
-So that la UX sea consistente con el estándar interno.
+So that la UX sea consistente con el estándar interno (NFR1, Arquitectura).
 
 **Acceptance Criteria:**
 
@@ -230,13 +230,13 @@ So that la UX sea consistente con el estándar interno.
 **Given** las pantallas de autenticación
 **When** un usuario navega login/registro/recuperación (si aplica)
 **Then** la maquetación usa componentes Bootstrap
-**And** respeta colores/estilo definidos en `03-visual-style-guide.md`
+**And** respeta colores/branding corporativo tomando `03-visual-style-guide.md` como referencia
 
 ### Story 1.5: Livewire 3 instalado e integrado en el layout
 
 As a desarrollador del proyecto,
 I want contar con Livewire 3 configurado en el layout,
-So that pueda implementar pantallas reactivas (polling/acciones) sin complejidad extra.
+So that pueda implementar pantallas reactivas (polling/acciones) sin complejidad extra (Arquitectura, NFR3).
 
 **Acceptance Criteria:**
 
@@ -282,7 +282,7 @@ So that el acceso esté controlado en todas las acciones (FR2, FR3).
 
 As a mantenedor del repositorio,
 I want un pipeline de CI que ejecute formato, tests y análisis estático,
-So that los merges mantengan calidad y no rompan el sistema.
+So that los merges mantengan calidad y no rompan el sistema (Arquitectura, Calidad/CI).
 
 **Acceptance Criteria:**
 
@@ -300,7 +300,7 @@ So that los merges mantengan calidad y no rompan el sistema.
 
 As a usuario interno,
 I want un layout desktop-first con navegación clara y menú por rol,
-So that pueda moverme rápido por los módulos del sistema.
+So that pueda moverme rápido por los módulos del sistema (FR2, NFR1).
 
 **Acceptance Criteria:**
 
@@ -415,9 +415,15 @@ So that se mantenga integridad referencial y trazabilidad en el inventario (FR7)
 **Acceptance Criteria:**
 
 **Given** un usuario con permisos de catálogo (Admin/Editor según corresponda)
+**And** el catálogo NO está referenciado por registros del inventario
 **When** elimina una Marca/Categoría/Ubicación
 **Then** el registro se marca como soft-deleted (no se borra físicamente)
 **And** deja de aparecer en listados normales
+
+**Given** un catálogo referenciado por registros del inventario
+**When** el usuario intenta eliminarlo (soft-delete)
+**Then** el sistema bloquea la operación
+**And** muestra un mensaje claro indicando que el catálogo está en uso
 
 **Given** un catálogo en soft-delete
 **When** Admin lo restaura
@@ -503,7 +509,7 @@ So that pueda entender qué unidades están disponibles y por qué (FR12).
 **Given** un Producto existente
 **When** el usuario entra al detalle del Producto
 **Then** ve conteos (total/disponibles/no disponibles)
-**And** ve desglose por estado para activos serializados o por kardex/stock para cantidad (según corresponda)
+**And** ve desglose por estado para activos serializados o un resumen de stock actual para productos por cantidad (según corresponda)
 
 ### Story 3.5: Detalle de Activo con estado, ubicación y tenencia actual
 

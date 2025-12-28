@@ -63,7 +63,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 - Entorno: intranet/on-prem; paridad local-prod con contenedores.
 - UX: sin WebSockets; preferir polling.
 - Estilo: `03-visual-style-guide.md` se usa solo como referencia de colores/branding corporativo (está desactualizada); no se trata como catálogo rígido de componentes.
-- Stack objetivo ya definido: Laravel 11 + PHP 8.2+ + MySQL 8; Blade + Livewire 3 + Bootstrap 5; Auth con Breeze (Blade) adaptado a Bootstrap.
+- Stack objetivo ya definido: Laravel 11 + PHP 8.2+ (desarrollo en 8.4) + MySQL 8; Blade + Livewire 3 + Bootstrap 5; Auth con Breeze (Blade) adaptado a Bootstrap.
 - Operación: queue driver `database`; CI mínimo `pint + phpunit + larastan`; trunk-based; merge solo con CI verde.
 - Soft-delete: retención indefinida hasta purga por Admin.
 

@@ -22,7 +22,7 @@ Desktop.ini
 _bmad-output/.archive/
 _bmad-output/project-scan-report.json
 
-# --- Laravel / PHP (future app) ---
+# --- Laravel / PHP (root-level, legacy) ---
 .env
 .env.*
 !.env.example
@@ -39,10 +39,35 @@ storage/*.key
 .phpunit.cache/
 coverage/
 
-# --- Node (Vite/Bootstrap) ---
+# --- Node (Vite/Bootstrap, root-level) ---
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# --- Laravel app in gatic/ subdirectory ---
+# Environment files
+gatic/.env
+gatic/.env.*
+!gatic/.env.example
+
+# Dependencies
+gatic/vendor/
+gatic/node_modules/
+
+# Build artifacts
+gatic/public/build/
+gatic/public/hot
+gatic/public/storage
+
+# Storage & cache
+gatic/storage/*.key
+gatic/bootstrap/cache/*
+!gatic/bootstrap/cache/.gitkeep
+
+# Testing
+gatic/.phpunit.result.cache
+gatic/.phpunit.cache/
+gatic/coverage/
+gatic/.pest/

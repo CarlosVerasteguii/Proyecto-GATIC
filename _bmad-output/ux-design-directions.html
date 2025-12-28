@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GATIC — UX Design Directions</title>
+    <style>
+      :root {
+        --cfe-green-brand: #008e5a;
+        --cfe-green-dark: #006b47;
+        --cfe-green-very-dark: #004d33;
+        --cfe-green-soft: #e6f4ef;
+        --cfe-black: #111111;
+
+        --bg: #f6f7f9;
+        --surface: #ffffff;
+        --border: rgba(17, 17, 17, 0.12);
+        --text: #1f2328;
+        --muted: rgba(31, 35, 40, 0.68);
+        --shadow: 0 16px 40px rgba(17, 17, 17, 0.14);
+        --shadow-sm: 0 6px 16px rgba(17, 17, 17, 0.1);
+        --radius: 16px;
+        --radius-sm: 12px;
+        --focus: 0 0 0 0.25rem rgba(0, 107, 71, 0.25);
+
+        --primary: var(--cfe-green-dark);
+        --primary-hover: var(--cfe-green-very-dark);
+        --chip: rgba(0, 107, 71, 0.1);
+        --chip-text: var(--cfe-green-very-dark);
+
+        --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--font);
+        color: var(--text);
+        background:
+          radial-gradient(900px 520px at 15% 0%, rgba(0, 107, 71, 0.12), transparent 56%),
+          radial-gradient(700px 420px at 85% 10%, rgba(0, 142, 90, 0.08), transparent 58%),
+          linear-gradient(180deg, #f7f8fa 0%, #f1f3f6 100%);
+      }
+
+      a {
+        color: var(--primary);
+        text-decoration: none;
+      }
+      a:hover {
+        color: var(--primary-hover);
+        text-decoration: underline;
+      }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.95em;
+      }
+
+      .page {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .top {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        align-items: start;
+        margin-bottom: 14px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.02em;
+      }
+
+      .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+        max-width: 66ch;
+      }
+
+      .toolbar {
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(17, 17, 17, 0.1);
+        border-radius: var(--radius);
+        padding: 12px;
+        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow-sm);
+        min-width: 340px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .seg {
+        display: inline-grid;
+        grid-auto-flow: column;
+        border: 1px solid rgba(17, 17, 17, 0.12);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        background: #fff;
+      }
+
+      .seg button {
+        border: 0;
+        background: transparent;
+        padding: 10px 12px;
+        cursor: pointer;
+        font-size: 13px;
+        font-family: inherit;
+      }
+
+      .seg button[aria-pressed="true"] {
+        background: var(--chip);
+        color: var(--chip-text);
+        font-weight: 800;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 4px;
+      }
+
+      select,
+      button {
+        font: inherit;
+      }
+
+      select {
+        width: 100%;
+        border: 1px solid rgba(17, 17, 17, 0.14);
+        background: #fff;
+        border-radius: var(--radius-sm);
+        padding: 10px 12px;
+        font-size: 13px;
+        appearance: none;
+      }
+
+      select:focus,
+      button:focus {
+        outline: none;
+        box-shadow: var(--focus);
+        border-color: rgba(0, 107, 71, 0.55);
+      }
+
+      .row2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .btn {
+        border: 1px solid rgba(17, 17, 17, 0.12);
+        background: #fff;
+        border-radius: var(--radius-sm);
+        padding: 10px 12px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out;
+      }
+      .btn:hover {
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-1px);
+        border-color: rgba(17, 17, 17, 0.16);
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .frame {
+        background: var(--surface);
+        border: 1px solid rgba(17, 17, 17, 0.1);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .frameHead {
+        padding: 10px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 250, 251, 0.92));
+      }
+
+      .frameHead strong {
+        font-size: 13px;
+      }
+
+      .frameHead span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .resize {
+        resize: horizontal;
+        overflow: auto;
+        min-width: 420px;
+        max-width: 100%;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .divider {
+        border-top: 1px solid rgba(17, 17, 17, 0.08);
+        margin: 10px 0 14px;
+      }
+
+      .eval {
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(17, 17, 17, 0.1);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        padding: 12px 14px;
+      }
+
+      .eval h3 {
+        margin: 0;
+        font-size: 13px;
+      }
+
+      .eval ul {
+        margin: 10px 0 0;
+        padding-left: 18px;
+        color: rgba(31, 35, 40, 0.86);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .compare {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        align-items: start;
+      }
+
+      @media (max-width: 1020px) {
+        .top {
+          grid-template-columns: 1fr;
+        }
+        .toolbar {
+          min-width: 0;
+        }
+        .compare {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .dir {
+        padding: 16px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 251, 252, 0.92));
+      }
+
+      .dirHead {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .dirHead h2 {
+        margin: 0;
+        font-size: 16px;
+        letter-spacing: -0.02em;
+      }
+
+      .tagline {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.35;
+        max-width: 70ch;
+      }
+
+      .chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        min-width: 260px;
+      }
+
+      .chip {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--chip);
+        color: var(--chip-text);
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .chipDot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--primary);
+        box-shadow: 0 0 0 3px rgba(0, 107, 71, 0.12);
+      }
+
+      .dirGrid {
+        display: grid;
+        grid-template-columns: 420px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+
+      @media (max-width: 1020px) {
+        .dirGrid {
+          grid-template-columns: 1fr;
+        }
+
+        .chips {
+          justify-content: flex-start;
+          min-width: 0;
+        }
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(17, 17, 17, 0.1);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        padding: 12px;
+      }
+
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        letter-spacing: -0.01em;
+      }
+
+      .card ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--text);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .card li {
+        margin: 6px 0;
+      }
+
+      .wire {
+        display: grid;
+        gap: 10px;
+      }
+
+      .wireBox {
+        border: 1px dashed rgba(17, 17, 17, 0.22);
+        background: rgba(0, 107, 71, 0.05);
+        border-radius: 12px;
+        padding: 10px;
+        font-size: 12px;
+        color: rgba(31, 35, 40, 0.82);
+      }
+
+      .wireRow {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .shots {
+        display: grid;
+        gap: 12px;
+      }
+
+      figure {
+        margin: 0;
+      }
+
+      .shot {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius);
+        border: 1px solid rgba(17, 17, 17, 0.1);
+        background: #fff;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .shot img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .shot .label {
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(17, 17, 17, 0.12);
+        color: rgba(31, 35, 40, 0.86);
+        font-size: 12px;
+        font-weight: 800;
+        backdrop-filter: blur(8px);
+      }
+
+      .callout {
+        position: absolute;
+        left: calc(var(--x) * 1%);
+        top: calc(var(--y) * 1%);
+        transform: translate(-50%, -50%);
+        width: min(260px, 56%);
+        pointer-events: none;
+      }
+
+      .bubble {
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(17, 17, 17, 0.14);
+        border-radius: 12px;
+        padding: 10px 10px;
+        box-shadow: 0 10px 22px rgba(17, 17, 17, 0.12);
+        color: rgba(31, 35, 40, 0.88);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .bubble strong {
+        display: block;
+        font-size: 12px;
+        color: var(--cfe-black);
+        margin-bottom: 3px;
+      }
+
+      .bubble .kpi {
+        margin-top: 8px;
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        padding: 6px 8px;
+        border-radius: 999px;
+        background: rgba(0, 107, 71, 0.1);
+        color: rgba(0, 77, 51, 0.95);
+        font-weight: 800;
+        font-size: 11px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="page">
+      <div class="top">
+        <div>
+          <h1>GATIC — UX Design Directions (Step 9)</h1>
+          <p class="sub">
+            Basado en tu prototipo real (<a href="http://localhost:3000/inventario">/inventario</a>) y el branding de
+            <code>03-visual-style-guide.md</code>.
+          </p>
+        </div>
+
+        <div class="toolbar">
+          <div class="seg" role="group" aria-label="Mode">
+            <button id="btnSingle" aria-pressed="true" type="button">Single</button>
+            <button id="btnCompare" aria-pressed="false" type="button">Compare</button>
+          </div>
+
+          <div id="singleControls">
+            <label for="dirSingle">Dirección</label>
+            <select id="dirSingle">
+              <option value="1">1 — Baseline + Pulido Operativo</option>
+              <option value="2">2 — Table-first Compact (Operador)</option>
+              <option value="3">3 — Master–Detail Drawer (Menos clicks)</option>
+              <option value="4">4 — Command Palette (Keyboard-first)</option>
+              <option value="5">5 — Movement-first Wizard (Registrar rápido)</option>
+              <option value="6">6 — Trust & Audit (Confianza y trazabilidad)</option>
+              <option value="7">7 — CFE Bold Brand (High Contrast)</option>
+              <option value="8">8 — Calm Enterprise (Neutral / cómodo)</option>
+            </select>
+          </div>
+
+          <div id="compareControls" class="hidden">
+            <div class="row2">
+              <div>
+                <label for="dirA">A</label>
+                <select id="dirA">
+                  <option value="1">1 — Baseline + Pulido</option>
+                  <option value="2" selected>2 — Table-first Compact</option>
+                  <option value="3">3 — Master–Detail Drawer</option>
+                  <option value="4">4 — Command Palette</option>
+                  <option value="5">5 — Movement-first Wizard</option>
+                  <option value="6">6 — Trust & Audit</option>
+                  <option value="7">7 — CFE Bold Brand</option>
+                  <option value="8">8 — Calm Enterprise</option>
+                </select>
+              </div>
+              <div>
+                <label for="dirB">B</label>
+                <select id="dirB">
+                  <option value="1" selected>1 — Baseline + Pulido</option>
+                  <option value="2">2 — Table-first Compact</option>
+                  <option value="3">3 — Master–Detail Drawer</option>
+                  <option value="4">4 — Command Palette</option>
+                  <option value="5">5 — Movement-first Wizard</option>
+                  <option value="6">6 — Trust & Audit</option>
+                  <option value="7">7 — CFE Bold Brand</option>
+                  <option value="8">8 — Calm Enterprise</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button id="btnEval" class="btn" type="button">Mostrar/Ocultar criterios</button>
+          <div class="hint">Tip: usa “Compare” para elegir un “base direction”, y luego mezcla elementos.</div>
+        </div>
+      </div>
+
+      <div id="eval" class="eval hidden">
+        <h3>Framework para evaluar</h3>
+        <ul>
+          <li><strong>Velocidad</strong>: ¿en cuántos clicks registras un movimiento?</li>
+          <li><strong>Escaneo</strong>: ¿puedes contestar “¿tenemos X?” en &lt;10s?</li>
+          <li><strong>Densidad</strong>: ¿se siente productivo sin volverse ilegible?</li>
+          <li><strong>Confianza</strong>: ¿está claro si el dato está actualizado (polling/refresh)?</li>
+          <li><strong>Accesibilidad</strong>: estados con texto + contraste AA (primary recomendado: <code>#006B47</code>)</li>
+          <li><strong>Adopción</strong>: “registrar” debe ser más fácil que “no registrar”.</li>
+        </ul>
+      </div>
+
+      <div class="divider"></div>
+
+      <div id="singleMode">
+        <div class="frame">
+          <div class="frameHead">
+            <strong id="singleTitle">Dirección 1 — Baseline + Pulido Operativo</strong>
+            <span>Mockups con screenshots reales + layout maps</span>
+          </div>
+          <div id="singleContainer"></div>
+        </div>
+      </div>
+
+      <div id="compareMode" class="hidden">
+        <div class="compare">
+          <div class="frame resize">
+            <div class="frameHead">
+              <strong id="titleA">A</strong>
+              <span>lado A</span>
+            </div>
+            <div id="compareA"></div>
+          </div>
+          <div class="frame resize">
+            <div class="frameHead">
+              <strong id="titleB">B</strong>
+              <span>lado B</span>
+            </div>
+            <div id="compareB"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIRECTION TEMPLATES (filled in later) -->
+    <template id="dir-1">
+      <div class="dir">
+        <div class="dirHead">
+          <div>
+            <h2>Direcci&oacute;n 1 &mdash; Baseline + Pulido Operativo</h2>
+            <p class="tagline">
+              Mantener tu layout actual (sidebar + barra + tabla) pero llevarlo a &ldquo;operator grade&rdquo;: m&aacute;s
+              claro, m&aacute;s r&aacute;pido y m&aacute;s confiable.
+            </p>
+          </div>
+          <div class="chips">
+            <span class="chip"><span class="chipDot"></span>R&aacute;pido</span>
+            <span class="chip"><span class="chipDot"></span>F&aacute;cil de adoptar</span>
+            <span class="chip"><span class="chipDot"></span>Menos riesgo</span>
+          </div>
+        </div>
+
+        <div class="dirGrid">
+          <div class="card">
+            <h3>Qu&eacute; cambia</h3>
+            <ul>
+              <li>Estados: convertir &ldquo;1 en Total / 1 Disp.&rdquo; en badges consistentes (Disponible/Prestado/Asignado).</li>
+              <li>Acciones: habilitar &ldquo;Acciones de Stock&rdquo; con un quick-flow (Asignar/Prestar/Retiro) sin fricci&oacute;n.</li>
+              <li>Confianza: &ldquo;Actualizado hace X&rdquo; + refresh manual + feedback de polling discreto.</li>
+              <li>Densidad: toggle &ldquo;Compacto&rdquo; (row height, typography, padding) para operaci&oacute;n diaria.</li>
+            </ul>
+          </div>
+
+          <div class="shots">
+            <figure class="shot">
+              <img src="ux-snapshots/inventario-baseline.png" alt="Inventario - baseline" loading="lazy" />
+              <div class="label">Inventario (baseline)</div>
+              <div class="callout" style="--x:36; --y:16;">
+                <div class="bubble">
+                  <strong>Buscar + filtros</strong>
+                  Inputs con foco r&aacute;pido (<code>/</code>), chips persistentes y atajos visibles.
+                  <span class="kpi">Objetivo: respuesta &lt;10s</span>
+                </div>
+              </div>
+              <div class="callout" style="--x:92; --y:34;">
+                <div class="bubble">
+                  <strong>Acciones de fila</strong>
+                  El men&uacute; debe estar habilitado + mostrar el &ldquo;siguiente paso&rdquo; (registrar movimiento).
+                </div>
+              </div>
+              <div class="callout" style="--x:76; --y:33;">
+                <div class="bubble">
+                  <strong>Estado / disponibilidad</strong>
+                  Badge sem&aacute;ntico con texto (no solo color), y conteos claros para stock.
+                </div>
+              </div>
+            </figure>
+
+            <figure class="shot">
+              <img src="ux-snapshots/inventario-columnas.png" alt="Inventario - columnas" loading="lazy" />
+              <div class="label">Columnas (control de densidad)</div>
+              <div class="callout" style="--x:66; --y:20;">
+                <div class="bubble">
+                  <strong>Presets &ldquo;operator&rdquo;</strong>
+                  <em>Default</em> (simple) vs <em>Auditor&iacute;a</em> (Proveedor/Contrato/Costo) + toggle compacto.
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template id="dir-2">
+      <div class="dir">
+        <div class="dirHead">
+          <div>
+            <h2>Direcci&oacute;n 2 &mdash; Table-first Compact (Operador)</h2>
+            <p class="tagline">
+              M&aacute;xima densidad controlada: tabla primero, acciones r&aacute;pidas a un click, multi-select y flujos repetibles.
+            </p>
+          </div>
+          <div class="chips">
+            <span class="chip"><span class="chipDot"></span>Alta densidad</span>
+            <span class="chip"><span class="chipDot"></span>Operaci&oacute;n diaria</span>
+            <span class="chip"><span class="chipDot"></span>Bulk-ready</span>
+          </div>
+        </div>
+
+        <div class="dirGrid">
+          <div class="card">
+            <h3>Qu&eacute; cambia</h3>
+            <ul>
+              <li>Tabla compacta + sticky header: filtros y columnas siempre accesibles.</li>
+              <li>Acciones inline (iconos): Asignar / Prestar / Devolver / Retiro (seg&uacute;n estado/rol).</li>
+              <li>Multi-select para operaciones por lote (cuando aplique): reduce clicks repetidos.</li>
+              <li>&ldquo;Quick edit&rdquo; en drawer para campos frecuentes (ubicaci&oacute;n, estado, nota).</li>
+            </ul>
+          </div>
+
+          <div class="shots">
+            <figure class="shot">
+              <img src="ux-snapshots/inventario-acciones-stock.png" alt="Inventario - acciones de stock" loading="lazy" />
+              <div class="label">Acciones de Stock (hoy deshabilitadas)</div>
+              <div class="callout" style="--x:87; --y:46;">
+                <div class="bubble">
+                  <strong>Quick actions</strong>
+                  Habilitar y hacer que cada acci&oacute;n abra un flujo m&iacute;nimo:
+                  receptor + nota (obligatorio) + guardar.
+                  <span class="kpi">Objetivo: &lt; 25s por movimiento</span>
+                </div>
+              </div>
+            </figure>
+
+            <figure class="shot">
+              <img src="ux-snapshots/inventario-filtros-avanzados.png" alt="Inventario - filtros avanzados" loading="lazy" />
+              <div class="label">Filtros avanzados (drawer)</div>
+              <div class="callout" style="--x:84; --y:24;">
+                <div class="bubble">
+                  <strong>Pattern correcto</strong>
+                  Drawer funciona perfecto para filtros sin perder contexto de tabla.
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template id="dir-3">
+      <div class="dir">
+        <div class="dirHead">
+          <div>
+            <h2>Direcci&oacute;n 3 &mdash; Master&ndash;Detail Drawer (Menos clicks)</h2>
+            <p class="tagline">
+              Tabla para buscar + un panel de detalle a la derecha para ver estado, historial y registrar movimiento sin cambiar de pantalla.
+            </p>
+          </div>
+          <div class="chips">
+            <span class="chip"><span class="chipDot"></span>Menos navegaci&oacute;n</span>
+            <span class="chip"><span class="chipDot"></span>Contexto fijo</span>
+            <span class="chip"><span class="chipDot"></span>Ideal para monitores</span>
+          </div>
+        </div>
+
+        <div class="dirGrid">
+          <div class="card">
+            <h3>Layout map (propuesto)</h3>
+            <div class="wire">
+              <div class="wireBox">Toolbar: b&uacute;squeda + chips + presets (Default/Compacto/Auditor&iacute;a)</div>
+              <div class="wireRow">
+                <div class="wireBox">Tabla compacta (selecci&oacute;n + multi-select)</div>
+                <div class="wireBox">
+                  Drawer detalle:
+                  <div style="margin-top: 6px; color: var(--muted)">
+                    Estado &bull; responsable actual &bull; historial &bull; adjuntos &bull; acciones (Asignar/Prestar/Devolver/Retiro)
+                  </div>
+                </div>
+              </div>
+              <div class="wireBox">Feedback: &ldquo;guardado&rdquo; + &ldquo;siguiente item&rdquo; + atajos visibles</div>
+            </div>
+          </div>
+
+          <div class="shots">
+            <figure class="shot">
+              <img src="ux-snapshots/inventario-baseline.png" alt="Inventario baseline para referencia" loading="lazy" />
+              <div class="label">Referencia (baseline)</div>
+              <div class="callout" style="--x:74; --y:54;">
+                <div class="bubble">
+                  <strong>Aqu&iacute; vive el drawer</strong>
+                  Selecci&oacute;n abre panel derecho sin perder tabla/filtros.
+                </div>
+              </div>
+            </figure>
+
+            <figure class="shot">
+              <img src="ux-snapshots/inventario-filtros-avanzados.png" alt="Drawer pattern ya existente" loading="lazy" />
+              <div class="label">Referencia: drawer ya existe</div>
+              <div class="callout" style="--x:88; --y:28;">
+                <div class="bubble">
+                  <strong>Reusar patr&oacute;n</strong>
+                  El mismo patr&oacute;n de drawer puede usarse para &ldquo;Detalle de producto/activo&rdquo;.
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template id="dir-4">
+      <div class="dir">
+        <div class="dirHead">
+          <div>
+            <h2>Direcci&oacute;n 4 &mdash; Command Palette (Keyboard-first)</h2>
+            <p class="tagline">
+              &ldquo;Hacer procesos r&aacute;pidos&rdquo; = menos mouse: comandos globales, navegaci&oacute;n por teclado, y atajos consistentes.
+            </p>
+          </div>
+          <div class="chips">
+            <span class="chip"><span class="chipDot"></span>Keyboard-first</span>
+            <span class="chip"><span class="chipDot"></span>Power users</span>
+            <span class="chip"><span class="chipDot"></span>Menos fricci&oacute;n</span>
+          </div>
+        </div>
+
+        <div class="dirGrid">
+          <div class="card">
+            <h3>Qu&eacute; cambia</h3>
+            <ul>
+              <li><code>Ctrl+K</code>: palette con acciones: &ldquo;Buscar activo&rdquo;, &ldquo;Registrar pr&eacute;stamo&rdquo;, &ldquo;Registrar asignaci&oacute;n&rdquo;.</li>
+              <li><code>/</code>: enfocar b&uacute;squeda local (inventario).</li>
+              <li>Atajos por contexto: flechas para navegar tabla, <code>Enter</code> abre detalle, <code>A</code>/<code>P</code> acciones r&aacute;pidas.</li>
+              <li>Ayuda inline: hint debajo de la b&uacute;squeda (&ldquo;/ para buscar &bull; Ctrl+K comandos&rdquo;).</li>
+            </ul>
+          </div>
+
+          <div class="shots">
+            <figure class="shot">
+              <img src="ux-snapshots/inventario-atajos-1440.png" alt="Atajos de teclado (modal)" loading="lazy" />
+              <div class="label">Atajos (ya existe un buen inicio)</div>
+              <div class="callout" style="--x:68; --y:26;">
+                <div class="bubble">
+                  <strong>Momento &ldquo;aha&rdquo;</strong>
+                  Si Soporte memoriza 4&ndash;5 atajos, el sistema deja de sentirse &ldquo;da hueva&rdquo;.
+                  <span class="kpi">Objetivo: 80% acciones sin mouse</span>
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template id="dir-5">
+      <div class="dir">
+        <div class="dirHead">
+          <div>
+            <h2>Direcci&oacute;n 5 &mdash; Movement-first Wizard (Registrar r&aacute;pido)</h2>
+            <p class="tagline">
+              Optimizar el n&uacute;cleo del MVP: &ldquo;consultar + registrar movimiento&rdquo; con un flujo m&iacute;nimo y repetible.
+            </p>
+          </div>
+          <div class="chips">
+            <span class="chip"><span class="chipDot"></span>Adopci&oacute;n-first</span>
+            <span class="chip"><span class="chipDot"></span>Flujo m&iacute;nimo</span>
+            <span class="chip"><span class="chipDot"></span>Anti-fricci&oacute;n</span>
+          </div>
+        </div>
+
+        <div class="dirGrid">
+          <div class="card">
+            <h3>Flujo propuesto</h3>
+            <ul>
+              <li>Desde tabla: &ldquo;Registrar movimiento&rdquo; (Asignar/Prestar/Devolver/Retiro).</li>
+              <li>Wizard 1 pantalla: receptor + nota (obligatorio) + opcionales colapsados.</li>
+              <li>Al guardar: confirmaci&oacute;n + bot&oacute;n &ldquo;Registrar otro&rdquo; (mantiene contexto y receptor reciente).</li>
+              <li>Soporta serializado vs cantidad sin confundir (copy + UI diferentes por tipo).</li>
+            </ul>
+          </div>
+
+          <div class="shots">
+            <figure class="shot">
+              <img src="ux-snapshots/inventario-modal-anadir-producto.png" alt="Modal Añadir Producto" loading="lazy" />
+              <div class="label">Referencia: modal multi-tab (patr&oacute;n fuerte)</div>
+              <div class="callout" style="--x:62; --y:73;">
+                <div class="bubble">
+                  <strong>Reusar patr&oacute;n para &ldquo;Movimiento&rdquo;</strong>
+                  Un modal/wizard similar, pero <em>mucho m&aacute;s corto</em>: receptor + nota + guardar.
+                  <span class="kpi">Objetivo: 2 campos obligatorios</span>
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template id="dir-6">
+      <div class="dir">
+        <div class="dirHead">
+          <div>
+            <h2>Direcci&oacute;n 6 &mdash; Trust &amp; Audit (Confianza y trazabilidad)</h2>
+            <p class="tagline">
+              Reducir dudas: &ldquo;&iquest;esto es real?&rdquo; &rarr; timestamps, estados claros, historial visible y errores con ID.
+            </p>
+          </div>
+          <div class="chips">
+            <span class="chip"><span class="chipDot"></span>Confianza</span>
+            <span class="chip"><span class="chipDot"></span>Menos errores</span>
+            <span class="chip"><span class="chipDot"></span>Auditor&iacute;a</span>
+          </div>
+        </div>
+
+        <div class="dirGrid">
+          <div class="card">
+            <h3>Qu&eacute; cambia</h3>
+            <ul>
+              <li>Mostrar &ldquo;Actualizado hace X&rdquo; en tabla/detalle + refresh manual.</li>
+              <li>Estados con texto + icono: Disponible/Prestado/Asignado/Pendiente/Retirado.</li>
+              <li>Historial (kardex) visible desde drawer de detalle (sin navegar a otra p&aacute;gina).</li>
+              <li>Errores inesperados: mensaje humano + <strong>ID de error</strong> (detalle solo Admin).</li>
+            </ul>
+          </div>
+
+          <div class="shots">
+            <figure class="shot">
+              <img src="ux-snapshots/inventario-baseline.png" alt="Inventario baseline" loading="lazy" />
+              <div class="label">Inventario (a&ntilde;adir &ldquo;confianza&rdquo;)</div>
+              <div class="callout" style="--x:86; --y:14;">
+                <div class="bubble">
+                  <strong>Dato &ldquo;fresh&rdquo;</strong>
+                  Timestamps + indicador de polling (sin distraer) = menos &ldquo;&iquest;seguro?&rdquo;.
+                </div>
+              </div>
+              <div class="callout" style="--x:74; --y:33;">
+                <div class="bubble">
+                  <strong>Sem&aacute;ntica consistente</strong>
+                  Badges y labels iguales en Inventario / Pr&eacute;stamos / Asignados / Historial.
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template id="dir-7">
+      <div class="dir">
+        <div class="dirHead">
+          <div>
+            <h2>Direcci&oacute;n 7 &mdash; CFE Bold Brand (High Contrast)</h2>
+            <p class="tagline">
+              Marca m&aacute;s presente (CFE) sin sacrificar accesibilidad: primary <code>#006B47</code>, acento <code>#008E5A</code>.
+            </p>
+          </div>
+          <div class="chips">
+            <span class="chip"><span class="chipDot"></span>Marca fuerte</span>
+            <span class="chip"><span class="chipDot"></span>AA contrast</span>
+            <span class="chip"><span class="chipDot"></span>Visual weight</span>
+          </div>
+        </div>
+
+        <div class="dirGrid">
+          <div class="card">
+            <h3>Aplicaci&oacute;n de color</h3>
+            <ul>
+              <li>Sidebar activo + botones primarios en <code>#006B47</code> (texto blanco).</li>
+              <li><code>#008E5A</code> solo como acento: iconos, bordes, highlights, fondos suaves.</li>
+              <li>Warning/Orange siempre con texto oscuro; estados nunca &ldquo;solo color&rdquo;.</li>
+              <li>Focus ring verde CFE (alpha) consistente en toda la app.</li>
+            </ul>
+          </div>
+
+          <div class="shots">
+            <figure class="shot">
+              <img
+                src="ux-snapshots/inventario-baseline.png"
+                alt="Inventario baseline"
+                loading="lazy"
+                style="filter: contrast(1.05) saturate(1.08);"
+              />
+              <div class="label">Concepto: + contraste / + marca (simulado)</div>
+              <div class="callout" style="--x:10; --y:18;">
+                <div class="bubble">
+                  <strong>Sidebar &ldquo;brand&rdquo;</strong>
+                  Activo con barra/shape verde, iconos y estados m&aacute;s legibles.
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template id="dir-8">
+      <div class="dir">
+        <div class="dirHead">
+          <div>
+            <h2>Direcci&oacute;n 8 &mdash; Calm Enterprise (Neutral / c&oacute;modo)</h2>
+            <p class="tagline">
+              Menos &ldquo;ruido visual&rdquo;: base neutra, verde solo para acciones clave. Ideal si el equipo vive aqu&iacute; todo el d&iacute;a.
+            </p>
+          </div>
+          <div class="chips">
+            <span class="chip"><span class="chipDot"></span>Calm</span>
+            <span class="chip"><span class="chipDot"></span>Menos fatiga</span>
+            <span class="chip"><span class="chipDot"></span>Profesional</span>
+          </div>
+        </div>
+
+        <div class="dirGrid">
+          <div class="card">
+            <h3>Qu&eacute; cambia</h3>
+            <ul>
+              <li>Menos sombras y menos bordes, m&aacute;s jerarqu&iacute;a tipogr&aacute;fica.</li>
+              <li>Verde solo en CTA y estados &ldquo;success&rdquo;; el resto en neutros.</li>
+              <li>Separaci&oacute;n por secciones (Toolbar / Tabla / Detalle) con fondos muy sutiles.</li>
+              <li>Perfecto para densidad alta sin cansar la vista.</li>
+            </ul>
+          </div>
+
+          <div class="shots">
+            <figure class="shot">
+              <img
+                src="ux-snapshots/inventario-baseline.png"
+                alt="Inventario baseline"
+                loading="lazy"
+                style="filter: saturate(0.82) contrast(1.02);"
+              />
+              <div class="label">Concepto: + neutro / + calma (simulado)</div>
+              <div class="callout" style="--x:58; --y:16;">
+                <div class="bubble">
+                  <strong>Menos fatiga</strong>
+                  Verde reservado para &ldquo;hacer algo&rdquo; (registrar) y estados clave.
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <script>
+      const names = {
+        1: "Dirección 1 — Baseline + Pulido Operativo",
+        2: "Dirección 2 — Table-first Compact (Operador)",
+        3: "Dirección 3 — Master–Detail Drawer (Menos clicks)",
+        4: "Dirección 4 — Command Palette (Keyboard-first)",
+        5: "Dirección 5 — Movement-first Wizard (Registrar rápido)",
+        6: "Dirección 6 — Trust & Audit (Confianza y trazabilidad)",
+        7: "Dirección 7 — CFE Bold Brand (High Contrast)",
+        8: "Dirección 8 — Calm Enterprise (Neutral / cómodo)",
+      };
+
+      const templates = {
+        1: document.getElementById("dir-1"),
+        2: document.getElementById("dir-2"),
+        3: document.getElementById("dir-3"),
+        4: document.getElementById("dir-4"),
+        5: document.getElementById("dir-5"),
+        6: document.getElementById("dir-6"),
+        7: document.getElementById("dir-7"),
+        8: document.getElementById("dir-8"),
+      };
+
+      function render(container, dir) {
+        container.innerHTML = "";
+        container.appendChild(templates[dir].content.cloneNode(true));
+      }
+
+      const btnSingle = document.getElementById("btnSingle");
+      const btnCompare = document.getElementById("btnCompare");
+      const singleControls = document.getElementById("singleControls");
+      const compareControls = document.getElementById("compareControls");
+      const singleMode = document.getElementById("singleMode");
+      const compareMode = document.getElementById("compareMode");
+
+      const dirSingle = document.getElementById("dirSingle");
+      const dirA = document.getElementById("dirA");
+      const dirB = document.getElementById("dirB");
+      const singleTitle = document.getElementById("singleTitle");
+      const titleA = document.getElementById("titleA");
+      const titleB = document.getElementById("titleB");
+      const singleContainer = document.getElementById("singleContainer");
+      const compareA = document.getElementById("compareA");
+      const compareB = document.getElementById("compareB");
+
+      function setMode(mode) {
+        const isCompare = mode === "compare";
+        btnSingle.setAttribute("aria-pressed", String(!isCompare));
+        btnCompare.setAttribute("aria-pressed", String(isCompare));
+        singleControls.classList.toggle("hidden", isCompare);
+        compareControls.classList.toggle("hidden", !isCompare);
+        singleMode.classList.toggle("hidden", isCompare);
+        compareMode.classList.toggle("hidden", !isCompare);
+      }
+
+      btnSingle.addEventListener("click", () => setMode("single"));
+      btnCompare.addEventListener("click", () => setMode("compare"));
+
+      dirSingle.addEventListener("change", () => {
+        const d = Number(dirSingle.value);
+        singleTitle.textContent = names[d];
+        render(singleContainer, d);
+      });
+
+      function syncCompare() {
+        const a = Number(dirA.value);
+        const b = Number(dirB.value);
+        titleA.textContent = names[a];
+        titleB.textContent = names[b];
+        render(compareA, a);
+        render(compareB, b);
+      }
+      dirA.addEventListener("change", syncCompare);
+      dirB.addEventListener("change", syncCompare);
+
+      document.getElementById("btnEval").addEventListener("click", () => {
+        document.getElementById("eval").classList.toggle("hidden");
+      });
+
+      render(singleContainer, 1);
+      syncCompare();
+    </script>
+  </body>
+</html>

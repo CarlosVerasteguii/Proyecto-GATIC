@@ -1,0 +1,108 @@
+# generated: 2025-12-27T19:37:54Z
+# project: GATIC
+# project_key: github-CarlosVerasteguii/Proyecto-GATIC
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog -> in-progress: Automatically when first story is created (via create-story)
+#   - in-progress -> done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2025-12-27T19:37:54Z
+project: GATIC
+project_key: github-CarlosVerasteguii/Proyecto-GATIC
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # All epics, stories, and retrospectives in order
+  epic-1: backlog
+  1-1-repo-inicial-layout-laravel-11-base: backlog
+  1-2-entorno-local-con-sail-mysql-8-seeders-minimos: backlog
+  1-3-autenticacion-base-breeze-blade-operativa: backlog
+  1-4-ui-base-bootstrap-5-sin-tailwind-alineada-a-guia-visual: backlog
+  1-5-livewire-3-instalado-e-integrado-en-el-layout: backlog
+  1-6-roles-fijos-policies-gates-base-server-side: backlog
+  1-7-calidad-y-ci-minima-pint-phpunit-larastan: backlog
+  1-8-layout-base-sidebar-topbar-navegacion-por-rol: backlog
+  1-9-componentes-ux-reutilizables-toasts-loaders-cancelar-actualizado-hace-xs: backlog
+  1-10-manejo-de-errores-en-produccion-con-id-detalle-solo-admin: backlog
+  1-11-patron-de-polling-base-wire-poll-visible-reutilizable: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-gestionar-categorias-incluye-serializado-asset-tag: backlog
+  2-2-gestionar-marcas: backlog
+  2-3-gestionar-ubicaciones: backlog
+  2-4-soft-delete-y-restauracion-de-catalogos: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-crear-y-mantener-productos: backlog
+  3-2-crear-y-mantener-activos-serializados-con-reglas-de-unicidad: backlog
+  3-3-listado-de-inventario-productos-con-indicadores-de-disponibilidad: backlog
+  3-4-detalle-de-producto-con-conteos-y-desglose-por-estado: backlog
+  3-5-detalle-de-activo-con-estado-ubicacion-y-tenencia-actual: backlog
+  3-6-ajustes-de-inventario-admin-con-motivo: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-crear-y-mantener-empleados-rpe: backlog
+  4-2-buscar-seleccionar-empleados-al-registrar-movimientos-autocomplete: backlog
+  4-3-ficha-de-empleado-detalle-y-activos-asociados-si-existen: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-reglas-de-estado-y-transiciones-para-activos-serializados: backlog
+  5-2-asignar-un-activo-serializado-a-un-empleado: backlog
+  5-3-prestar-y-devolver-un-activo-serializado: backlog
+  5-4-movimientos-por-cantidad-vinculados-a-producto-y-empleado: backlog
+  5-5-kardex-historial-para-productos-por-cantidad: backlog
+  5-6-dashboard-minimo-de-metricas-operativas-polling: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-busqueda-unificada-productos-activos-con-salto-directo-por-match-exacto: backlog
+  6-2-filtros-de-inventario-por-catalogos-y-estado-disponibilidad: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-crear-tarea-pendiente-y-administrar-renglones: backlog
+  7-2-captura-de-renglones-serializado-cantidad-con-validaciones-minimas: backlog
+  7-3-procesamiento-por-renglon-edicion-estados-y-finalizacion-parcial: backlog
+  7-4-locks-de-concurrencia-claim-estado-visible-heartbeat-ttl: backlog
+  7-5-admin-puede-liberar-forzar-reclamo-de-lock: backlog
+  epic-7-retrospective: optional
+
+  epic-8: backlog
+  8-1-auditoria-consultable-best-effort: backlog
+  8-2-notas-manuales-en-entidades-relevantes: backlog
+  8-3-adjuntos-seguros-con-control-de-acceso: backlog
+  8-4-papelera-soft-delete-restaurar-purgar: backlog
+  8-5-error-id-consultable-por-admin-end-to-end: backlog
+  epic-8-retrospective: optional

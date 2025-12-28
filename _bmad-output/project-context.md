@@ -1,10 +1,32 @@
+---
+project_name: 'GATIC'
+user_name: 'Carlos'
+date: '2025-12-27T16:11:32.3720620-06:00'
+sections_completed:
+  - technology_stack
+  - language_rules
+  - framework_rules
+  - testing_rules
+  - quality_rules
+  - workflow_rules
+  - anti_patterns
+status: 'complete'
+rule_count: 64
+optimized_for_llm: true
+sources:
+  - docsBmad/project-context.md
+  - _bmad-output/architecture.md
+  - _bmad-output/prd.md
+  - _bmad-output/project-planning-artifacts/epics.md
+  - 03-visual-style-guide.md
+---
+
 # Project Context for AI Agents (GATIC)
 
 _Reglas criticas para agentes IA. Mantener esto **lean**._
 
 Fuente de verdad (bible): `docsBmad/project-context.md` (si algo contradice este archivo, gana el bible).  
-Arquitectura: `_bmad-output/architecture.md`.  
-Version BMAD (copia): `_bmad-output/project-context.md`.
+Arquitectura: `_bmad-output/architecture.md`.
 
 ---
 

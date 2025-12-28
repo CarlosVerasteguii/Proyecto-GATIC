@@ -36,40 +36,40 @@ so that el equipo pueda iterar rápido y reproducir el entorno local de forma co
 
 ## Tasks / Subtasks
 
-- [ ] Preparación del entorno local (AC: 1)
-  - [ ] Confirmar prerequisitos: Docker (Desktop) + Compose v2; puertos libres `APP_PORT` y `3306` (o configurar forwards)
-  - [ ] Confirmar compatibilidad de PHP en host para `composer install` (actualmente el repo requiere **PHP >= 8.4** por `composer.lock`)
-- [ ] Instalar scaffolding de Sail con MySQL (AC: 1)
-  - [ ] En `gatic/`, ejecutar `php artisan sail:install --with=mysql --php=8.4` (evitar default `--php=8.5`)
-  - [ ] Verificar que se generó archivo de compose (`gatic/compose.yaml` por default; o `docker-compose.yml` si ya existía)
-- [ ] Alinear MySQL a 8.0 (paridad con arquitectura) (AC: 3)
-  - [ ] En el compose generado, cambiar el servicio `mysql` a imagen `mysql:8.0` (Sail stub actual usa `mysql:8.4`)
-  - [ ] Verificar que el script de creación de DB de testing se mantiene montado (para `phpunit`)
-- [ ] Configurar variables de entorno para Sail + MySQL (AC: 1, 2)
-  - [ ] Asegurar `WWWGROUP` y `WWWUSER` definidos (ej. `1000`) para evitar fallos de build/permisos
-  - [ ] Definir `APP_PORT` (recomendado `8080` si `80` requiere privilegios o está ocupado)
-  - [ ] Ajustar `.env.example` para MySQL en Sail (sin secretos): `DB_CONNECTION=mysql`, `DB_HOST=mysql`, `DB_PORT=3306`, `DB_DATABASE=gatic`, `DB_USERNAME=sail`, `DB_PASSWORD=password`
-- [ ] Seeders mínimos para desarrollo (AC: 2)
-  - [ ] Agregar migración para `users.role` (valores: `Admin|Editor|Lector`) según arquitectura (`users.role`)
-  - [ ] Actualizar `DatabaseSeeder` (o seeders dedicados) para crear usuarios base:
+- [x] Preparación del entorno local (AC: 1)
+  - [x] Confirmar prerequisitos: Docker (Desktop) + Compose v2; puertos libres `APP_PORT` y `3306` (o configurar forwards)
+  - [x] Confirmar compatibilidad de PHP en host para `composer install` (actualmente el repo requiere **PHP >= 8.4** por `composer.lock`)
+- [x] Instalar scaffolding de Sail con MySQL (AC: 1)
+  - [x] En `gatic/`, ejecutar `php artisan sail:install --with=mysql --php=8.4` (evitar default `--php=8.5`)
+  - [x] Verificar que se generó archivo de compose (`gatic/compose.yaml` por default; o `docker-compose.yml` si ya existía)
+- [x] Alinear MySQL a 8.0 (paridad con arquitectura) (AC: 3)
+  - [x] En el compose generado, cambiar el servicio `mysql` a imagen `mysql:8.0` (Sail stub actual usa `mysql:8.4`)
+  - [x] Verificar que el script de creación de DB de testing se mantiene montado (para `phpunit`)
+- [x] Configurar variables de entorno para Sail + MySQL (AC: 1, 2)
+  - [x] Asegurar `WWWGROUP` y `WWWUSER` definidos (ej. `1000`) para evitar fallos de build/permisos
+  - [x] Definir `APP_PORT` (recomendado `8080` si `80` requiere privilegios o está ocupado)
+  - [x] Ajustar `.env.example` para MySQL en Sail (sin secretos): `DB_CONNECTION=mysql`, `DB_HOST=mysql`, `DB_PORT=3306`, `DB_DATABASE=gatic`, `DB_USERNAME=sail`, `DB_PASSWORD=password`
+- [x] Seeders mínimos para desarrollo (AC: 2)
+  - [x] Agregar migración para `users.role` (valores: `Admin|Editor|Lector`) según arquitectura (`users.role`)
+  - [x] Actualizar `DatabaseSeeder` (o seeders dedicados) para crear usuarios base:
     - Admin: `admin@gatic.local` (role `Admin`)
     - Editor: `editor@gatic.local` (role `Editor`)
     - Lector: `lector@gatic.local` (role `Lector`)
-  - [ ] Documentar credenciales de dev (password de ejemplo) en este story (Dev Notes)
-- [ ] Verificación end-to-end en entorno limpio (AC: 1, 2)
-  - [ ] `./vendor/bin/sail up -d`
-  - [ ] `./vendor/bin/sail artisan migrate:fresh --seed`
-  - [ ] Confirmar respuesta HTTP (ej. abrir `http://localhost:${APP_PORT}`) y que existen usuarios seed en DB
-- [ ] Documentación mínima de uso (AC: 1)
-  - [ ] En `README.md` (raíz) agregar sección “Dev local con Sail” (up/down, migrate/seed, tests, troubleshooting Windows/WSL2)
+  - [x] Documentar credenciales de dev (password de ejemplo) en este story (Dev Notes)
+- [x] Verificación end-to-end en entorno limpio (AC: 1, 2)
+  - [x] `./vendor/bin/sail up -d`
+  - [x] `./vendor/bin/sail artisan migrate:fresh --seed`
+  - [x] Confirmar respuesta HTTP (ej. abrir `http://localhost:${APP_PORT}`) y que existen usuarios seed en DB
+- [x] Documentación mínima de uso (AC: 1)
+  - [x] En `README.md` (raíz) agregar sección “Dev local con Sail” (up/down, migrate/seed, tests, troubleshooting Windows/WSL2)
 
 ## Dev Notes
 
-### Contexto actual (antes de tocar código)
+### Contexto actual
 
 - La app Laravel vive en `gatic/` (Story 1.1 ya completada) y el repo raíz se reserva para BMAD/docs.
-- Hoy `gatic/` NO tiene archivo de compose (`compose.yaml` / `docker-compose.yml`), por lo que `./vendor/bin/sail up` aún no aplica.
-- `.env` / `.env.example` todavía usan `DB_CONNECTION=sqlite` por default, pero el stack objetivo es MySQL 8 en Sail.
+- `gatic/` ya incluye `compose.yaml` para Sail (PHP 8.4) + MySQL 8.0, por lo que `./vendor/bin/sail up -d` aplica desde `gatic/`.
+- `.env` / `.env.example` ya están alineados a MySQL en Sail (`DB_CONNECTION=mysql`, `DB_HOST=mysql`) y `APP_PORT=8080`.
 
 ### Contexto de Gate / Epic (para evitar decisiones aisladas)
 
@@ -125,7 +125,7 @@ so that el equipo pueda iterar rápido y reproducir el entorno local de forma co
 - `gatic/.env.example`
 - `gatic/database/migrations/*add_role_to_users_table*.php`
 - `gatic/database/seeders/*` (o solo `DatabaseSeeder.php`)
-- `gatic/phpunit.xml` (Sail lo ajusta para DB `testing`)
+- `gatic/phpunit.xml` (configurado para DB `testing` en Sail)
 - `README.md` (raíz): sección “Dev local con Sail”
 
 ### Requisitos de testing
@@ -139,12 +139,13 @@ so that el equipo pueda iterar rápido y reproducir el entorno local de forma co
 ### Inteligencia de historia previa (Story 1.1)
 
 - La app ya está creada en `gatic/` con Laravel 11 y dependencias instaladas.
-- Importante: `gatic/.env.example` y `gatic/.env` quedaron con `DB_CONNECTION=sqlite` por default; esta historia debe mover el flujo de dev a MySQL vía Sail.
+- Importante: `gatic/.env.example` y `gatic/.env` ya quedaron con `DB_CONNECTION=mysql` para Sail; el flujo de dev es sobre MySQL 8.0.
 - El repo ya usa convención de commits `feat(gate-0): ...` y layout documentado en `README.md` (raíz).
 
 ### Inteligencia de Git reciente
 
-- Último commit relevante: `feat(gate-0): initialize Laravel 11 in gatic/ + repo layout (Story 1.1)`.
+- Último commit relevante: `feat(gate-0): configure Sail + MySQL 8 + seeders (Story 1.2)`.
+- Previo: `feat(gate-0): initialize Laravel 11 in gatic/ + repo layout (Story 1.1)`.
 - Mantener cambios de esta historia acotados a `gatic/` + `README.md` (raíz).
 
 ### Info técnica reciente (Sail / MySQL)
@@ -184,6 +185,7 @@ GPT-5.2 (Codex CLI)
 - Fuentes analizadas: `_bmad-output/project-planning-artifacts/epics.md`, `docsBmad/project-context.md`, `project-context.md`, `_bmad-output/architecture.md`, Story previa `1-1-repo-inicial-layout-laravel-11-base.md`
 - Sail verificado en código: `gatic/vendor/laravel/sail/src/Console/InstallCommand.php`, stubs `gatic/vendor/laravel/sail/stubs/compose.stub` y `gatic/vendor/laravel/sail/stubs/mysql.stub`
 - Nota de plataforma: `gatic/vendor/composer/platform_check.php` requiere PHP >= 8.4 para correr Artisan fuera de contenedor
+- Implementación (commit): `9026883 feat(gate-0): configure Sail + MySQL 8 + seeders (Story 1.2)`
 
 ### Implementation Plan
 
@@ -195,16 +197,25 @@ GPT-5.2 (Codex CLI)
 
 ### Completion Notes List
 
-- ✅ Story context creado y marcado `ready-for-dev`
-- ✅ Validación ejecutada y reporte generado
-- ✅ `sprint-status.yaml` actualizado a `ready-for-dev`
+- ✅ Sail + MySQL 8.0 configurado (`gatic/compose.yaml`, `gatic/.env.example`)
+- ✅ Migración `users.role` + seeders mínimos (Admin/Editor/Lector)
+- ✅ Verificado end-to-end: `sail up -d`, `migrate:fresh --seed`, HTTP 200, usuarios seed en DB
+- ✅ `phpunit.xml` configurado para usar DB `testing` en tests
+- ✅ README raíz actualizado con “Dev local con Sail”
+- ✅ `sprint-status.yaml` actualizado a `done`
 
 ### Story Completion Status
 
-✅ **READY-FOR-DEV** — Contexto y guardrails completos para implementar Sail+MySQL8.0+seeders mínimos, con sprint tracking actualizado y validación registrada.
+✅ **DONE** — Sail + MySQL 8.0 + seeders mínimos implementado y verificado (AC 1–3).
 
 ### File List
 
-- `_bmad-output/implementation-artifacts/1-2-entorno-local-con-sail-mysql-8-seeders-minimos.md`
+- `README.md` (Dev local con Sail)
+- `gatic/compose.yaml` (Sail + MySQL 8.0)
+- `gatic/.env.example` (MySQL + puertos)
+- `gatic/phpunit.xml` (tests → DB `testing`)
+- `gatic/database/migrations/2025_12_28_114810_add_role_to_users_table.php`
+- `gatic/database/seeders/DatabaseSeeder.php`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml` (status update)
+- `_bmad-output/implementation-artifacts/1-2-entorno-local-con-sail-mysql-8-seeders-minimos.md`
 - `_bmad-output/implementation-artifacts/validation-report-2025-12-28T082303Z.md` (post-validación)

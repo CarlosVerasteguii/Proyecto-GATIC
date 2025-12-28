@@ -59,6 +59,47 @@ php artisan <comando>
 - **Dev Local:** Laravel Sail
 - **Build:** Vite/NPM
 
+## Dev local con Sail
+
+> Nota: si ejecutas `php`, `composer` o `artisan` en host, actualmente el repo requiere **PHP >= 8.4** (por dependencias en `gatic/composer.lock`). Si no lo tienes, corre los comandos desde WSL2/Git Bash o usa Sail.
+
+### Prerrequisitos
+
+- Docker Desktop + Docker Compose v2 (`docker compose`)
+- WSL2 (recomendado) o Git Bash (necesitas `bash` para correr `./vendor/bin/sail`)
+- Puertos libres: `APP_PORT` (default 8080) y `FORWARD_DB_PORT` (default 3306)
+
+### Setup / Arranque
+
+```bash
+cd gatic
+cp .env.example .env
+
+# Si NO tienes PHP 8.4+ en host, puedes instalar dependencias con Docker:
+docker run --rm -v "$(pwd)":/var/www/html -w /var/www/html laravelsail/php84-composer:latest composer install
+
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan migrate:fresh --seed
+```
+
+### Credenciales seed (solo dev)
+
+- Admin: `admin@gatic.local` / `password`
+- Editor: `editor@gatic.local` / `password`
+- Lector: `lector@gatic.local` / `password`
+
+### Tests
+
+```bash
+cd gatic
+./vendor/bin/sail test
+```
+
+### Troubleshooting (Windows/WSL2)
+
+- Si `./vendor/bin/sail` falla por `bash`/permisos: usa WSL2 o Git Bash.
+- Si el puerto 8080/3306 está ocupado: ajusta `APP_PORT` / `FORWARD_DB_PORT` en `gatic/.env`.
+
 ## Roadmap
 
 El proyecto se ejecuta por Gates (0-5). Consulta `docsBmad/gates-execution.md` para detalles.

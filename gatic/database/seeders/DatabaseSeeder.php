@@ -13,11 +13,26 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Create base users with fixed roles for development
+        User::factory()->create([
+            'name' => 'Admin User',
+            'email' => 'admin@gatic.local',
+            'password' => bcrypt('password'),
+            'role' => 'Admin',
+        ]);
 
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Editor User',
+            'email' => 'editor@gatic.local',
+            'password' => bcrypt('password'),
+            'role' => 'Editor',
+        ]);
+
+        User::factory()->create([
+            'name' => 'Lector User',
+            'email' => 'lector@gatic.local',
+            'password' => bcrypt('password'),
+            'role' => 'Lector',
         ]);
     }
 }

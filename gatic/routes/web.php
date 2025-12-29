@@ -15,9 +15,11 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth'])->name('dashboard');
 
-Route::get('/dev/livewire-smoke', LivewireSmokeTest::class)
-    ->middleware(['auth'])
-    ->name('dev.livewire-smoke');
+if (app()->environment(['local', 'testing'])) {
+    Route::get('/dev/livewire-smoke', LivewireSmokeTest::class)
+        ->middleware(['auth'])
+        ->name('dev.livewire-smoke');
+}
 
 // MVP: Profile management deshabilitado - Story 1.3 scope = "solo login/logout"
 // Habilitar en story futura cuando se requiera gestion de perfil

@@ -1,0 +1,39 @@
+$app-sidebar-width: 18rem;
+
+.app-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-areas:
+        'topbar'
+        'main';
+    grid-template-rows: auto 1fr;
+}
+
+@include media-breakpoint-up(md) {
+    .app-shell {
+        grid-template-areas:
+            'sidebar topbar'
+            'sidebar main';
+        grid-template-columns: $app-sidebar-width 1fr;
+    }
+}
+
+.app-sidebar {
+    grid-area: sidebar;
+    background: $white;
+}
+
+.app-sidebar-brand {
+    color: $primary;
+}
+
+.app-topbar {
+    grid-area: topbar;
+    position: sticky;
+    top: 0;
+    z-index: $zindex-sticky;
+}
+
+.app-main {
+    grid-area: main;
+}

@@ -7,9 +7,14 @@
 // Bootstrap
 @import 'bootstrap/scss/bootstrap';
 
+@import 'layout';
+
 a:focus-visible,
 .btn:focus-visible,
-.nav-link:focus-visible {
+.nav-link:focus-visible,
+.navbar-toggler:focus-visible,
+.btn-close:focus-visible,
+.dropdown-item:focus-visible {
     outline: 0;
     box-shadow: 0 0 0 0.25rem rgba($cfe-green-dark, 0.25);
     border-radius: 0.25rem;

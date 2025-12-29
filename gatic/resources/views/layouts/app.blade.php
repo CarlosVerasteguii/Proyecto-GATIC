@@ -20,10 +20,10 @@
     @stack('styles')
 </head>
 <body>
-    <div id="app">
+    <div id="app" class="app-shell">
         @include('layouts.navigation')
 
-        <main class="py-4">
+        <main class="app-main py-4">
             {{ $slot ?? '' }}
             @yield('content')
         </main>

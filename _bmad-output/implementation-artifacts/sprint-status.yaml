@@ -49,7 +49,7 @@ development_status:
   1-5-livewire-3-instalado-e-integrado-en-el-layout: done
   1-6-roles-fijos-policies-gates-base-server-side: done
   1-7-calidad-y-ci-minima-pint-phpunit-larastan: done
-  1-8-layout-base-sidebar-topbar-navegacion-por-rol: backlog
+  1-8-layout-base-sidebar-topbar-navegacion-por-rol: done
   1-9-componentes-ux-reutilizables-toasts-loaders-cancelar-actualizado-hace-xs: backlog
   1-10-manejo-de-errores-en-produccion-con-id-detalle-solo-admin: backlog
   1-11-patron-de-polling-base-wire-poll-visible-reutilizable: backlog

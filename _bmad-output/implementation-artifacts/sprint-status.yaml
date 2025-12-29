@@ -45,8 +45,8 @@ development_status:
   1-1-repo-inicial-layout-laravel-11-base: done
   1-2-entorno-local-con-sail-mysql-8-seeders-minimos: done
   1-3-autenticacion-base-breeze-blade-operativa: done
-  1-4-ui-base-bootstrap-5-sin-tailwind-alineada-a-guia-visual: in-progress
-  1-5-livewire-3-instalado-e-integrado-en-el-layout: review
+  1-4-ui-base-bootstrap-5-sin-tailwind-alineada-a-guia-visual: done
+  1-5-livewire-3-instalado-e-integrado-en-el-layout: in-progress
   1-6-roles-fijos-policies-gates-base-server-side: backlog
   1-7-calidad-y-ci-minima-pint-phpunit-larastan: backlog
   1-8-layout-base-sidebar-topbar-navegacion-por-rol: backlog

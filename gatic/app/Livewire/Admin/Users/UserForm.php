@@ -45,7 +45,7 @@ class UserForm extends Component
         $model = User::query()->findOrFail($this->userId);
         $this->name = $model->name;
         $this->email = $model->email;
-        $this->role = ($model->role instanceof UserRole) ? $model->role->value : (string) $model->role;
+        $this->role = $model->role->value;
         $this->is_active = (bool) $model->is_active;
     }
 
@@ -68,11 +68,9 @@ class UserForm extends Component
         return [
             'role' => ['required', $roleRule],
             'is_active' => ['boolean'],
-            'password' => array_values(array_filter([
-                'nullable',
-                'confirmed',
-                $this->password !== '' ? Password::defaults() : null,
-            ])),
+            'password' => $this->password !== ''
+                ? ['nullable', 'confirmed', Password::defaults()]
+                : ['nullable', 'confirmed'],
         ];
     }
 
@@ -138,7 +136,7 @@ class UserForm extends Component
             }
         }
 
-        $user->role = $this->role;
+        $user->role = $newRole;
         $user->is_active = $this->is_active;
 
         if ($this->password !== '') {

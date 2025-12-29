@@ -61,7 +61,7 @@ php artisan <comando>
 
 ## Dev local con Sail
 
-> Nota: si ejecutas `php`, `composer` o `artisan` en host, actualmente el repo requiere **PHP >= 8.4** (por dependencias en `gatic/composer.lock`). Si no lo tienes, corre los comandos desde WSL2/Git Bash o usa Sail.
+> Nota: si ejecutas `php`, `composer` o `artisan` en host, necesitas **PHP >= 8.2** (ver `gatic/composer.json`). En Windows, suele ser más simple correr todo con Sail (WSL2/Git Bash) para evitar diferencias de entorno.
 
 ### Prerrequisitos
 
@@ -75,8 +75,8 @@ php artisan <comando>
 cd gatic
 cp .env.example .env
 
-# Si NO tienes PHP 8.4+ en host, puedes instalar dependencias con Docker:
-docker run --rm -v "$(pwd)":/var/www/html -w /var/www/html laravelsail/php84-composer:latest composer install
+# Si NO tienes PHP 8.2+ en host, puedes instalar dependencias con Docker:
+docker run --rm -v "$(pwd)":/var/www/html -w /var/www/html laravelsail/php82-composer:latest composer install
 
 ./vendor/bin/sail up -d
 ./vendor/bin/sail artisan migrate:fresh --seed
@@ -94,6 +94,33 @@ docker run --rm -v "$(pwd)":/var/www/html -w /var/www/html laravelsail/php84-com
 cd gatic
 ./vendor/bin/sail test
 ```
+
+### Calidad / CI (Pint + PHPUnit + Larastan)
+
+Comandos canónicos (desde `gatic/`):
+
+```bash
+./vendor/bin/pint --test
+php artisan test
+./vendor/bin/phpstan analyse --no-progress
+```
+
+Si estás en Windows y no puedes ejecutar `./vendor/bin/sail` (por `bash`), puedes correrlos con Docker Compose:
+
+```bash
+cd gatic
+docker compose exec -T laravel.test ./vendor/bin/pint --test
+docker compose exec -T laravel.test php artisan test
+docker compose exec -T laravel.test ./vendor/bin/phpstan analyse --no-progress
+```
+
+### Protección de rama (GitHub)
+
+Para que el **merge se bloquee** si falla CI (AC1), configura Branch protection en GitHub para `main`:
+
+- `Settings → Branches → Branch protection rules → Add rule`
+- Activar **Require status checks to pass before merging** y marcar el check **CI**
+- (Opcional) Activar **Require branches to be up to date before merging** e **Include administrators**
 
 ### Troubleshooting (Windows/WSL2)
 

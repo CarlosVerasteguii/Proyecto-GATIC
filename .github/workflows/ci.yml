@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+          MYSQL_USER: sail
+          MYSQL_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ppassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    defaults:
+      run:
+        working-directory: gatic
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Map mysql hostname
+        # PHPUnit config uses DB_HOST=mysql; map it to the MySQL service exposed on localhost.
+        run: echo "127.0.0.1 mysql" | sudo tee -a /etc/hosts
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, pdo_mysql, intl, bcmath
+          tools: composer:v2
+          coverage: none
+
+      - name: Composer cache dir
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('gatic/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Wait for MySQL
+        run: |
+          php -r '$attempts=30; while($attempts-->0){ try{ new PDO("mysql:host=mysql;port=3306;dbname=testing","sail","password",[PDO::ATTR_TIMEOUT=>1]); echo "MySQL ready\n"; exit(0);} catch(Throwable $e){ sleep(2);} } fwrite(STDERR,"MySQL not ready\n"); exit(1);'
+
+      - name: Pint (format check)
+        run: ./vendor/bin/pint --test
+
+      - name: PHPUnit
+        run: php artisan test
+
+      - name: Larastan (PHPStan)
+        run: ./vendor/bin/phpstan analyse --no-progress

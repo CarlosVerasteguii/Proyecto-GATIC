@@ -21,6 +21,10 @@ Desktop.ini
 # --- BMAD output hygiene ---
 _bmad-output/.archive/
 _bmad-output/project-scan-report.json
+_bmad-output/implementation-artifacts/validation-report-*.md
+
+# Local helper output
+git-status.txt
 
 # --- Laravel / PHP (root-level, legacy) ---
 .env

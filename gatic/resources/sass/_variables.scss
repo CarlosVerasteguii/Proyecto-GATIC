@@ -1,6 +1,19 @@
 // Body
 $body-bg: #f8fafc;
 
+// Branding (CFE/GATIC)
+$cfe-green: #008e5a;
+$cfe-green-dark: #006b47;
+
+// Bootstrap theme
+$primary: $cfe-green-dark;
+$link-color: $cfe-green;
+$link-hover-color: $cfe-green-dark;
+
+$input-focus-border-color: $cfe-green;
+$input-focus-box-shadow: 0 0 0 0.25rem rgba($cfe-green-dark, 0.25);
+$btn-focus-box-shadow: $input-focus-box-shadow;
+
 // Typography
 $font-family-sans-serif: 'Nunito', sans-serif;
 $font-size-base: 0.9rem;

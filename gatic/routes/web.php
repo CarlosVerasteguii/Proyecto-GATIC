@@ -1,15 +1,23 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Livewire\Dev\LivewireSmokeTest;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+
+    return redirect()->route('login');
 });
 
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth'])->name('dashboard');
+
+Route::get('/dev/livewire-smoke', LivewireSmokeTest::class)
+    ->middleware(['auth'])
+    ->name('dev.livewire-smoke');
 
 // MVP: Profile management deshabilitado - Story 1.3 scope = "solo login/logout"
 // Habilitar en story futura cuando se requiera gestion de perfil

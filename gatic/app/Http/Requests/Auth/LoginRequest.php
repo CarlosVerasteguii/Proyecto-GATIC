@@ -49,6 +49,19 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if (Auth::user() && ! Auth::user()->is_active) {
+            Auth::guard('web')->logout();
+
+            $this->session()->invalidate();
+            $this->session()->regenerateToken();
+
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'Tu usuario está deshabilitado. Contacta a un administrador.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -18,21 +19,21 @@ class DatabaseSeeder extends Seeder
             'name' => 'Admin User',
             'email' => 'admin@gatic.local',
             'password' => bcrypt('password'),
-            'role' => 'Admin',
+            'role' => UserRole::Admin,
         ]);
 
         User::factory()->create([
             'name' => 'Editor User',
             'email' => 'editor@gatic.local',
             'password' => bcrypt('password'),
-            'role' => 'Editor',
+            'role' => UserRole::Editor,
         ]);
 
         User::factory()->create([
             'name' => 'Lector User',
             'email' => 'lector@gatic.local',
             'password' => bcrypt('password'),
-            'role' => 'Lector',
+            'role' => UserRole::Lector,
         ]);
     }
 }

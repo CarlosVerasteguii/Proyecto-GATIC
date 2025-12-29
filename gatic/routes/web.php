@@ -1,5 +1,7 @@
 <?php
 
+use App\Livewire\Admin\Users\UserForm;
+use App\Livewire\Admin\Users\UsersIndex;
 use App\Livewire\Dev\LivewireSmokeTest;
 use Illuminate\Support\Facades\Route;
 
@@ -13,11 +15,20 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth'])->name('dashboard');
+})->middleware(['auth', 'active'])->name('dashboard');
+
+Route::middleware(['auth', 'active', 'can:users.manage'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/users', UsersIndex::class)->name('users.index');
+        Route::get('/users/create', UserForm::class)->name('users.create');
+        Route::get('/users/{user}/edit', UserForm::class)->name('users.edit');
+    });
 
 if (app()->environment(['local', 'testing'])) {
     Route::get('/dev/livewire-smoke', LivewireSmokeTest::class)
-        ->middleware(['auth'])
+        ->middleware(['auth', 'active'])
         ->name('dev.livewire-smoke');
 }
 

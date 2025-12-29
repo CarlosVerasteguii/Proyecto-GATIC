@@ -25,6 +25,8 @@ Roles (MVP, fijos):
 - **Editor**: opera inventario/activos, pero con restricciones admin-only (ej. gestión de usuarios).
 - **Lector**: consulta (sin acciones destructivas ni adjuntos en MVP).
 
+Matriz de permisos RBAC (MVP): ver `docsBmad/rbac.md`.
+
 Nota: **Empleado (RPE)** NO es lo mismo que “Usuario del sistema”. Los préstamos/asignaciones se hacen a **Empleados**.
 
 ## Glosario y Modelo Mental

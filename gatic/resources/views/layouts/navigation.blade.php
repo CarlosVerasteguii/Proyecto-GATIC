@@ -13,6 +13,11 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('dashboard') }}">Inicio</a>
                 </li>
+                @can('users.manage')
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('admin.users.index') }}">Usuarios</a>
+                    </li>
+                @endcan
             </ul>
 
             <!-- Right Side Of Navbar -->

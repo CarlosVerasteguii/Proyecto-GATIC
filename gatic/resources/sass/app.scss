@@ -9,6 +9,10 @@
 
 @import 'layout';
 
+.gatic-toast-container {
+    z-index: $zindex-toast;
+}
+
 a:focus-visible,
 .btn:focus-visible,
 .nav-link:focus-visible,

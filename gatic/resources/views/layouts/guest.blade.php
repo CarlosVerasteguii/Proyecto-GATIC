@@ -48,6 +48,8 @@
         </main>
     </div>
 
+    <x-ui.toast-container />
+
     @livewireScripts
 </body>
 </html>

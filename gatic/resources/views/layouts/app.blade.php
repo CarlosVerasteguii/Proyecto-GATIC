@@ -29,6 +29,8 @@
         </main>
     </div>
 
+    <x-ui.toast-container />
+
     @livewireScripts
     @stack('scripts')
 </body>

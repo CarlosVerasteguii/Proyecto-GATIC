@@ -27,6 +27,8 @@ class LivewireLayoutIntegrationTest extends TestCase
         if ($stackScriptsPos !== false) {
             $this->assertLessThan($stackScriptsPos, $scriptsPos);
         }
+
+        $this->assertStringContainsString('<x-ui.toast-container', $contents);
     }
 
     public function test_guest_layout_includes_livewire_assets_in_expected_locations(): void
@@ -45,5 +47,7 @@ class LivewireLayoutIntegrationTest extends TestCase
 
         $this->assertLessThan($headClosePos, $stylesPos);
         $this->assertLessThan($bodyClosePos, $scriptsPos);
+
+        $this->assertStringContainsString('<x-ui.toast-container', $contents);
     }
 }

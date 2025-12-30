@@ -18,6 +18,17 @@ Version BMAD (copia): `_bmad-output/project-context.md`.
 - Tooling: Vite/NPM, Laravel Sail (dev), Docker Compose (prod)
 - Calidad/CI: `pint --test`, `phpunit`, `larastan/larastan`
 
+### Local Toolchain Notes (Windows)
+
+- En esta laptop hay **dos** PHPs:
+  - `C:\\xampp\\php\\php.exe` (en PATH por defecto): **PHP 8.0.30** (NO usar para este repo).
+  - `C:\\Users\\carlo\\.tools\\php84\\php.exe`: **PHP 8.4.x** (usar para correr `artisan`, `phpunit`, etc.).
+- Composer no est&aacute; en PATH; est&aacute; como PHAR en: `C:\\Users\\carlo\\.tools\\composer\\composer.phar` (ejecutar con el PHP 8.4).
+- Comandos recomendados (PowerShell, desde `gatic/`):
+  - Tests (recomendado): `vendor\\bin\\sail artisan test` (requiere Docker Desktop corriendo; `compose.yaml` usa runtime Sail **8.4** + MySQL **8.0**)
+  - Tests (sin Docker): solo si tu PHP local tiene `pdo_mysql` + una DB accesible (por defecto los tests apuntan a `mysql` via Sail)
+  - Composer: `C:\\Users\\carlo\\.tools\\php84\\php.exe C:\\Users\\carlo\\.tools\\composer\\composer.phar install`
+
 ---
 
 ## Critical Implementation Rules
@@ -90,4 +101,4 @@ Version BMAD (copia): `_bmad-output/project-context.md`.
 - Agentes: leer este archivo + `_bmad-output/architecture.md` antes de implementar.
 - Si hay conflicto: gana `docsBmad/project-context.md`.
 
-Last Updated: 2025-12-27
+Last Updated: 2025-12-30

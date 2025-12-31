@@ -28,6 +28,23 @@ Para una acción reversible (best-effort), despacha un toast con `action`:
 
 En el componente, atiende el evento con `#[On('ui:undo-toggle')]`.
 
+## Errores inesperados con `error_id`
+
+### Alerta reutilizable + copiar
+
+Usa el componente Blade:
+
+- `<x-ui.error-alert-with-id :error-id="$errorId" />`
+
+Esto renderiza mensaje humano + `error_id` y un botón "Copiar" (sin dependencias nuevas).
+
+### Livewire: evitar modal por defecto en 500
+
+Para requests Livewire que regresan JSON `{ message, error_id }` con status `>= 500`, el frontend:
+
+- evita el modal por defecto (solo cuando existe `error_id`)
+- muestra un toast consistente con el `error_id`
+
 ## Operaciones lentas (>3s) + Cancelar
 
 ### Objetivo
@@ -66,4 +83,3 @@ Usa `<x-ui.skeleton />` para placeholders alineados a Bootstrap:
 ## Polling + "Actualizado hace Xs"
 
 Usa `<x-ui.freshness-indicator :updated-at="$lastUpdatedAtIso" />` y actualiza `lastUpdatedAtIso` cada vez que llegue data nueva (por ejemplo, en el método llamado por `wire:poll.visible`).
-

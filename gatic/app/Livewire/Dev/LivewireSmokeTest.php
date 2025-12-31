@@ -14,12 +14,15 @@ class LivewireSmokeTest extends Component
     use InteractsWithToasts;
 
     public int $count = 0;
+
     public bool $toggle = false;
 
     public string $slowResult = 'Sin ejecutar';
+
     public int $slowResultVersion = 0;
 
     public int $pollCount = 0;
+
     public string $lastUpdatedAtIso = '';
 
     public function mount(): void
@@ -74,7 +77,7 @@ class LivewireSmokeTest extends Component
         sleep(5);
 
         $this->slowResultVersion++;
-        $this->slowResult = 'Resultado #' . $this->slowResultVersion . ' (' . now()->format('H:i:s') . ')';
+        $this->slowResult = 'Resultado #'.$this->slowResultVersion.' ('.now()->format('H:i:s').')';
     }
 
     public function pollTick(): void

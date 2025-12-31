@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Admin\ErrorReports\ErrorReportsLookup;
 use App\Livewire\Admin\Users\UserForm;
 use App\Livewire\Admin\Users\UsersIndex;
 use App\Livewire\Dev\LivewireSmokeTest;
@@ -24,6 +25,13 @@ Route::middleware(['auth', 'active', 'can:users.manage'])
         Route::get('/users', UsersIndex::class)->name('users.index');
         Route::get('/users/create', UserForm::class)->name('users.create');
         Route::get('/users/{user}/edit', UserForm::class)->name('users.edit');
+    });
+
+Route::middleware(['auth', 'active', 'can:admin-only'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/error-reports', ErrorReportsLookup::class)->name('error-reports.lookup');
     });
 
 if (app()->environment(['local', 'testing'])) {

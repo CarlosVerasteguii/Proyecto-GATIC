@@ -52,7 +52,7 @@ development_status:
   1-8-layout-base-sidebar-topbar-navegacion-por-rol: done
   1-9-componentes-ux-reutilizables-toasts-loaders-cancelar-actualizado-hace-xs: done
   1-10-manejo-de-errores-en-produccion-con-id-detalle-solo-admin: done
-  1-11-patron-de-polling-base-wire-poll-visible-reutilizable: backlog
+  1-11-patron-de-polling-base-wire-poll-visible-reutilizable: done
   epic-1-retrospective: optional
 
   epic-2: backlog

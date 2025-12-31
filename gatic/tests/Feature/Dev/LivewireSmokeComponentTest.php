@@ -3,6 +3,7 @@
 namespace Tests\Feature\Dev;
 
 use App\Livewire\Dev\LivewireSmokeTest;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -39,5 +40,25 @@ class LivewireSmokeComponentTest extends TestCase
             ->dispatch('ui:undo-toggle', previous: false)
             ->assertSet('toggle', false)
             ->assertDispatched('ui:toast', type: 'info');
+    }
+
+    public function test_poll_tick_increments_counter_and_updates_freshness_timestamp(): void
+    {
+        $first = Carbon::parse('2025-01-01T00:00:00Z');
+        Carbon::setTestNow($first);
+
+        $component = Livewire::test(LivewireSmokeTest::class)
+            ->assertSet('pollCount', 0)
+            ->assertSet('lastUpdatedAtIso', $first->toIso8601String());
+
+        $second = $first->copy()->addSeconds(10);
+        Carbon::setTestNow($second);
+
+        $component
+            ->call('pollTick')
+            ->assertSet('pollCount', 1)
+            ->assertSet('lastUpdatedAtIso', $second->toIso8601String());
+
+        Carbon::setTestNow();
     }
 }

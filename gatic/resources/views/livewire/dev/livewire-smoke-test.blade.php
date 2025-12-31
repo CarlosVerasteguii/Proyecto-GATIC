@@ -53,7 +53,7 @@
                         </div>
 
                         <div class="col-12">
-                            <div class="border rounded p-3" wire:poll.visible.5s="pollTick">
+                            <x-ui.poll method="pollTick" class="border rounded p-3">
                                 <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
                                     <div>
                                         <div class="fw-semibold">Polling + "Actualizado hace Xs"</div>
@@ -62,7 +62,7 @@
 
                                     <x-ui.freshness-indicator :updated-at="$lastUpdatedAtIso" />
                                 </div>
-                            </div>
+                            </x-ui.poll>
                         </div>
 
                         <div class="col-12">

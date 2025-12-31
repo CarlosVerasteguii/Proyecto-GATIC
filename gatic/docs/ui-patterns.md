@@ -82,4 +82,23 @@ Usa `<x-ui.skeleton />` para placeholders alineados a Bootstrap:
 
 ## Polling + "Actualizado hace Xs"
 
+### Wrapper estandar: `<x-ui.poll />`
+
+Usa el componente Blade `x-ui.poll` para evitar hardcodear intervalos y estandarizar `wire:poll.visible`:
+
+```blade
+<x-ui.poll method="refreshBadges" class="border rounded p-3">
+    <x-ui.freshness-indicator :updated-at="$lastUpdatedAtIso" />
+    <!-- ... -->
+</x-ui.poll>
+```
+
+- Intervalos: vienen de `config('gatic.ui.polling.*')` (por defecto `badges_interval_s`).
+- Kill-switch global: `config('gatic.ui.polling.enabled')` (env `GATIC_UI_POLLING_ENABLED=false`) desactiva el atributo `wire:poll*`.
+- Casos especiales (métricas/locks): pasa `:interval-s="config('gatic.ui.polling.metrics_interval_s')"` o `:interval-s="config('gatic.ui.polling.locks_heartbeat_interval_s')"` (sin números mágicos).
+
+### No disparar overlay por polling
+
+Si el componente también usa `<x-ui.long-request />`, define `target="..."` para que el overlay solo aplique a métodos manuales y no al método de polling.
+
 Usa `<x-ui.freshness-indicator :updated-at="$lastUpdatedAtIso" />` y actualiza `lastUpdatedAtIso` cada vez que llegue data nueva (por ejemplo, en el método llamado por `wire:poll.visible`).

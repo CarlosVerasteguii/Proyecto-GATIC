@@ -3,6 +3,8 @@
 use App\Livewire\Admin\ErrorReports\ErrorReportsLookup;
 use App\Livewire\Admin\Users\UserForm;
 use App\Livewire\Admin\Users\UsersIndex;
+use App\Livewire\Catalogs\Categories\CategoriesIndex;
+use App\Livewire\Catalogs\Categories\CategoryForm;
 use App\Livewire\Dev\LivewireSmokeTest;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +34,15 @@ Route::middleware(['auth', 'active', 'can:admin-only'])
     ->name('admin.')
     ->group(function () {
         Route::get('/error-reports', ErrorReportsLookup::class)->name('error-reports.lookup');
+    });
+
+Route::middleware(['auth', 'active', 'can:catalogs.manage'])
+    ->prefix('catalogs')
+    ->name('catalogs.')
+    ->group(function () {
+        Route::get('/categories', CategoriesIndex::class)->name('categories.index');
+        Route::get('/categories/create', CategoryForm::class)->name('categories.create');
+        Route::get('/categories/{category}/edit', CategoryForm::class)->name('categories.edit');
     });
 
 if (app()->environment(['local', 'testing'])) {

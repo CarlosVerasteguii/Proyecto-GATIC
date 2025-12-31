@@ -1,6 +1,7 @@
 @php
     $dashboardActive = request()->routeIs('dashboard');
     $adminUsersActive = request()->routeIs('admin.users.*');
+    $catalogsCategoriesActive = request()->routeIs('catalogs.categories.*');
 @endphp
 
 <ul class="nav nav-pills flex-column gap-1">
@@ -22,6 +23,18 @@
                 @if ($adminUsersActive) aria-current="page" @endif
             >
                 Usuarios
+            </a>
+        </li>
+    @endcan
+
+    @can('catalogs.manage')
+        <li class="nav-item">
+            <a
+                class="nav-link @if ($catalogsCategoriesActive) active @endif"
+                href="{{ route('catalogs.categories.index') }}"
+                @if ($catalogsCategoriesActive) aria-current="page" @endif
+            >
+                Categorías
             </a>
         </li>
     @endcan

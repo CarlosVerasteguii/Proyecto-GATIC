@@ -7,7 +7,10 @@ use App\Livewire\Catalogs\Locations\LocationsIndex;
 use App\Models\Location;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -134,5 +137,38 @@ class LocationsTest extends TestCase
             ->assertDontSee('Bodega Central');
 
         $this->assertSoftDeleted('locations', ['id' => $location->id]);
+    }
+
+    public function test_delete_is_blocked_when_location_is_in_use(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Bodega Central']);
+
+        Schema::dropIfExists('location_usages');
+        Schema::create('location_usages', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('location_id')->constrained('locations');
+            $table->timestamps();
+        });
+
+        try {
+            DB::table('location_usages')->insert([
+                'location_id' => $location->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            Livewire::actingAs($admin)
+                ->test(LocationsIndex::class)
+                ->call('delete', $location->id)
+                ->assertDispatched('ui:toast', type: 'error');
+
+            $this->assertDatabaseHas('locations', [
+                'id' => $location->id,
+                'deleted_at' => null,
+            ]);
+        } finally {
+            Schema::dropIfExists('location_usages');
+        }
     }
 }

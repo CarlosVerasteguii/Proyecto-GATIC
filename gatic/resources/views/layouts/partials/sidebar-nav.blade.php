@@ -4,6 +4,7 @@
     $catalogsCategoriesActive = request()->routeIs('catalogs.categories.*');
     $catalogsBrandsActive = request()->routeIs('catalogs.brands.*');
     $catalogsLocationsActive = request()->routeIs('catalogs.locations.*');
+    $catalogsTrashActive = request()->routeIs('catalogs.trash.*');
 @endphp
 
 <ul class="nav nav-pills flex-column gap-1">
@@ -57,5 +58,16 @@
                 Ubicaciones
             </a>
         </li>
+        @can('admin-only')
+            <li class="nav-item">
+                <a
+                    class="nav-link @if ($catalogsTrashActive) active @endif"
+                    href="{{ route('catalogs.trash.index') }}"
+                    @if ($catalogsTrashActive) aria-current="page" @endif
+                >
+                    Papelera
+                </a>
+            </li>
+        @endcan
     @endcan
 </ul>

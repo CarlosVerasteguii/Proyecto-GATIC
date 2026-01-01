@@ -4,12 +4,15 @@ namespace App\Livewire\Catalogs\Brands;
 
 use App\Livewire\Concerns\InteractsWithToasts;
 use App\Models\Brand;
+use App\Support\Catalogs\CatalogUsage;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Throwable;
 
 #[Layout('layouts.app')]
 class BrandsIndex extends Component
@@ -83,18 +86,28 @@ class BrandsIndex extends Component
 
         $this->validate();
 
-        if (! $this->brandId) {
-            Brand::query()->create(['name' => $this->name]);
+        try {
+            if (! $this->brandId) {
+                Brand::query()->create(['name' => $this->name]);
 
-            $this->reset('name');
-            $this->toastSuccess('Marca creada.');
+                $this->reset('name');
+                $this->toastSuccess('Marca creada.');
 
-            return;
+                return;
+            }
+
+            $brand = Brand::query()->findOrFail($this->brandId);
+            $brand->name = $this->name;
+            $brand->save();
+        } catch (QueryException $exception) {
+            if ($this->isDuplicateNameException($exception)) {
+                $this->addError('name', 'La marca ya existe.');
+
+                return;
+            }
+
+            throw $exception;
         }
-
-        $brand = Brand::query()->findOrFail($this->brandId);
-        $brand->name = $this->name;
-        $brand->save();
 
         $this->reset(['brandId', 'name']);
         $this->toastSuccess('Marca actualizada.');
@@ -105,6 +118,22 @@ class BrandsIndex extends Component
         Gate::authorize('catalogs.manage');
 
         $brand = Brand::query()->findOrFail($brandId);
+
+        try {
+            $inUse = CatalogUsage::isInUse('brands', $brand->id);
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->toastError('No se pudo validar si la marca está en uso.');
+
+            return;
+        }
+
+        if ($inUse) {
+            $this->toastError('No se puede eliminar: la marca está en uso.');
+
+            return;
+        }
+
         $brand->delete();
 
         if ($this->brandId === $brandId) {
@@ -135,5 +164,18 @@ class BrandsIndex extends Component
     private function escapeLike(string $value): string
     {
         return addcslashes($value, '\\%_');
+    }
+
+    private function isDuplicateNameException(QueryException $exception): bool
+    {
+        $errorInfo = $exception->errorInfo;
+
+        if (! is_array($errorInfo) || count($errorInfo) < 2) {
+            return false;
+        }
+
+        $driverCode = (int) ($errorInfo[1] ?? 0);
+
+        return $driverCode === 1062;
     }
 }

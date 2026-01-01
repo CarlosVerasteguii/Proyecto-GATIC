@@ -4,6 +4,7 @@ namespace App\Livewire\Catalogs\Locations;
 
 use App\Livewire\Concerns\InteractsWithToasts;
 use App\Models\Location;
+use App\Support\Catalogs\CatalogUsage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Gate;
@@ -11,6 +12,7 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Throwable;
 
 #[Layout('layouts.app')]
 class LocationsIndex extends Component
@@ -116,6 +118,22 @@ class LocationsIndex extends Component
         Gate::authorize('catalogs.manage');
 
         $location = Location::query()->findOrFail($locationId);
+
+        try {
+            $inUse = CatalogUsage::isInUse('locations', $location->id);
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->toastError('No se pudo validar si la ubicación está en uso.');
+
+            return;
+        }
+
+        if ($inUse) {
+            $this->toastError('No se puede eliminar: la ubicación está en uso.');
+
+            return;
+        }
+
         $location->delete();
 
         if ($this->locationId === $locationId) {

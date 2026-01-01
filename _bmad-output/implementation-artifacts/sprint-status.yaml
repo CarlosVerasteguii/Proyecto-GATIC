@@ -59,7 +59,7 @@ development_status:
   2-1-gestionar-categorias-incluye-serializado-asset-tag: done
   2-2-gestionar-marcas: done
   2-3-gestionar-ubicaciones: done
-  2-4-soft-delete-y-restauracion-de-catalogos: backlog
+  2-4-soft-delete-y-restauracion-de-catalogos: done
   epic-2-retrospective: optional
 
   epic-3: backlog

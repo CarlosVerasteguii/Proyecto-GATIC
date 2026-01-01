@@ -1,4 +1,6 @@
-<div class="container">
+<div class="container position-relative">
+    <x-ui.long-request target="delete" />
+
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             <div class="card">
@@ -41,6 +43,16 @@
                                             <a class="btn btn-sm btn-outline-primary" href="{{ route('catalogs.categories.edit', ['category' => $category->id]) }}">
                                                 Editar
                                             </a>
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                wire:click="delete({{ $category->id }})"
+                                                wire:confirm="Confirmas que deseas eliminar esta categoria?"
+                                                wire:loading.attr="disabled"
+                                                wire:target="delete"
+                                            >
+                                                Eliminar
+                                            </button>
                                         </td>
                                     </tr>
                                 @empty
@@ -60,4 +72,3 @@
         </div>
     </div>
 </div>
-

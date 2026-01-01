@@ -14,7 +14,8 @@
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
 
     <!-- Scripts -->
-    @unless(app()->runningUnitTests())
+    @php($runningPhpUnit = class_exists(\PHPUnit\Framework\TestCase::class, false))
+    @unless($runningPhpUnit)
         @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     @endunless
 

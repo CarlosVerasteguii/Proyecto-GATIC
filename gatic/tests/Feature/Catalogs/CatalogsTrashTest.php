@@ -130,7 +130,7 @@ class CatalogsTrashTest extends TestCase
                 $component->restore('brands', 1);
                 $this->fail('Expected AuthorizationException for restore().');
             } catch (AuthorizationException) {
-                $this->assertTrue(true);
+                $this->addToAssertionCount(1);
             }
         }
     }

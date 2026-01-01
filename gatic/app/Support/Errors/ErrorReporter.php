@@ -146,7 +146,7 @@ final class ErrorReporter
             return $this->sanitizeText($trimmed);
         }
 
-        $path = isset($parts['path']) && is_string($parts['path']) ? $parts['path'] : '';
+        $path = (string) ($parts['path'] ?? '');
 
         return $parts['scheme'].'://'.$parts['host'].$path;
     }

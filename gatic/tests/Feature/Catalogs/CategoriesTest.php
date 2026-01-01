@@ -186,7 +186,7 @@ class CategoriesTest extends TestCase
             $index->delete(1);
             $this->fail('Expected AuthorizationException for delete().');
         } catch (AuthorizationException) {
-            $this->assertTrue(true);
+            $this->addToAssertionCount(1);
         }
 
         $form = new CategoryForm;
@@ -195,7 +195,7 @@ class CategoriesTest extends TestCase
             $form->save();
             $this->fail('Expected AuthorizationException for save().');
         } catch (AuthorizationException) {
-            $this->assertTrue(true);
+            $this->addToAssertionCount(1);
         }
     }
 }

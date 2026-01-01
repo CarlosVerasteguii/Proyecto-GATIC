@@ -53,21 +53,21 @@ class LocationsTest extends TestCase
             $component->save();
             $this->fail('Expected AuthorizationException for save().');
         } catch (AuthorizationException) {
-            $this->assertTrue(true);
+            $this->addToAssertionCount(1);
         }
 
         try {
             $component->edit(1);
             $this->fail('Expected AuthorizationException for edit().');
         } catch (AuthorizationException) {
-            $this->assertTrue(true);
+            $this->addToAssertionCount(1);
         }
 
         try {
             $component->delete(1);
             $this->fail('Expected AuthorizationException for delete().');
         } catch (AuthorizationException) {
-            $this->assertTrue(true);
+            $this->addToAssertionCount(1);
         }
     }
 

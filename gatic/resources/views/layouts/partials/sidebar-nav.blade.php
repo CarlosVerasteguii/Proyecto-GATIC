@@ -2,6 +2,7 @@
     $dashboardActive = request()->routeIs('dashboard');
     $adminUsersActive = request()->routeIs('admin.users.*');
     $catalogsCategoriesActive = request()->routeIs('catalogs.categories.*');
+    $catalogsBrandsActive = request()->routeIs('catalogs.brands.*');
 @endphp
 
 <ul class="nav nav-pills flex-column gap-1">
@@ -35,6 +36,15 @@
                 @if ($catalogsCategoriesActive) aria-current="page" @endif
             >
                 Categorías
+            </a>
+        </li>
+        <li class="nav-item">
+            <a
+                class="nav-link @if ($catalogsBrandsActive) active @endif"
+                href="{{ route('catalogs.brands.index') }}"
+                @if ($catalogsBrandsActive) aria-current="page" @endif
+            >
+                Marcas
             </a>
         </li>
     @endcan

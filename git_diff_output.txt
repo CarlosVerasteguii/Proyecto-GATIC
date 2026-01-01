@@ -1,0 +1,84 @@
+diff --git a/_bmad-output/implementation-artifacts/sprint-status.yaml b/_bmad-output/implementation-artifacts/sprint-status.yaml
+index 422c291..3ab6a9c 100644
+--- a/_bmad-output/implementation-artifacts/sprint-status.yaml
++++ b/_bmad-output/implementation-artifacts/sprint-status.yaml
+@@ -55,9 +55,9 @@ development_status:
+   1-11-patron-de-polling-base-wire-poll-visible-reutilizable: done
+   epic-1-retrospective: done
+ 
+-  epic-2: backlog
++  epic-2: in-progress
+   2-1-gestionar-categorias-incluye-serializado-asset-tag: done
+-  2-2-gestionar-marcas: backlog
++  2-2-gestionar-marcas: done
+   2-3-gestionar-ubicaciones: backlog
+   2-4-soft-delete-y-restauracion-de-catalogos: backlog
+   epic-2-retrospective: optional
+diff --git a/gatic/app/Support/Errors/ErrorReporter.php b/gatic/app/Support/Errors/ErrorReporter.php
+index 88f90c0..cb98ed9 100644
+--- a/gatic/app/Support/Errors/ErrorReporter.php
++++ b/gatic/app/Support/Errors/ErrorReporter.php
+@@ -121,6 +121,7 @@ private function allowlistedHeaders(Request $request): array
+ 
+             if ($key === 'referer') {
+                 $headers[$key] = $this->sanitizeReferer($value);
++
+                 continue;
+             }
+ 
+diff --git a/gatic/resources/views/layouts/partials/sidebar-nav.blade.php b/gatic/resources/views/layouts/partials/sidebar-nav.blade.php
+index 4989867..fabe429 100644
+--- a/gatic/resources/views/layouts/partials/sidebar-nav.blade.php
++++ b/gatic/resources/views/layouts/partials/sidebar-nav.blade.php
+@@ -2,6 +2,7 @@
+     $dashboardActive = request()->routeIs('dashboard');
+     $adminUsersActive = request()->routeIs('admin.users.*');
+     $catalogsCategoriesActive = request()->routeIs('catalogs.categories.*');
++    $catalogsBrandsActive = request()->routeIs('catalogs.brands.*');
+ @endphp
+ 
+ <ul class="nav nav-pills flex-column gap-1">
+@@ -37,5 +38,14 @@ class="nav-link @if ($catalogsCategoriesActive) active @endif"
+                 Categorías
+             </a>
+         </li>
++        <li class="nav-item">
++            <a
++                class="nav-link @if ($catalogsBrandsActive) active @endif"
++                href="{{ route('catalogs.brands.index') }}"
++                @if ($catalogsBrandsActive) aria-current="page" @endif
++            >
++                Marcas
++            </a>
++        </li>
+     @endcan
+ </ul>
+diff --git a/gatic/routes/web.php b/gatic/routes/web.php
+index 4c7175b..5ab5c70 100644
+--- a/gatic/routes/web.php
++++ b/gatic/routes/web.php
+@@ -3,6 +3,7 @@
+ use App\Livewire\Admin\ErrorReports\ErrorReportsLookup;
+ use App\Livewire\Admin\Users\UserForm;
+ use App\Livewire\Admin\Users\UsersIndex;
++use App\Livewire\Catalogs\Brands\BrandsIndex;
+ use App\Livewire\Catalogs\Categories\CategoriesIndex;
+ use App\Livewire\Catalogs\Categories\CategoryForm;
+ use App\Livewire\Dev\LivewireSmokeTest;
+@@ -43,6 +44,7 @@
+         Route::get('/categories', CategoriesIndex::class)->name('categories.index');
+         Route::get('/categories/create', CategoryForm::class)->name('categories.create');
+         Route::get('/categories/{category}/edit', CategoryForm::class)->name('categories.edit');
++        Route::get('/brands', BrandsIndex::class)->name('brands.index');
+     });
+ 
+ if (app()->environment(['local', 'testing'])) {
+diff --git a/gatic/tests/Feature/Ui/PollComponentTest.php b/gatic/tests/Feature/Ui/PollComponentTest.php
+index 60545fe..cded04d 100644
+--- a/gatic/tests/Feature/Ui/PollComponentTest.php
++++ b/gatic/tests/Feature/Ui/PollComponentTest.php
+@@ -22,4 +22,3 @@ public function test_visible_false_string_uses_non_visible_polling_attribute():
+         $this->assertStringNotContainsString('wire:poll.visible.', $html);
+     }
+ }
+-

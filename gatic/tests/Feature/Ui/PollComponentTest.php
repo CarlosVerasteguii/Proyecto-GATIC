@@ -22,4 +22,3 @@ class PollComponentTest extends TestCase
         $this->assertStringNotContainsString('wire:poll.visible.', $html);
     }
 }
-

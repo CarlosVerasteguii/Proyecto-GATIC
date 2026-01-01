@@ -55,9 +55,9 @@ development_status:
   1-11-patron-de-polling-base-wire-poll-visible-reutilizable: done
   epic-1-retrospective: done
 
-  epic-2: backlog
+  epic-2: in-progress
   2-1-gestionar-categorias-incluye-serializado-asset-tag: done
-  2-2-gestionar-marcas: backlog
+  2-2-gestionar-marcas: done
   2-3-gestionar-ubicaciones: backlog
   2-4-soft-delete-y-restauracion-de-catalogos: backlog
   epic-2-retrospective: optional

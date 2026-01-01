@@ -121,6 +121,7 @@ final class ErrorReporter
 
             if ($key === 'referer') {
                 $headers[$key] = $this->sanitizeReferer($value);
+
                 continue;
             }
 

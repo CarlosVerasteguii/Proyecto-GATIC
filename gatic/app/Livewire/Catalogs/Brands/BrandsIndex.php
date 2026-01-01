@@ -134,6 +134,6 @@ class BrandsIndex extends Component
 
     private function escapeLike(string $value): string
     {
-        return addcslashes($value, "\\%_");
+        return addcslashes($value, '\\%_');
     }
 }

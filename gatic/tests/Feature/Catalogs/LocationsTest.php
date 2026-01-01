@@ -1,0 +1,138 @@
+<?php
+
+namespace Tests\Feature\Catalogs;
+
+use App\Enums\UserRole;
+use App\Livewire\Catalogs\Locations\LocationsIndex;
+use App\Models\Location;
+use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use Tests\TestCase;
+
+class LocationsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_admin_and_editor_can_access_locations_page(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $editor = User::factory()->create(['role' => UserRole::Editor]);
+
+        $this->actingAs($admin)
+            ->get('/catalogs/locations')
+            ->assertOk();
+
+        $this->actingAs($editor)
+            ->get('/catalogs/locations')
+            ->assertOk();
+    }
+
+    public function test_lector_cannot_access_locations_page(): void
+    {
+        $lector = User::factory()->create(['role' => UserRole::Lector]);
+
+        $this->actingAs($lector)
+            ->get('/catalogs/locations')
+            ->assertForbidden();
+    }
+
+    public function test_lector_cannot_execute_locations_livewire_actions(): void
+    {
+        $lector = User::factory()->create(['role' => UserRole::Lector]);
+
+        $this->actingAs($lector);
+
+        $component = new LocationsIndex;
+
+        try {
+            $component->save();
+            $this->fail('Expected AuthorizationException for save().');
+        } catch (AuthorizationException) {
+            $this->assertTrue(true);
+        }
+
+        try {
+            $component->edit(1);
+            $this->fail('Expected AuthorizationException for edit().');
+        } catch (AuthorizationException) {
+            $this->assertTrue(true);
+        }
+
+        try {
+            $component->delete(1);
+            $this->fail('Expected AuthorizationException for delete().');
+        } catch (AuthorizationException) {
+            $this->assertTrue(true);
+        }
+    }
+
+    public function test_can_create_location_and_it_is_normalized(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        Livewire::actingAs($admin)
+            ->test(LocationsIndex::class)
+            ->set('name', '  Bodega   Central  ')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertDispatched('ui:toast', type: 'success');
+
+        $this->assertDatabaseHas('locations', [
+            'name' => 'Bodega Central',
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_unique_name_is_enforced_case_accent_and_space_insensitive_including_soft_deleted(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        $existing = Location::query()->create(['name' => 'Café  Central']);
+        $existing->delete();
+
+        Livewire::actingAs($admin)
+            ->test(LocationsIndex::class)
+            ->set('name', '  cafe central ')
+            ->call('save')
+            ->assertHasErrors(['name' => 'unique']);
+    }
+
+    public function test_search_escapes_like_wildcards(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        Location::query()->create(['name' => 'A_B']);
+        Location::query()->create(['name' => 'ABC']);
+        Location::query()->create(['name' => '100% Real']);
+        Location::query()->create(['name' => '1000 Real']);
+
+        Livewire::actingAs($admin)
+            ->test(LocationsIndex::class)
+            ->set('search', '_')
+            ->assertSee('A_B')
+            ->assertDontSee('ABC');
+
+        Livewire::actingAs($admin)
+            ->test(LocationsIndex::class)
+            ->set('search', '%')
+            ->assertSee('100% Real')
+            ->assertDontSee('1000 Real');
+    }
+
+    public function test_delete_is_soft_delete_and_location_disappears_from_list(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Bodega Central']);
+
+        Livewire::actingAs($admin)
+            ->test(LocationsIndex::class)
+            ->assertSee('Bodega Central')
+            ->call('delete', $location->id)
+            ->assertDispatched('ui:toast', type: 'success')
+            ->assertDontSee('Bodega Central');
+
+        $this->assertSoftDeleted('locations', ['id' => $location->id]);
+    }
+}

@@ -6,6 +6,7 @@ use App\Livewire\Admin\Users\UsersIndex;
 use App\Livewire\Catalogs\Brands\BrandsIndex;
 use App\Livewire\Catalogs\Categories\CategoriesIndex;
 use App\Livewire\Catalogs\Categories\CategoryForm;
+use App\Livewire\Catalogs\Locations\LocationsIndex;
 use App\Livewire\Dev\LivewireSmokeTest;
 use Illuminate\Support\Facades\Route;
 
@@ -45,6 +46,7 @@ Route::middleware(['auth', 'active', 'can:catalogs.manage'])
         Route::get('/categories/create', CategoryForm::class)->name('categories.create');
         Route::get('/categories/{category}/edit', CategoryForm::class)->name('categories.edit');
         Route::get('/brands', BrandsIndex::class)->name('brands.index');
+        Route::get('/locations', LocationsIndex::class)->name('locations.index');
     });
 
 if (app()->environment(['local', 'testing'])) {

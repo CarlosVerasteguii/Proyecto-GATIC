@@ -60,9 +60,13 @@ development_status:
   2-2-gestionar-marcas: done
   2-3-gestionar-ubicaciones: done
   2-4-soft-delete-y-restauracion-de-catalogos: done
-  epic-2-retrospective: optional
+  epic-2-retrospective: done
 
   epic-3: backlog
+  # Epic 3 notes (Gate 2 - inventario navegable):
+  # - Tenencia real (Empleado RPE) y movimientos viven en Epic 4/5; en Epic 3 el detalle de Activo debe mostrar "Tenencia: N/A".
+  # - Definir estados minimos del Activo para conteos/disponibilidad (Disponible/Asignado/Prestado/Pendiente de Retiro/Retirado).
+  # - Usar foreign keys reales (products/assets -> categories/brands/locations) para que CatalogUsage pueda bloquear deletes de catalogos "en uso".
   3-1-crear-y-mantener-productos: backlog
   3-2-crear-y-mantener-activos-serializados-con-reglas-de-unicidad: backlog
   3-3-listado-de-inventario-productos-con-indicadores-de-disponibilidad: backlog

@@ -136,6 +136,8 @@ Permite configurar los catálogos necesarios para clasificar el inventario y man
 Permite crear y mantener Productos y Activos, aplicar reglas de unicidad, consultar detalles y realizar ajustes con motivo.
 **FRs covered:** FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR25
 
+Nota: la tenencia real (Empleado RPE) y movimientos (asignar/prestar/devolver) se implementan en Epica 4/5.
+
 ### Epic 4: Directorio de Empleados (RPE)
 Permite administrar Empleados (RPE) y seleccionarlos rápidamente como receptores de movimientos.
 **FRs covered:** FR15, FR16
@@ -434,6 +436,11 @@ So that se mantenga integridad referencial y trazabilidad en el inventario (FR7)
 
 Permite crear y mantener Productos y Activos, aplicar reglas de unicidad, consultar detalles y realizar ajustes con motivo.
 
+**Nota (Gate 2 / Epic 3):**
+
+- En esta epica se construye inventario navegable (productos/activos, estados, conteos, ajustes).
+- La "tenencia" real (asignar/prestar/devolver a Empleados RPE) se implementa en Epica 4 (Empleados) y Epica 5 (Movimientos).
+
 ### Story 3.1: Crear y mantener Productos
 
 As a Admin/Editor,
@@ -444,7 +451,8 @@ So that el sistema maneje Productos serializados o por cantidad según su Catego
 
 **Given** un Admin/Editor autenticado
 **When** crea o edita un Producto
-**Then** puede asociarlo a Categoría, Marca y Ubicación (según modelo definido)
+**Then** puede asociarlo a Categoria y Marca (segun modelo definido)
+**And** la ubicacion operativa se captura a nivel de Activo (para productos serializados)
 **And** las validaciones impiden datos incompletos
 
 **Given** una Categoría con `is_serialized = true`
@@ -497,6 +505,7 @@ So that pueda responder rápido “¿tenemos X?” (FR25).
 **When** se calculan disponibilidades
 **Then** No disponibles = Asignado + Prestado + Pendiente de Retiro
 **And** Disponibles = Total - No disponibles
+**And** en esta epica los estados pueden capturarse/ajustarse sin requerir Movimientos (Epica 5)
 
 ### Story 3.4: Detalle de Producto con conteos y desglose por estado
 
@@ -510,6 +519,7 @@ So that pueda entender qué unidades están disponibles y por qué (FR12).
 **When** el usuario entra al detalle del Producto
 **Then** ve conteos (total/disponibles/no disponibles)
 **And** ve desglose por estado para activos serializados o un resumen de stock actual para productos por cantidad (según corresponda)
+**And** el desglose por estado se basa en el estado actual de los Activos (sin depender de Movimientos en esta epica)
 
 ### Story 3.5: Detalle de Activo con estado, ubicación y tenencia actual
 
@@ -521,8 +531,8 @@ So that pueda saber quién lo tiene o dónde está (FR13).
 
 **Given** un Activo existente
 **When** el usuario entra al detalle del Activo
-**Then** ve estado actual y ubicación
-**And** si está asignado/prestado, ve el Empleado asociado (tenencia actual)
+**Then** ve estado actual y ubicacion
+**And** ve una seccion "Tenencia actual" con valor "N/A (se habilita en Epica 4/5)" mientras no existan Empleados y Movimientos
 
 ### Story 3.6: Ajustes de inventario (Admin) con motivo
 
@@ -535,7 +545,8 @@ So that el sistema refleje la realidad física con trazabilidad (FR14, NFR7).
 **Given** un Admin autenticado
 **When** realiza un ajuste (cantidad o estado/registro según aplique)
 **Then** el sistema requiere un motivo
-**And** el ajuste queda registrado de forma auditable
+**And** el ajuste queda registrado de forma auditable (registro de ajuste con actor, timestamp y motivo)
+**And** el ajuste es transaccional (no deja inventario en estado inconsistente)
 
 ## Epic 4: Directorio de Empleados (RPE)
 

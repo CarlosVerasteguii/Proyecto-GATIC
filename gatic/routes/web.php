@@ -9,6 +9,8 @@ use App\Livewire\Catalogs\Categories\CategoryForm;
 use App\Livewire\Catalogs\Locations\LocationsIndex;
 use App\Livewire\Catalogs\Trash\CatalogsTrash;
 use App\Livewire\Dev\LivewireSmokeTest;
+use App\Livewire\Inventory\Assets\AssetForm as InventoryAssetForm;
+use App\Livewire\Inventory\Assets\AssetsIndex as InventoryAssetsIndex;
 use App\Livewire\Inventory\Products\ProductForm as InventoryProductForm;
 use App\Livewire\Inventory\Products\ProductsIndex as InventoryProductsIndex;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +66,7 @@ Route::middleware(['auth', 'active', 'can:inventory.view'])
     ->name('inventory.')
     ->group(function () {
         Route::get('/products', InventoryProductsIndex::class)->name('products.index');
+        Route::get('/products/{product}/assets', InventoryAssetsIndex::class)->name('products.assets.index');
     });
 
 Route::middleware(['auth', 'active', 'can:inventory.manage'])
@@ -72,6 +75,8 @@ Route::middleware(['auth', 'active', 'can:inventory.manage'])
     ->group(function () {
         Route::get('/products/create', InventoryProductForm::class)->name('products.create');
         Route::get('/products/{product}/edit', InventoryProductForm::class)->name('products.edit');
+        Route::get('/products/{product}/assets/create', InventoryAssetForm::class)->name('products.assets.create');
+        Route::get('/products/{product}/assets/{asset}/edit', InventoryAssetForm::class)->name('products.assets.edit');
     });
 
 if (app()->environment(['local', 'testing'])) {

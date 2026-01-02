@@ -1,0 +1,105 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+/**
+ * @property int $id
+ * @property int $product_id
+ * @property int $location_id
+ * @property string $serial
+ * @property string|null $asset_tag
+ * @property string $status
+ */
+class Asset extends Model
+{
+    use SoftDeletes;
+
+    public const STATUS_AVAILABLE = 'Disponible';
+
+    public const STATUS_ASSIGNED = 'Asignado';
+
+    public const STATUS_LOANED = 'Prestado';
+
+    public const STATUS_PENDING_RETIREMENT = 'Pendiente de Retiro';
+
+    public const STATUS_RETIRED = 'Retirado';
+
+    /**
+     * @var list<string>
+     */
+    public const STATUSES = [
+        self::STATUS_AVAILABLE,
+        self::STATUS_ASSIGNED,
+        self::STATUS_LOANED,
+        self::STATUS_PENDING_RETIREMENT,
+        self::STATUS_RETIRED,
+    ];
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'product_id',
+        'location_id',
+        'serial',
+        'asset_tag',
+        'status',
+    ];
+
+    public static function normalizeSerial(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = trim($value);
+
+        return $normalized === '' ? null : $normalized;
+    }
+
+    public static function normalizeAssetTag(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = strtoupper(trim($value));
+
+        return $normalized === '' ? null : $normalized;
+    }
+
+    protected function serial(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => self::normalizeSerial($value),
+        );
+    }
+
+    protected function assetTag(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => self::normalizeAssetTag($value),
+        );
+    }
+
+    /**
+     * @return BelongsTo<Product, $this>
+     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * @return BelongsTo<Location, $this>
+     */
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
+    }
+}

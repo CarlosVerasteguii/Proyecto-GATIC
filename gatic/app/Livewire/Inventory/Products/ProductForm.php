@@ -195,9 +195,6 @@ class ProductForm extends Component
                 ->with('status', 'Producto creado.');
         }
 
-        if (! $model instanceof Product) {
-            $model = Product::query()->findOrFail($this->productId);
-        }
         $model->name = $validated['name'];
         $model->brand_id = $validated['brand_id'];
         $model->qty_total = $this->categoryIsSerialized ? null : $validated['qty_total'];

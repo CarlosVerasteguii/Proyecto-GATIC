@@ -50,6 +50,18 @@
                                             @endif
                                         </td>
                                         <td class="text-end">
+                                            @if ($product->category?->is_serialized)
+                                                <a
+                                                    class="btn btn-sm btn-outline-secondary"
+                                                    href="{{ route('inventory.products.assets.index', ['product' => $product->id]) }}"
+                                                >
+                                                    Activos
+                                                </a>
+                                            @else
+                                                <a class="btn btn-sm btn-outline-secondary disabled" href="#" tabindex="-1" aria-disabled="true">
+                                                    Activos
+                                                </a>
+                                            @endif
                                             @can('inventory.manage')
                                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('inventory.products.edit', ['product' => $product->id]) }}">
                                                     Editar
@@ -74,4 +86,3 @@
         </div>
     </div>
 </div>
-

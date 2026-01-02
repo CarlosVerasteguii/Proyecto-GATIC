@@ -15,25 +15,31 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create base users with fixed roles for development
-        User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@gatic.local',
-            'password' => bcrypt('password'),
-            'role' => UserRole::Admin,
-        ]);
+        User::query()->updateOrCreate(
+            ['email' => 'admin@gatic.local'],
+            [
+                'name' => 'Admin User',
+                'password' => bcrypt('password'),
+                'role' => UserRole::Admin,
+            ],
+        );
 
-        User::factory()->create([
-            'name' => 'Editor User',
-            'email' => 'editor@gatic.local',
-            'password' => bcrypt('password'),
-            'role' => UserRole::Editor,
-        ]);
+        User::query()->updateOrCreate(
+            ['email' => 'editor@gatic.local'],
+            [
+                'name' => 'Editor User',
+                'password' => bcrypt('password'),
+                'role' => UserRole::Editor,
+            ],
+        );
 
-        User::factory()->create([
-            'name' => 'Lector User',
-            'email' => 'lector@gatic.local',
-            'password' => bcrypt('password'),
-            'role' => UserRole::Lector,
-        ]);
+        User::query()->updateOrCreate(
+            ['email' => 'lector@gatic.local'],
+            [
+                'name' => 'Lector User',
+                'password' => bcrypt('password'),
+                'role' => UserRole::Lector,
+            ],
+        );
     }
 }

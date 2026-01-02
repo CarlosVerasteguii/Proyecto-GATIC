@@ -5,6 +5,7 @@
     $catalogsBrandsActive = request()->routeIs('catalogs.brands.*');
     $catalogsLocationsActive = request()->routeIs('catalogs.locations.*');
     $catalogsTrashActive = request()->routeIs('catalogs.trash.*');
+    $inventoryProductsActive = request()->routeIs('inventory.products.*');
 @endphp
 
 <ul class="nav nav-pills flex-column gap-1">
@@ -26,6 +27,18 @@
                 @if ($adminUsersActive) aria-current="page" @endif
             >
                 Usuarios
+            </a>
+        </li>
+    @endcan
+
+    @can('inventory.view')
+        <li class="nav-item">
+            <a
+                class="nav-link @if ($inventoryProductsActive) active @endif"
+                href="{{ route('inventory.products.index') }}"
+                @if ($inventoryProductsActive) aria-current="page" @endif
+            >
+                Inventario &gt; Productos
             </a>
         </li>
     @endcan

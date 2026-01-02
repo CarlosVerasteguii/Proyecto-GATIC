@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use App\Support\Authorization\RoleAccess;
 use Illuminate\Support\Facades\Gate;
@@ -42,6 +43,16 @@ class AuthServiceProvider extends ServiceProvider
 
         Gate::define(
             'catalogs.manage',
+            static fn (User $user): bool => RoleAccess::isAdminOrEditor($user)
+        );
+
+        Gate::define(
+            'inventory.view',
+            static fn (User $user): bool => RoleAccess::isAdminOrEditor($user) || $user->role === UserRole::Lector
+        );
+
+        Gate::define(
+            'inventory.manage',
             static fn (User $user): bool => RoleAccess::isAdminOrEditor($user)
         );
     }

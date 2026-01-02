@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $category_id
  * @property int|null $brand_id
  * @property int|null $qty_total
+ * @property int|null $assets_total
+ * @property int|null $assets_unavailable
  */
 class Product extends Model
 {
@@ -67,5 +70,13 @@ class Product extends Model
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    /**
+     * @return HasMany<Asset, $this>
+     */
+    public function assets(): HasMany
+    {
+        return $this->hasMany(Asset::class);
     }
 }

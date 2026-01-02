@@ -43,6 +43,15 @@ class Asset extends Model
     /**
      * @var list<string>
      */
+    public const UNAVAILABLE_STATUSES = [
+        self::STATUS_ASSIGNED,
+        self::STATUS_LOANED,
+        self::STATUS_PENDING_RETIREMENT,
+    ];
+
+    /**
+     * @var list<string>
+     */
     protected $fillable = [
         'product_id',
         'location_id',

@@ -31,23 +31,37 @@
                                     <th>Categoría</th>
                                     <th>Marca</th>
                                     <th>Tipo</th>
-                                    <th class="text-end">Stock total</th>
+                                    <th class="text-end">Total</th>
+                                    <th class="text-end">Disponibles</th>
+                                    <th class="text-end">No disponibles</th>
                                     <th class="text-end">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse ($products as $product)
-                                    <tr>
+                                    @php
+                                        $isSerialized = (bool) $product->category?->is_serialized;
+                                        $total = $isSerialized ? (int) ($product->assets_total ?? 0) : (int) ($product->qty_total ?? 0);
+                                        $unavailable = $isSerialized ? (int) ($product->assets_unavailable ?? 0) : 0;
+                                        $available = max($total - $unavailable, 0);
+                                    @endphp
+
+                                    <tr @class(['table-warning' => $available === 0])>
                                         <td>{{ $product->name }}</td>
                                         <td>{{ $product->category?->name ?? '-' }}</td>
                                         <td>{{ $product->brand?->name ?? '-' }}</td>
                                         <td>{{ $product->category?->is_serialized ? 'Serializado' : 'Por cantidad' }}</td>
                                         <td class="text-end">
-                                            @if ($product->category?->is_serialized)
-                                                —
-                                            @else
-                                                {{ (string) $product->qty_total }}
+                                            {{ $total }}
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="fw-semibold">{{ $available }}</span>
+                                            @if ($available === 0)
+                                                <span class="badge text-bg-danger ms-2" role="status">Sin disponibles</span>
                                             @endif
+                                        </td>
+                                        <td class="text-end">
+                                            {{ $unavailable }}
                                         </td>
                                         <td class="text-end">
                                             @if ($product->category?->is_serialized)
@@ -58,9 +72,8 @@
                                                     Activos
                                                 </a>
                                             @else
-                                                <a class="btn btn-sm btn-outline-secondary disabled" href="#" tabindex="-1" aria-disabled="true">
-                                                    Activos
-                                                </a>
+                                                <span class="text-muted" aria-hidden="true">&mdash;</span>
+                                                <span class="visually-hidden">Sin acciones aplicables</span>
                                             @endif
                                             @can('inventory.manage')
                                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('inventory.products.edit', ['product' => $product->id]) }}">
@@ -71,7 +84,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-muted">No hay productos.</td>
+                                        <td colspan="8" class="text-muted">No hay productos.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

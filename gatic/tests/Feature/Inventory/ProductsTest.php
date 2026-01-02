@@ -5,11 +5,12 @@ namespace Tests\Feature\Inventory;
 use App\Enums\UserRole;
 use App\Livewire\Inventory\Products\ProductForm;
 use App\Livewire\Inventory\Products\ProductsIndex;
+use App\Models\Asset;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Location;
 use App\Models\Product;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -163,20 +164,13 @@ class ProductsTest extends TestCase
         ]);
     }
 
-    public function test_lector_cannot_execute_products_manage_livewire_actions(): void
+    public function test_lector_cannot_access_products_manage_livewire_component(): void
     {
         $lector = User::factory()->create(['role' => UserRole::Lector]);
 
-        $this->actingAs($lector);
-
-        $form = new ProductForm;
-
-        try {
-            $form->save();
-            $this->fail('Expected AuthorizationException for save().');
-        } catch (AuthorizationException) {
-            $this->addToAssertionCount(1);
-        }
+        Livewire::actingAs($lector)
+            ->test(ProductForm::class)
+            ->assertForbidden();
     }
 
     public function test_lector_can_render_products_index_livewire_component(): void
@@ -223,5 +217,126 @@ class ProductsTest extends TestCase
             ->assertSee('No hay productos.')
             ->assertDontSee('Dell_1')
             ->assertDontSee('Dell X1');
+    }
+
+    public function test_products_index_shows_availability_counts_for_qty_products(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        Product::query()->create([
+            'name' => 'Cables HDMI',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => 10,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get('/inventory/products')
+            ->assertOk();
+
+        $response->assertSeeTextInOrder([
+            'Cables HDMI',
+            'Por cantidad',
+            '10',
+            '10',
+            '0',
+        ]);
+    }
+
+    public function test_products_index_shows_availability_counts_for_serialized_products_excluding_retired(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-1',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-2',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_ASSIGNED,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-3',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_LOANED,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-4',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_PENDING_RETIREMENT,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-5',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_RETIRED,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get('/inventory/products')
+            ->assertOk();
+
+        $response->assertSeeTextInOrder([
+            'Dell X1',
+            'Serializado',
+            '4',
+            '1',
+            '3',
+        ]);
+    }
+
+    public function test_products_index_highlights_products_with_no_available_stock(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        Product::query()->create([
+            'name' => 'Baterías AAA',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => 0,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get('/inventory/products')
+            ->assertOk();
+
+        $response
+            ->assertSeeText('Baterías AAA')
+            ->assertSeeText('Sin disponibles')
+            ->assertSee('table-warning', false);
     }
 }

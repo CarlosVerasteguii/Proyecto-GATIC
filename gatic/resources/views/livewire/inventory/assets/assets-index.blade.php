@@ -57,6 +57,18 @@
                                             <td>{{ $asset->status }}</td>
                                             <td>{{ $asset->location?->name ?? '-' }}</td>
                                             <td class="text-end">
+                                                @php
+                                                    $returnQuery = array_filter([
+                                                        'q' => $search,
+                                                        'page' => $assets->currentPage(),
+                                                    ], static fn ($value): bool => $value !== null && $value !== '');
+                                                @endphp
+                                                <a
+                                                    class="btn btn-sm btn-outline-secondary"
+                                                    href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id] + $returnQuery) }}"
+                                                >
+                                                    Ver
+                                                </a>
                                                 @can('inventory.manage')
                                                     <a
                                                         class="btn btn-sm btn-outline-primary"
@@ -85,4 +97,3 @@
         </div>
     </div>
 </div>
-

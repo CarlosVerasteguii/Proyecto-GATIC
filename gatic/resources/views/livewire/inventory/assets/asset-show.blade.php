@@ -1,0 +1,71 @@
+<div class="container position-relative">
+    @php
+        $returnQuery = array_filter(
+            request()->only(['q', 'page']),
+            static fn ($value): bool => $value !== null && $value !== ''
+        );
+
+        $statusBadgeClass = match ($asset->status) {
+            \App\Models\Asset::STATUS_AVAILABLE => 'bg-success',
+            \App\Models\Asset::STATUS_ASSIGNED => 'bg-warning text-dark',
+            \App\Models\Asset::STATUS_LOANED => 'bg-info text-dark',
+            \App\Models\Asset::STATUS_PENDING_RETIREMENT => 'bg-warning text-dark',
+            \App\Models\Asset::STATUS_RETIRED => 'bg-secondary',
+            default => 'bg-secondary',
+        };
+    @endphp
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex gap-2">
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery) }}">
+                        Volver
+                    </a>
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.show', ['product' => $product->id]) }}">
+                        Producto
+                    </a>
+                </div>
+                @can('inventory.manage')
+                    <a class="btn btn-sm btn-primary" href="{{ route('inventory.products.assets.edit', ['product' => $product->id, 'asset' => $asset->id]) }}">
+                        Editar
+                    </a>
+                @endcan
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    Detalle del Activo
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">Producto</dt>
+                        <dd class="col-sm-9">{{ $product->name }}</dd>
+
+                        <dt class="col-sm-3">Serial</dt>
+                        <dd class="col-sm-9">{{ $asset->serial }}</dd>
+
+                        <dt class="col-sm-3">Asset tag</dt>
+                        <dd class="col-sm-9">{{ $asset->asset_tag ?? '-' }}</dd>
+
+                        <dt class="col-sm-3">Estado</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge {{ $statusBadgeClass }}">{{ $asset->status }}</span>
+                        </dd>
+
+                        <dt class="col-sm-3">Ubicación</dt>
+                        <dd class="col-sm-9">{{ $asset->location?->name ?? '-' }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    Tenencia actual
+                </div>
+                <div class="card-body">
+                    <p class="mb-0 text-muted">N/A (se habilita en Épica 4/5)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

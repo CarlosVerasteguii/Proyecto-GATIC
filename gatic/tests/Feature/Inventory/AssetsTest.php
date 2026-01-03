@@ -4,6 +4,7 @@ namespace Tests\Feature\Inventory;
 
 use App\Enums\UserRole;
 use App\Livewire\Inventory\Assets\AssetForm;
+use App\Livewire\Inventory\Assets\AssetShow;
 use App\Livewire\Inventory\Assets\AssetsIndex;
 use App\Models\Asset;
 use App\Models\Category;
@@ -92,6 +93,10 @@ class AssetsTest extends TestCase
 
         $this->actingAs($lector)
             ->get("/inventory/products/{$product->id}/assets")
+            ->assertOk();
+
+        $this->actingAs($lector)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
             ->assertOk();
 
         $this->actingAs($lector)
@@ -315,5 +320,187 @@ class AssetsTest extends TestCase
         Livewire::actingAs($lector)
             ->test(AssetsIndex::class, ['product' => (string) $product->id])
             ->assertOk();
+    }
+
+    public function test_all_roles_can_view_asset_show_page(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $editor = User::factory()->create(['role' => UserRole::Editor]);
+        $lector = User::factory()->create(['role' => UserRole::Lector]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-1',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertOk();
+
+        $this->actingAs($editor)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertOk();
+
+        $this->actingAs($lector)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertOk();
+    }
+
+    public function test_asset_show_returns_404_if_asset_does_not_belong_to_product(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product1 = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $product2 = Product::query()->create([
+            'name' => 'Dell X2',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product1->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-1',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product2->id}/assets/{$asset->id}")
+            ->assertNotFound();
+    }
+
+    public function test_asset_show_returns_404_if_asset_is_soft_deleted(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-1',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+        $asset->delete();
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertNotFound();
+    }
+
+    public function test_asset_show_returns_404_for_non_serialized_products(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Cables HDMI',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => 10,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}/assets/999")
+            ->assertNotFound();
+    }
+
+    public function test_asset_show_displays_tenencia_na_message(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-1',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertOk()
+            ->assertSee('N/A (se habilita en Épica 4/5)');
+    }
+
+    public function test_asset_show_livewire_component_renders(): void
+    {
+        $lector = User::factory()->create(['role' => UserRole::Lector]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-1',
+            'asset_tag' => 'TAG-001',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+
+        Livewire::actingAs($lector)
+            ->test(AssetShow::class, ['product' => (string) $product->id, 'asset' => (string) $asset->id])
+            ->assertOk()
+            ->assertSee('SER-1')
+            ->assertSee('TAG-001')
+            ->assertSee('Disponible')
+            ->assertSee('Almacén');
     }
 }

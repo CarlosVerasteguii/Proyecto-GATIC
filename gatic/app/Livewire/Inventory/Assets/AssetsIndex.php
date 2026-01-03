@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -21,6 +22,7 @@ class AssetsIndex extends Component
 
     public bool $productIsSerialized = false;
 
+    #[Url(as: 'q')]
     public string $search = '';
 
     public function mount(string $product): void

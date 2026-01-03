@@ -10,6 +10,7 @@ use App\Livewire\Catalogs\Locations\LocationsIndex;
 use App\Livewire\Catalogs\Trash\CatalogsTrash;
 use App\Livewire\Dev\LivewireSmokeTest;
 use App\Livewire\Inventory\Assets\AssetForm as InventoryAssetForm;
+use App\Livewire\Inventory\Assets\AssetShow as InventoryAssetShow;
 use App\Livewire\Inventory\Assets\AssetsIndex as InventoryAssetsIndex;
 use App\Livewire\Inventory\Products\ProductForm as InventoryProductForm;
 use App\Livewire\Inventory\Products\ProductShow as InventoryProductShow;
@@ -73,6 +74,10 @@ Route::middleware(['auth', 'active', 'can:inventory.view'])
         Route::get('/products/{product}/assets', InventoryAssetsIndex::class)
             ->whereNumber('product')
             ->name('products.assets.index');
+        Route::get('/products/{product}/assets/{asset}', InventoryAssetShow::class)
+            ->whereNumber('product')
+            ->whereNumber('asset')
+            ->name('products.assets.show');
     });
 
 Route::middleware(['auth', 'active', 'can:inventory.manage'])

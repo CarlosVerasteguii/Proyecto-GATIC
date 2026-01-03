@@ -47,7 +47,14 @@
                                     @endphp
 
                                     <tr @class(['table-warning' => $available === 0])>
-                                        <td>{{ $product->name }}</td>
+                                        <td>
+                                            <a
+                                                class="text-decoration-none"
+                                                href="{{ route('inventory.products.show', ['product' => $product->id]) }}"
+                                            >
+                                                {{ $product->name }}
+                                            </a>
+                                        </td>
                                         <td>{{ $product->category?->name ?? '-' }}</td>
                                         <td>{{ $product->brand?->name ?? '-' }}</td>
                                         <td>{{ $product->category?->is_serialized ? 'Serializado' : 'Por cantidad' }}</td>
@@ -64,6 +71,12 @@
                                             {{ $unavailable }}
                                         </td>
                                         <td class="text-end">
+                                            <a
+                                                class="btn btn-sm btn-outline-secondary"
+                                                href="{{ route('inventory.products.show', ['product' => $product->id]) }}"
+                                            >
+                                                Ver
+                                            </a>
                                             @if ($product->category?->is_serialized)
                                                 <a
                                                     class="btn btn-sm btn-outline-secondary"
@@ -71,9 +84,6 @@
                                                 >
                                                     Activos
                                                 </a>
-                                            @else
-                                                <span class="text-muted" aria-hidden="true">&mdash;</span>
-                                                <span class="visually-hidden">Sin acciones aplicables</span>
                                             @endif
                                             @can('inventory.manage')
                                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('inventory.products.edit', ['product' => $product->id]) }}">

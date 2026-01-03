@@ -12,6 +12,7 @@ use App\Livewire\Dev\LivewireSmokeTest;
 use App\Livewire\Inventory\Assets\AssetForm as InventoryAssetForm;
 use App\Livewire\Inventory\Assets\AssetsIndex as InventoryAssetsIndex;
 use App\Livewire\Inventory\Products\ProductForm as InventoryProductForm;
+use App\Livewire\Inventory\Products\ProductShow as InventoryProductShow;
 use App\Livewire\Inventory\Products\ProductsIndex as InventoryProductsIndex;
 use Illuminate\Support\Facades\Route;
 
@@ -66,7 +67,12 @@ Route::middleware(['auth', 'active', 'can:inventory.view'])
     ->name('inventory.')
     ->group(function () {
         Route::get('/products', InventoryProductsIndex::class)->name('products.index');
-        Route::get('/products/{product}/assets', InventoryAssetsIndex::class)->name('products.assets.index');
+        Route::get('/products/{product}', InventoryProductShow::class)
+            ->whereNumber('product')
+            ->name('products.show');
+        Route::get('/products/{product}/assets', InventoryAssetsIndex::class)
+            ->whereNumber('product')
+            ->name('products.assets.index');
     });
 
 Route::middleware(['auth', 'active', 'can:inventory.manage'])
@@ -74,9 +80,16 @@ Route::middleware(['auth', 'active', 'can:inventory.manage'])
     ->name('inventory.')
     ->group(function () {
         Route::get('/products/create', InventoryProductForm::class)->name('products.create');
-        Route::get('/products/{product}/edit', InventoryProductForm::class)->name('products.edit');
-        Route::get('/products/{product}/assets/create', InventoryAssetForm::class)->name('products.assets.create');
-        Route::get('/products/{product}/assets/{asset}/edit', InventoryAssetForm::class)->name('products.assets.edit');
+        Route::get('/products/{product}/edit', InventoryProductForm::class)
+            ->whereNumber('product')
+            ->name('products.edit');
+        Route::get('/products/{product}/assets/create', InventoryAssetForm::class)
+            ->whereNumber('product')
+            ->name('products.assets.create');
+        Route::get('/products/{product}/assets/{asset}/edit', InventoryAssetForm::class)
+            ->whereNumber('product')
+            ->whereNumber('asset')
+            ->name('products.assets.edit');
     });
 
 if (app()->environment(['local', 'testing'])) {

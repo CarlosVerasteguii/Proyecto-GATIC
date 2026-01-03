@@ -70,7 +70,7 @@ development_status:
   3-1-crear-y-mantener-productos: done
   3-2-crear-y-mantener-activos-serializados-con-reglas-de-unicidad: done
   3-3-listado-de-inventario-productos-con-indicadores-de-disponibilidad: done
-  3-4-detalle-de-producto-con-conteos-y-desglose-por-estado: backlog
+  3-4-detalle-de-producto-con-conteos-y-desglose-por-estado: done
   3-5-detalle-de-activo-con-estado-ubicacion-y-tenencia-actual: backlog
   3-6-ajustes-de-inventario-admin-con-motivo: backlog
   epic-3-retrospective: optional

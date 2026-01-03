@@ -12,6 +12,7 @@ use App\Models\Location;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -338,5 +339,176 @@ class ProductsTest extends TestCase
             ->assertSeeText('Baterías AAA')
             ->assertSeeText('Sin disponibles')
             ->assertSee('table-warning', false);
+    }
+
+    public function test_all_roles_can_access_product_show_page(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $editor = User::factory()->create(['role' => UserRole::Editor]);
+        $lector = User::factory()->create(['role' => UserRole::Lector]);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}")
+            ->assertOk()
+            ->assertSeeText('Dell X1');
+
+        $this->actingAs($editor)
+            ->get("/inventory/products/{$product->id}")
+            ->assertOk()
+            ->assertSeeText('Dell X1');
+
+        $this->actingAs($lector)
+            ->get("/inventory/products/{$product->id}")
+            ->assertOk()
+            ->assertSeeText('Dell X1');
+    }
+
+    public function test_product_show_is_forbidden_when_inventory_view_is_denied(): void
+    {
+        $lector = User::factory()->create(['role' => UserRole::Lector]);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Gate::define('inventory.view', static fn (User $user): bool => false);
+
+        $this->actingAs($lector)
+            ->get("/inventory/products/{$product->id}")
+            ->assertForbidden();
+    }
+
+    public function test_product_show_shows_availability_counts_for_serialized_products_with_breakdown(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-1',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-2',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_ASSIGNED,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-3',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_LOANED,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-4',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_PENDING_RETIREMENT,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-5',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_RETIRED,
+        ]);
+        $softDeletedAsset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-6',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_ASSIGNED,
+        ]);
+        $softDeletedAsset->delete();
+
+        $response = $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}")
+            ->assertOk();
+
+        $response->assertSeeTextInOrder([
+            'Total',
+            '4',
+            'Disponibles',
+            '1',
+            'No disponibles',
+            '3',
+        ]);
+
+        $response->assertSeeTextInOrder([
+            Asset::STATUS_AVAILABLE,
+            '1',
+            Asset::STATUS_ASSIGNED,
+            '1',
+            Asset::STATUS_LOANED,
+            '1',
+            Asset::STATUS_PENDING_RETIREMENT,
+            '1',
+            Asset::STATUS_RETIRED,
+            '1',
+        ]);
+    }
+
+    public function test_product_show_shows_qty_summary_for_qty_products(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Cables HDMI',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => 10,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}")
+            ->assertOk();
+
+        $response->assertSeeTextInOrder([
+            'Total',
+            '10',
+            'Disponibles',
+            '10',
+            'No disponibles',
+            '0',
+        ]);
     }
 }

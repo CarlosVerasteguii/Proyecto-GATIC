@@ -30,6 +30,11 @@
                         Editar
                     </a>
                 @endcan
+                @can('admin-only')
+                    <a class="btn btn-sm btn-warning" href="{{ route('inventory.products.assets.adjust', ['product' => $product->id, 'asset' => $asset->id] + $returnQuery) }}">
+                        Ajustar
+                    </a>
+                @endcan
             </div>
 
             <div class="card">

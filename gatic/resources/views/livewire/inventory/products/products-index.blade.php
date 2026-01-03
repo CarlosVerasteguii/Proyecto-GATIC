@@ -1,4 +1,10 @@
 <div class="container position-relative">
+    @php
+        $returnQuery = array_filter(
+            request()->only(['q', 'page']),
+            static fn ($value): bool => $value !== null && $value !== ''
+        );
+    @endphp
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             <div class="card">
@@ -50,7 +56,7 @@
                                         <td>
                                             <a
                                                 class="text-decoration-none"
-                                                href="{{ route('inventory.products.show', ['product' => $product->id]) }}"
+                                                href="{{ route('inventory.products.show', ['product' => $product->id] + $returnQuery) }}"
                                             >
                                                 {{ $product->name }}
                                             </a>
@@ -73,14 +79,14 @@
                                         <td class="text-end">
                                             <a
                                                 class="btn btn-sm btn-outline-secondary"
-                                                href="{{ route('inventory.products.show', ['product' => $product->id]) }}"
+                                                href="{{ route('inventory.products.show', ['product' => $product->id] + $returnQuery) }}"
                                             >
                                                 Ver
                                             </a>
                                             @if ($product->category?->is_serialized)
                                                 <a
                                                     class="btn btn-sm btn-outline-secondary"
-                                                    href="{{ route('inventory.products.assets.index', ['product' => $product->id]) }}"
+                                                    href="{{ route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery) }}"
                                                 >
                                                     Activos
                                                 </a>

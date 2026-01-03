@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('inventory_adjustment_entries', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('inventory_adjustment_id')->constrained('inventory_adjustments')->cascadeOnDelete();
+            $table->string('subject_type');
+            $table->unsignedBigInteger('subject_id');
+            $table->foreignId('product_id')->nullable()->constrained('products')->nullOnDelete();
+            $table->foreignId('asset_id')->nullable()->constrained('assets')->nullOnDelete();
+            $table->json('before');
+            $table->json('after');
+            $table->timestamps();
+
+            $table->index(['subject_type', 'subject_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('inventory_adjustment_entries');
+    }
+};

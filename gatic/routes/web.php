@@ -9,6 +9,9 @@ use App\Livewire\Catalogs\Categories\CategoryForm;
 use App\Livewire\Catalogs\Locations\LocationsIndex;
 use App\Livewire\Catalogs\Trash\CatalogsTrash;
 use App\Livewire\Dev\LivewireSmokeTest;
+use App\Livewire\Inventory\Adjustments\AdjustmentsIndex as InventoryAdjustmentsIndex;
+use App\Livewire\Inventory\Adjustments\AssetAdjustmentForm as InventoryAssetAdjustmentForm;
+use App\Livewire\Inventory\Adjustments\ProductAdjustmentForm as InventoryProductAdjustmentForm;
 use App\Livewire\Inventory\Assets\AssetForm as InventoryAssetForm;
 use App\Livewire\Inventory\Assets\AssetShow as InventoryAssetShow;
 use App\Livewire\Inventory\Assets\AssetsIndex as InventoryAssetsIndex;
@@ -95,6 +98,20 @@ Route::middleware(['auth', 'active', 'can:inventory.manage'])
             ->whereNumber('product')
             ->whereNumber('asset')
             ->name('products.assets.edit');
+    });
+
+Route::middleware(['auth', 'active', 'can:admin-only'])
+    ->prefix('inventory')
+    ->name('inventory.')
+    ->group(function () {
+        Route::get('/adjustments', InventoryAdjustmentsIndex::class)->name('adjustments.index');
+        Route::get('/products/{product}/adjust', InventoryProductAdjustmentForm::class)
+            ->whereNumber('product')
+            ->name('products.adjust');
+        Route::get('/products/{product}/assets/{asset}/adjust', InventoryAssetAdjustmentForm::class)
+            ->whereNumber('product')
+            ->whereNumber('asset')
+            ->name('products.assets.adjust');
     });
 
 if (app()->environment(['local', 'testing'])) {

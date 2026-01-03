@@ -1,18 +1,35 @@
 <div class="container position-relative">
+    @php
+        $returnQuery = array_filter(
+            request()->only(['q', 'page']),
+            static fn ($value): bool => $value !== null && $value !== ''
+        );
+    @endphp
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.index') }}">
+                <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.index', $returnQuery) }}">
                     Volver
                 </a>
-                @if ($productIsSerialized)
-                    <a
-                        class="btn btn-sm btn-outline-secondary"
-                        href="{{ route('inventory.products.assets.index', ['product' => $product->id]) }}"
-                    >
-                        Activos
-                    </a>
-                @endif
+                <div class="d-flex gap-2">
+                    @if ($productIsSerialized)
+                        <a
+                            class="btn btn-sm btn-outline-secondary"
+                            href="{{ route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery) }}"
+                        >
+                            Activos
+                        </a>
+                    @else
+                        @can('admin-only')
+                            <a
+                                class="btn btn-sm btn-warning"
+                                href="{{ route('inventory.products.adjust', ['product' => $product->id] + $returnQuery) }}"
+                            >
+                                Ajustar inventario
+                            </a>
+                        @endcan
+                    @endif
+                </div>
             </div>
 
             <div class="row g-3 mb-3">

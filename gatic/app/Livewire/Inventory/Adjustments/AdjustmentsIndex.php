@@ -29,4 +29,3 @@ class AdjustmentsIndex extends Component
         ]);
     }
 }
-

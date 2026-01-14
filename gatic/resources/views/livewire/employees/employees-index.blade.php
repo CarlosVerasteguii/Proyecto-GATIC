@@ -129,6 +129,12 @@
                                         <td>{{ $employee->department ?? '—' }}</td>
                                         <td>{{ $employee->job_title ?? '—' }}</td>
                                         <td class="text-end">
+                                            <a
+                                                href="{{ route('employees.show', $employee->id) }}"
+                                                class="btn btn-sm btn-outline-secondary"
+                                            >
+                                                Ver ficha
+                                            </a>
                                             <button
                                                 type="button"
                                                 class="btn btn-sm btn-outline-primary"

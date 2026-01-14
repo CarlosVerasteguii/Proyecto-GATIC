@@ -75,10 +75,10 @@ development_status:
   3-6-ajustes-de-inventario-admin-con-motivo: done
   epic-3-retrospective: done
 
-  epic-4: in-progress
+  epic-4: done
   4-1-crear-y-mantener-empleados-rpe: done
   4-2-buscar-seleccionar-empleados-al-registrar-movimientos-autocomplete: done
-  4-3-ficha-de-empleado-detalle-y-activos-asociados-si-existen: backlog
+  4-3-ficha-de-empleado-detalle-y-activos-asociados-si-existen: done
   epic-4-retrospective: optional
 
   epic-5: backlog

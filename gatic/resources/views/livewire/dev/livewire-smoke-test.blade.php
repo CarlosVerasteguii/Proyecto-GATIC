@@ -76,6 +76,30 @@
                                 </button>
                             </div>
                         </div>
+
+                        @can('inventory.manage')
+                        <div class="col-12">
+                            <div class="border rounded p-3">
+                                <div class="fw-semibold mb-2">EmployeeCombobox (Story 4.2)</div>
+                                <p class="small text-muted mb-3">
+                                    Selector reusable de empleados con autocomplete. Busca por RPE o nombre.
+                                </p>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Seleccionar empleado</label>
+                                        <livewire:ui.employee-combobox wire:model="selectedEmployeeId" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Estado actual</label>
+                                        <div class="p-2 border rounded bg-body">
+                                            <code>employee_id: {{ $selectedEmployeeId ?? 'null' }}</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endcan
                     </div>
                 </div>
             </div>

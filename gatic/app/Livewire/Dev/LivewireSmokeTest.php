@@ -25,6 +25,8 @@ class LivewireSmokeTest extends Component
 
     public string $lastUpdatedAtIso = '';
 
+    public ?int $selectedEmployeeId = null;
+
     public function mount(): void
     {
         $this->lastUpdatedAtIso = now()->toIso8601String();

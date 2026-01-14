@@ -55,14 +55,14 @@ development_status:
   1-11-patron-de-polling-base-wire-poll-visible-reutilizable: done
   epic-1-retrospective: done
 
-  epic-2: in-progress
+  epic-2: done
   2-1-gestionar-categorias-incluye-serializado-asset-tag: done
   2-2-gestionar-marcas: done
   2-3-gestionar-ubicaciones: done
   2-4-soft-delete-y-restauracion-de-catalogos: done
   epic-2-retrospective: done
 
-  epic-3: in-progress
+  epic-3: done
   # Epic 3 notes (Gate 2 - inventario navegable):
   # - Tenencia real (Empleado RPE) y movimientos viven en Epic 4/5; en Epic 3 el detalle de Activo debe mostrar "Tenencia: N/A".
   # - Definir estados minimos del Activo para conteos/disponibilidad (Disponible/Asignado/Prestado/Pendiente de Retiro/Retirado).
@@ -73,10 +73,10 @@ development_status:
   3-4-detalle-de-producto-con-conteos-y-desglose-por-estado: done
   3-5-detalle-de-activo-con-estado-ubicacion-y-tenencia-actual: done
   3-6-ajustes-de-inventario-admin-con-motivo: done
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
 
-  epic-4: backlog
-  4-1-crear-y-mantener-empleados-rpe: backlog
+  epic-4: in-progress
+  4-1-crear-y-mantener-empleados-rpe: ready-for-dev
   4-2-buscar-seleccionar-empleados-al-registrar-movimientos-autocomplete: backlog
   4-3-ficha-de-empleado-detalle-y-activos-asociados-si-existen: backlog
   epic-4-retrospective: optional

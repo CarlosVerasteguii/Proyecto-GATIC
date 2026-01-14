@@ -9,6 +9,7 @@ use App\Livewire\Catalogs\Categories\CategoryForm;
 use App\Livewire\Catalogs\Locations\LocationsIndex;
 use App\Livewire\Catalogs\Trash\CatalogsTrash;
 use App\Livewire\Dev\LivewireSmokeTest;
+use App\Livewire\Employees\EmployeesIndex;
 use App\Livewire\Inventory\Adjustments\AdjustmentsIndex as InventoryAdjustmentsIndex;
 use App\Livewire\Inventory\Adjustments\AssetAdjustmentForm as InventoryAssetAdjustmentForm;
 use App\Livewire\Inventory\Adjustments\ProductAdjustmentForm as InventoryProductAdjustmentForm;
@@ -112,6 +113,13 @@ Route::middleware(['auth', 'active', 'can:admin-only'])
             ->whereNumber('product')
             ->whereNumber('asset')
             ->name('products.assets.adjust');
+    });
+
+Route::middleware(['auth', 'active', 'can:inventory.manage'])
+    ->prefix('employees')
+    ->name('employees.')
+    ->group(function () {
+        Route::get('/', EmployeesIndex::class)->name('index');
     });
 
 if (app()->environment(['local', 'testing'])) {

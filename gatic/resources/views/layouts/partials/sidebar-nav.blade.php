@@ -1,6 +1,7 @@
 @php
     $dashboardActive = request()->routeIs('dashboard');
     $adminUsersActive = request()->routeIs('admin.users.*');
+    $employeesActive = request()->routeIs('employees.*');
     $catalogsCategoriesActive = request()->routeIs('catalogs.categories.*');
     $catalogsBrandsActive = request()->routeIs('catalogs.brands.*');
     $catalogsLocationsActive = request()->routeIs('catalogs.locations.*');
@@ -39,6 +40,18 @@
                 @if ($inventoryProductsActive) aria-current="page" @endif
             >
                 Inventario &gt; Productos
+            </a>
+        </li>
+    @endcan
+
+    @can('inventory.manage')
+        <li class="nav-item">
+            <a
+                class="nav-link @if ($employeesActive) active @endif"
+                href="{{ route('employees.index') }}"
+                @if ($employeesActive) aria-current="page" @endif
+            >
+                Empleados
             </a>
         </li>
     @endcan

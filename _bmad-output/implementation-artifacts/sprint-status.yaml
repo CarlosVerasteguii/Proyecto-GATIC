@@ -81,8 +81,8 @@ development_status:
   4-3-ficha-de-empleado-detalle-y-activos-asociados-si-existen: done
   epic-4-retrospective: done
 
-  epic-5: backlog
-  5-1-reglas-de-estado-y-transiciones-para-activos-serializados: backlog
+  epic-5: in-progress
+  5-1-reglas-de-estado-y-transiciones-para-activos-serializados: done
   5-2-asignar-un-activo-serializado-a-un-empleado: backlog
   5-3-prestar-y-devolver-un-activo-serializado: backlog
   5-4-movimientos-por-cantidad-vinculados-a-producto-y-empleado: backlog

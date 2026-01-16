@@ -2,6 +2,7 @@
 
 namespace App\Actions\Inventory\Adjustments;
 
+use App\Actions\Inventory\Products\LockQuantityProduct;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryAdjustmentEntry;
 use App\Models\Product;
@@ -24,15 +25,7 @@ class ApplyProductQuantityAdjustment
         ])->validate();
 
         return DB::transaction(function () use ($data): InventoryAdjustment {
-            /** @var Product $product */
-            $product = Product::query()
-                ->with('category')
-                ->lockForUpdate()
-                ->findOrFail($data['product_id']);
-
-            if ($product->category?->is_serialized) {
-                abort(404);
-            }
+            $product = (new LockQuantityProduct)->execute($data['product_id']);
 
             $before = ['qty_total' => $product->qty_total];
             $after = ['qty_total' => $data['new_qty']];

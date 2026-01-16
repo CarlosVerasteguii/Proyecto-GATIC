@@ -20,6 +20,14 @@
                             Activos
                         </a>
                     @else
+                        @can('inventory.manage')
+                            <a
+                                class="btn btn-sm btn-primary"
+                                href="{{ route('inventory.products.movements.quantity', ['product' => $product->id]) }}"
+                            >
+                                <i class="bi bi-arrow-left-right me-1"></i> Registrar movimiento
+                            </a>
+                        @endcan
                         @can('admin-only')
                             <a
                                 class="btn btn-sm btn-warning"

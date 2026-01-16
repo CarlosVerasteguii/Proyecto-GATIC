@@ -9,8 +9,8 @@ use App\Livewire\Catalogs\Categories\CategoryForm;
 use App\Livewire\Catalogs\Locations\LocationsIndex;
 use App\Livewire\Catalogs\Trash\CatalogsTrash;
 use App\Livewire\Dev\LivewireSmokeTest;
-use App\Livewire\Employees\EmployeesIndex;
 use App\Livewire\Employees\EmployeeShow;
+use App\Livewire\Employees\EmployeesIndex;
 use App\Livewire\Inventory\Adjustments\AdjustmentsIndex as InventoryAdjustmentsIndex;
 use App\Livewire\Inventory\Adjustments\AssetAdjustmentForm as InventoryAssetAdjustmentForm;
 use App\Livewire\Inventory\Adjustments\ProductAdjustmentForm as InventoryProductAdjustmentForm;
@@ -20,6 +20,7 @@ use App\Livewire\Inventory\Assets\AssetsIndex as InventoryAssetsIndex;
 use App\Livewire\Inventory\Products\ProductForm as InventoryProductForm;
 use App\Livewire\Inventory\Products\ProductShow as InventoryProductShow;
 use App\Livewire\Inventory\Products\ProductsIndex as InventoryProductsIndex;
+use App\Livewire\Movements\Assets\AssignAssetForm as MovementsAssignAssetForm;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -100,6 +101,10 @@ Route::middleware(['auth', 'active', 'can:inventory.manage'])
             ->whereNumber('product')
             ->whereNumber('asset')
             ->name('products.assets.edit');
+        Route::get('/products/{product}/assets/{asset}/assign', MovementsAssignAssetForm::class)
+            ->whereNumber('product')
+            ->whereNumber('asset')
+            ->name('products.assets.assign');
     });
 
 Route::middleware(['auth', 'active', 'can:admin-only'])

@@ -25,7 +25,9 @@ class EmployeeShow extends Component
 
         $this->employeeId = (int) $employee;
 
-        $this->employeeModel = Employee::query()->findOrFail($this->employeeId);
+        $this->employeeModel = Employee::query()
+            ->with(['assignedAssets.product', 'loanedAssets.product'])
+            ->findOrFail($this->employeeId);
     }
 
     public function render(): View

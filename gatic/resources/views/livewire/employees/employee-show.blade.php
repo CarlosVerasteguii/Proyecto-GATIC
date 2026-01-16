@@ -41,24 +41,78 @@
             {{-- Activos asignados --}}
             <div class="card mb-3">
                 <div class="card-header">
-                    Activos asignados
+                    Activos asignados ({{ $employee->assignedAssets->count() }})
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-0">
-                        0 elementos — Se habilita con Movimientos (Epic 5)
-                    </p>
+                    @if ($employee->assignedAssets->isEmpty())
+                        <p class="text-muted mb-0">No hay activos asignados a este empleado</p>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Serial</th>
+                                        <th>Asset tag</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($employee->assignedAssets as $asset)
+                                        <tr>
+                                            <td>{{ $asset->product?->name ?? '-' }}</td>
+                                            <td>{{ $asset->serial }}</td>
+                                            <td>{{ $asset->asset_tag ?? '-' }}</td>
+                                            <td class="text-end">
+                                                <a href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id]) }}" class="btn btn-sm btn-outline-secondary">
+                                                    Ver
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
                 </div>
             </div>
 
             {{-- Activos prestados --}}
             <div class="card mb-3">
                 <div class="card-header">
-                    Activos prestados
+                    Activos prestados ({{ $employee->loanedAssets->count() }})
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-0">
-                        0 elementos — Se habilita con Movimientos (Epic 5)
-                    </p>
+                    @if ($employee->loanedAssets->isEmpty())
+                        <p class="text-muted mb-0">No hay activos prestados a este empleado</p>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Serial</th>
+                                        <th>Asset tag</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($employee->loanedAssets as $asset)
+                                        <tr>
+                                            <td>{{ $asset->product?->name ?? '-' }}</td>
+                                            <td>{{ $asset->serial }}</td>
+                                            <td>{{ $asset->asset_tag ?? '-' }}</td>
+                                            <td class="text-end">
+                                                <a href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id]) }}" class="btn btn-sm btn-outline-secondary">
+                                                    Ver
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

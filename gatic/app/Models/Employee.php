@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -61,5 +62,37 @@ class Employee extends Model
         return Attribute::make(
             set: fn (?string $value): ?string => self::normalizeText($value),
         );
+    }
+
+    /**
+     * Assets currently assigned to this employee.
+     *
+     * @return HasMany<Asset, $this>
+     */
+    public function assignedAssets(): HasMany
+    {
+        return $this->hasMany(Asset::class, 'current_employee_id')
+            ->where('status', Asset::STATUS_ASSIGNED);
+    }
+
+    /**
+     * Assets currently loaned to this employee.
+     *
+     * @return HasMany<Asset, $this>
+     */
+    public function loanedAssets(): HasMany
+    {
+        return $this->hasMany(Asset::class, 'current_employee_id')
+            ->where('status', Asset::STATUS_LOANED);
+    }
+
+    /**
+     * All movement records involving this employee.
+     *
+     * @return HasMany<AssetMovement, $this>
+     */
+    public function assetMovements(): HasMany
+    {
+        return $this->hasMany(AssetMovement::class);
     }
 }

@@ -443,7 +443,7 @@ class AssetsTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_asset_show_displays_tenencia_na_message(): void
+    public function test_asset_show_displays_tenencia_na_for_available_asset(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
         $location = Location::query()->create(['name' => 'Almacén']);
@@ -469,7 +469,7 @@ class AssetsTest extends TestCase
         $this->actingAs($admin)
             ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
             ->assertOk()
-            ->assertSee('N/A (se habilita en Épica 4/5)');
+            ->assertSee('El activo está disponible');
     }
 
     public function test_asset_show_livewire_component_renders(): void

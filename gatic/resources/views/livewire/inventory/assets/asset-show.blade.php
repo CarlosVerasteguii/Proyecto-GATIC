@@ -25,16 +25,23 @@
                         Producto
                     </a>
                 </div>
-                @can('inventory.manage')
-                    <a class="btn btn-sm btn-primary" href="{{ route('inventory.products.assets.edit', ['product' => $product->id, 'asset' => $asset->id]) }}">
-                        Editar
-                    </a>
-                @endcan
-                @can('admin-only')
-                    <a class="btn btn-sm btn-warning" href="{{ route('inventory.products.assets.adjust', ['product' => $product->id, 'asset' => $asset->id] + $returnQuery) }}">
-                        Ajustar
-                    </a>
-                @endcan
+                <div class="d-flex gap-2">
+                    @can('inventory.manage')
+                        @if (\App\Support\Assets\AssetStatusTransitions::canAssign($asset->status))
+                            <a class="btn btn-sm btn-success" href="{{ route('inventory.products.assets.assign', ['product' => $product->id, 'asset' => $asset->id]) }}">
+                                <i class="bi bi-person-check me-1"></i> Asignar
+                            </a>
+                        @endif
+                        <a class="btn btn-sm btn-primary" href="{{ route('inventory.products.assets.edit', ['product' => $product->id, 'asset' => $asset->id]) }}">
+                            Editar
+                        </a>
+                    @endcan
+                    @can('admin-only')
+                        <a class="btn btn-sm btn-warning" href="{{ route('inventory.products.assets.adjust', ['product' => $product->id, 'asset' => $asset->id] + $returnQuery) }}">
+                            Ajustar
+                        </a>
+                    @endcan
+                </div>
             </div>
 
             <div class="card">
@@ -68,7 +75,29 @@
                     Tenencia actual
                 </div>
                 <div class="card-body">
-                    <p class="mb-0 text-muted">N/A (se habilita en Épica 4/5)</p>
+                    @php
+                        $hasHolder = in_array($asset->status, [\App\Models\Asset::STATUS_ASSIGNED, \App\Models\Asset::STATUS_LOANED], true);
+                    @endphp
+
+                    @if (! $hasHolder)
+                        <p class="mb-0 text-muted">N/A — El activo está disponible</p>
+                    @elseif ($asset->currentEmployee)
+                        <div class="d-flex align-items-center gap-2">
+                            @if ($asset->status === \App\Models\Asset::STATUS_ASSIGNED)
+                                <span class="badge bg-warning text-dark">Asignado</span>
+                            @else
+                                <span class="badge bg-info text-dark">Prestado</span>
+                            @endif
+                            <a href="{{ route('employees.show', ['employee' => $asset->currentEmployee->id]) }}" class="text-decoration-none">
+                                <strong>{{ $asset->currentEmployee->rpe }}</strong> — {{ $asset->currentEmployee->name }}
+                            </a>
+                        </div>
+                    @else
+                        <div class="d-flex align-items-center gap-2 text-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span>Sin tenencia registrada (estado legacy o ajuste manual)</span>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

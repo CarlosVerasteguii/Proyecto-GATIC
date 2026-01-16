@@ -68,4 +68,3 @@ final class SearchEmployees
         return addcslashes($value, '\\%_');
     }
 }
-

@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Livewire\Movements\Assets;
 
-use App\Actions\Movements\Assets\AssignAssetToEmployee;
+use App\Actions\Movements\Assets\ReturnLoanedAsset;
 use App\Models\Asset;
 use App\Models\Product;
 use App\Support\Assets\AssetStatusTransitions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Throwable;
 
 #[Layout('layouts.app')]
-class AssignAssetForm extends Component
+class ReturnAssetForm extends Component
 {
     public int $productId;
 
@@ -26,6 +27,8 @@ class AssignAssetForm extends Component
     public ?Asset $assetModel = null;
 
     public ?int $employeeId = null;
+
+    public bool $employeeLocked = false;
 
     public string $note = '';
 
@@ -51,18 +54,25 @@ class AssignAssetForm extends Component
         }
 
         $this->assetModel = Asset::query()
-            ->with('location')
+            ->with(['location', 'currentEmployee'])
             ->where('product_id', $this->productId)
             ->findOrFail($this->assetId);
 
-        if (! AssetStatusTransitions::canAssign($this->assetModel->status)) {
-            session()->flash('error', AssetStatusTransitions::getBlockingReason($this->assetModel->status, 'assign'));
+        if (! AssetStatusTransitions::canReturn($this->assetModel->status)) {
+            session()->flash('error', AssetStatusTransitions::getBlockingReason($this->assetModel->status, 'return'));
             $this->redirectRoute('inventory.products.assets.show', [
                 'product' => $this->productId,
                 'asset' => $this->assetId,
             ], navigate: true);
 
             return;
+        }
+
+        if ($this->assetModel->current_employee_id !== null) {
+            if ($this->assetModel->currentEmployee) {
+                $this->employeeId = $this->assetModel->current_employee_id;
+                $this->employeeLocked = true;
+            }
         }
     }
 
@@ -72,9 +82,15 @@ class AssignAssetForm extends Component
     protected function rules(): array
     {
         return [
-            'employeeId' => ['required', 'integer', 'exists:employees,id'],
+            'employeeId' => [$this->requiresEmployeeSelection() ? 'required' : 'nullable', 'integer', 'exists:employees,id'],
             'note' => ['required', 'string', 'min:5', 'max:1000'],
         ];
+    }
+
+    private function requiresEmployeeSelection(): bool
+    {
+        return $this->assetModel !== null
+            && ($this->assetModel->current_employee_id === null || $this->assetModel->currentEmployee === null);
     }
 
     /**
@@ -100,33 +116,60 @@ class AssignAssetForm extends Component
         ];
     }
 
-    public function assign(): void
+    public function returnAsset(): void
     {
         Gate::authorize('inventory.manage');
 
         $this->validate();
 
         try {
-            $action = new AssignAssetToEmployee;
+            $actorUserId = auth()->id();
+            if ($actorUserId === null) {
+                abort(403);
+            }
+
+            $action = new ReturnLoanedAsset;
             $action->execute([
                 'asset_id' => $this->assetId,
                 'employee_id' => $this->employeeId,
                 'note' => $this->note,
-                'actor_user_id' => auth()->id(),
+                'actor_user_id' => (int) $actorUserId,
             ]);
 
             $this->dispatch(
                 'ui:toast',
                 type: 'success',
-                title: 'Asignación exitosa',
-                message: 'El activo ha sido asignado al empleado correctamente.',
+                title: 'Devolucion exitosa',
+                message: 'El activo ha sido devuelto correctamente.',
             );
 
             $this->redirectRoute('inventory.products.assets.show', [
                 'product' => $this->productId,
                 'asset' => $this->assetId,
             ], navigate: true);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
+            if (isset($e->errors()['employee_id'][0])) {
+                $this->addError('employeeId', $e->errors()['employee_id'][0]);
+
+                return;
+            }
+
+            if (isset($e->errors()['asset_id'][0])) {
+                $this->dispatch(
+                    'ui:toast',
+                    type: 'error',
+                    title: 'No se puede devolver',
+                    message: $e->errors()['asset_id'][0],
+                );
+
+                $this->redirectRoute('inventory.products.assets.show', [
+                    'product' => $this->productId,
+                    'asset' => $this->assetId,
+                ], navigate: true);
+
+                return;
+            }
+
             throw $e;
         } catch (Throwable $e) {
             $this->errorId = app(\App\Support\Errors\ErrorReporter::class)->report($e, request());
@@ -135,7 +178,7 @@ class AssignAssetForm extends Component
                 'ui:toast',
                 type: 'error',
                 title: 'Error inesperado',
-                message: 'Ocurrió un error al asignar el activo.',
+                message: 'Ocurrio un error al devolver el activo.',
                 errorId: $this->errorId,
             );
         }
@@ -145,7 +188,7 @@ class AssignAssetForm extends Component
     {
         Gate::authorize('inventory.manage');
 
-        return view('livewire.movements.assets.assign-asset-form', [
+        return view('livewire.movements.assets.return-asset-form', [
             'product' => $this->productModel,
             'asset' => $this->assetModel,
         ]);

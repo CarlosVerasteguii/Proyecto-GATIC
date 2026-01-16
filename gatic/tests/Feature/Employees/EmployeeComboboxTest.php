@@ -49,7 +49,7 @@ class EmployeeComboboxTest extends TestCase
 
         $component = new EmployeeCombobox;
 
-        foreach (['mount', 'updatedSearch', 'clearSelection', 'retrySearch'] as $method) {
+        foreach (['mount', 'updatedSearch', 'clearSelection', 'retrySearch', 'closeDropdown'] as $method) {
             try {
                 $component->{$method}();
                 $this->fail("Expected AuthorizationException for {$method}().");
@@ -228,4 +228,3 @@ class EmployeeComboboxTest extends TestCase
             ->assertSee('ABC123');
     }
 }
-

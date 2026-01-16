@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Livewire\Movements\Assets;
 
-use App\Actions\Movements\Assets\AssignAssetToEmployee;
+use App\Actions\Movements\Assets\LoanAssetToEmployee;
 use App\Models\Asset;
 use App\Models\Product;
 use App\Support\Assets\AssetStatusTransitions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Throwable;
 
 #[Layout('layouts.app')]
-class AssignAssetForm extends Component
+class LoanAssetForm extends Component
 {
     public int $productId;
 
@@ -55,8 +56,8 @@ class AssignAssetForm extends Component
             ->where('product_id', $this->productId)
             ->findOrFail($this->assetId);
 
-        if (! AssetStatusTransitions::canAssign($this->assetModel->status)) {
-            session()->flash('error', AssetStatusTransitions::getBlockingReason($this->assetModel->status, 'assign'));
+        if (! AssetStatusTransitions::canLoan($this->assetModel->status)) {
+            session()->flash('error', AssetStatusTransitions::getBlockingReason($this->assetModel->status, 'loan'));
             $this->redirectRoute('inventory.products.assets.show', [
                 'product' => $this->productId,
                 'asset' => $this->assetId,
@@ -100,33 +101,54 @@ class AssignAssetForm extends Component
         ];
     }
 
-    public function assign(): void
+    public function loan(): void
     {
         Gate::authorize('inventory.manage');
 
         $this->validate();
 
         try {
-            $action = new AssignAssetToEmployee;
+            $actorUserId = auth()->id();
+            if ($actorUserId === null) {
+                abort(403);
+            }
+
+            $action = new LoanAssetToEmployee;
             $action->execute([
                 'asset_id' => $this->assetId,
                 'employee_id' => $this->employeeId,
                 'note' => $this->note,
-                'actor_user_id' => auth()->id(),
+                'actor_user_id' => (int) $actorUserId,
             ]);
 
             $this->dispatch(
                 'ui:toast',
                 type: 'success',
-                title: 'Asignación exitosa',
-                message: 'El activo ha sido asignado al empleado correctamente.',
+                title: 'Prestamo exitoso',
+                message: 'El activo ha sido prestado correctamente.',
             );
 
             $this->redirectRoute('inventory.products.assets.show', [
                 'product' => $this->productId,
                 'asset' => $this->assetId,
             ], navigate: true);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
+            if (isset($e->errors()['asset_id'][0])) {
+                $this->dispatch(
+                    'ui:toast',
+                    type: 'error',
+                    title: 'No se puede prestar',
+                    message: $e->errors()['asset_id'][0],
+                );
+
+                $this->redirectRoute('inventory.products.assets.show', [
+                    'product' => $this->productId,
+                    'asset' => $this->assetId,
+                ], navigate: true);
+
+                return;
+            }
+
             throw $e;
         } catch (Throwable $e) {
             $this->errorId = app(\App\Support\Errors\ErrorReporter::class)->report($e, request());
@@ -135,7 +157,7 @@ class AssignAssetForm extends Component
                 'ui:toast',
                 type: 'error',
                 title: 'Error inesperado',
-                message: 'Ocurrió un error al asignar el activo.',
+                message: 'Ocurrio un error al prestar el activo.',
                 errorId: $this->errorId,
             );
         }
@@ -145,7 +167,7 @@ class AssignAssetForm extends Component
     {
         Gate::authorize('inventory.manage');
 
-        return view('livewire.movements.assets.assign-asset-form', [
+        return view('livewire.movements.assets.loan-asset-form', [
             'product' => $this->productModel,
             'asset' => $this->assetModel,
         ]);

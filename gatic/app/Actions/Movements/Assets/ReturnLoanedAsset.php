@@ -1,0 +1,79 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Movements\Assets;
+
+use App\Exceptions\AssetTransitionException;
+use App\Models\Asset;
+use App\Models\AssetMovement;
+use App\Models\Employee;
+use App\Support\Assets\AssetStatusTransitions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+
+class ReturnLoanedAsset
+{
+    /**
+     * @param  array{asset_id: int, note: string, actor_user_id: int, employee_id?: int|null}  $data
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function execute(array $data): AssetMovement
+    {
+        Validator::make($data, [
+            'asset_id' => ['required', 'integer', Rule::exists('assets', 'id')->whereNull('deleted_at')],
+            'employee_id' => ['nullable', 'integer', Rule::exists('employees', 'id')],
+            'note' => ['required', 'string', 'min:5', 'max:1000'],
+            'actor_user_id' => ['required', 'integer', Rule::exists('users', 'id')],
+        ], [
+            'asset_id.required' => 'El activo es obligatorio.',
+            'asset_id.exists' => 'El activo seleccionado no existe.',
+            'employee_id.exists' => 'El empleado seleccionado no existe.',
+            'note.required' => 'La nota es obligatoria.',
+            'note.min' => 'La nota debe tener al menos :min caracteres.',
+            'note.max' => 'La nota no puede exceder :max caracteres.',
+        ])->validate();
+
+        return DB::transaction(function () use ($data): AssetMovement {
+            /** @var Asset $asset */
+            $asset = Asset::query()
+                ->lockForUpdate()
+                ->findOrFail($data['asset_id']);
+
+            try {
+                AssetStatusTransitions::assertCanReturn($asset->status);
+            } catch (AssetTransitionException $e) {
+                throw $e->toValidationException('asset_id');
+            }
+
+            $employeeId = $asset->current_employee_id;
+
+            if ($employeeId !== null && ! Employee::query()->whereKey($employeeId)->exists()) {
+                $employeeId = null;
+            }
+
+            $employeeId = $employeeId ?? ($data['employee_id'] ?? null);
+
+            if ($employeeId === null) {
+                throw ValidationException::withMessages([
+                    'employee_id' => 'Debes seleccionar un empleado para registrar la devolucion.',
+                ]);
+            }
+
+            $asset->status = Asset::STATUS_AVAILABLE;
+            $asset->current_employee_id = null;
+            $asset->save();
+
+            return AssetMovement::create([
+                'asset_id' => $asset->id,
+                'employee_id' => $employeeId,
+                'actor_user_id' => $data['actor_user_id'],
+                'type' => AssetMovement::TYPE_RETURN,
+                'note' => $data['note'],
+            ]);
+        });
+    }
+}

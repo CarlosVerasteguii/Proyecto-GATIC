@@ -32,6 +32,16 @@
                                 <i class="bi bi-person-check me-1"></i> Asignar
                             </a>
                         @endif
+                        @if (\App\Support\Assets\AssetStatusTransitions::canLoan($asset->status))
+                            <a class="btn btn-sm btn-info text-dark" href="{{ route('inventory.products.assets.loan', ['product' => $product->id, 'asset' => $asset->id]) }}">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Prestar
+                            </a>
+                        @endif
+                        @if (\App\Support\Assets\AssetStatusTransitions::canReturn($asset->status))
+                            <a class="btn btn-sm btn-info text-dark" href="{{ route('inventory.products.assets.return', ['product' => $product->id, 'asset' => $asset->id]) }}">
+                                <i class="bi bi-arrow-return-left me-1"></i> Devolver
+                            </a>
+                        @endif
                         <a class="btn btn-sm btn-primary" href="{{ route('inventory.products.assets.edit', ['product' => $product->id, 'asset' => $asset->id]) }}">
                             Editar
                         </a>

@@ -192,7 +192,7 @@ final class AssetStatusTransitions
     /**
      * Get human-readable reason why an action is blocked.
      *
-     * @param string $action One of: assign, loan, return, unassign
+     * @param  string  $action  One of: assign, loan, return, unassign
      * @return string|null Null if action is allowed
      */
     public static function getBlockingReason(string $currentStatus, string $action): ?string

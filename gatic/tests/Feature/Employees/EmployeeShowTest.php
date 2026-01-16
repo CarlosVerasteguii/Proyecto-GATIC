@@ -127,6 +127,7 @@ class EmployeeShowTest extends TestCase
             ->test(EmployeeShow::class, ['employee' => (string) $employee->id])
             ->assertSee('Activos asignados')
             ->assertSee('Activos prestados')
-            ->assertSee('0 elementos');
+            ->assertSee('No hay activos asignados a este empleado')
+            ->assertSee('No hay activos prestados a este empleado');
     }
 }

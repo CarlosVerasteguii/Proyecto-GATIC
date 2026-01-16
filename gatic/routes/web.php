@@ -21,6 +21,8 @@ use App\Livewire\Inventory\Products\ProductForm as InventoryProductForm;
 use App\Livewire\Inventory\Products\ProductShow as InventoryProductShow;
 use App\Livewire\Inventory\Products\ProductsIndex as InventoryProductsIndex;
 use App\Livewire\Movements\Assets\AssignAssetForm as MovementsAssignAssetForm;
+use App\Livewire\Movements\Assets\LoanAssetForm as MovementsLoanAssetForm;
+use App\Livewire\Movements\Assets\ReturnAssetForm as MovementsReturnAssetForm;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -105,6 +107,14 @@ Route::middleware(['auth', 'active', 'can:inventory.manage'])
             ->whereNumber('product')
             ->whereNumber('asset')
             ->name('products.assets.assign');
+        Route::get('/products/{product}/assets/{asset}/loan', MovementsLoanAssetForm::class)
+            ->whereNumber('product')
+            ->whereNumber('asset')
+            ->name('products.assets.loan');
+        Route::get('/products/{product}/assets/{asset}/return', MovementsReturnAssetForm::class)
+            ->whereNumber('product')
+            ->whereNumber('asset')
+            ->name('products.assets.return');
     });
 
 Route::middleware(['auth', 'active', 'can:admin-only'])

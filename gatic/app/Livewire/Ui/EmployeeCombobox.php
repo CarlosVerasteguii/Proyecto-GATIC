@@ -7,9 +7,9 @@ use App\Models\Employee;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
-use Throwable;
 use Livewire\Attributes\Modelable;
 use Livewire\Component;
+use Throwable;
 
 class EmployeeCombobox extends Component
 {
@@ -97,6 +97,8 @@ class EmployeeCombobox extends Component
 
     public function closeDropdown(): void
     {
+        Gate::authorize('inventory.manage');
+
         $this->showDropdown = false;
     }
 

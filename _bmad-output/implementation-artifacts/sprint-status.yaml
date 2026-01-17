@@ -86,7 +86,7 @@ development_status:
   5-2-asignar-un-activo-serializado-a-un-empleado: done
   5-3-prestar-y-devolver-un-activo-serializado: done
   5-4-movimientos-por-cantidad-vinculados-a-producto-y-empleado: done
-  5-5-kardex-historial-para-productos-por-cantidad: backlog
+  5-5-kardex-historial-para-productos-por-cantidad: done
   5-6-dashboard-minimo-de-metricas-operativas-polling: backlog
   epic-5-retrospective: optional
 

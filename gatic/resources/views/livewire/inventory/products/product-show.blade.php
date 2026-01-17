@@ -20,6 +20,12 @@
                             Activos
                         </a>
                     @else
+                        <a
+                            class="btn btn-sm btn-outline-info"
+                            href="{{ route('inventory.products.kardex', ['product' => $product->id] + $returnQuery) }}"
+                        >
+                            <i class="bi bi-clock-history me-1"></i> Ver kardex
+                        </a>
                         @can('inventory.manage')
                             <a
                                 class="btn btn-sm btn-primary"

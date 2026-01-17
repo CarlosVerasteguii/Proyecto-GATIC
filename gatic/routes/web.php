@@ -18,6 +18,7 @@ use App\Livewire\Inventory\Assets\AssetForm as InventoryAssetForm;
 use App\Livewire\Inventory\Assets\AssetShow as InventoryAssetShow;
 use App\Livewire\Inventory\Assets\AssetsIndex as InventoryAssetsIndex;
 use App\Livewire\Inventory\Products\ProductForm as InventoryProductForm;
+use App\Livewire\Inventory\Products\ProductKardex as InventoryProductKardex;
 use App\Livewire\Inventory\Products\ProductShow as InventoryProductShow;
 use App\Livewire\Inventory\Products\ProductsIndex as InventoryProductsIndex;
 use App\Livewire\Movements\Assets\AssignAssetForm as MovementsAssignAssetForm;
@@ -87,6 +88,9 @@ Route::middleware(['auth', 'active', 'can:inventory.view'])
             ->whereNumber('product')
             ->whereNumber('asset')
             ->name('products.assets.show');
+        Route::get('/products/{product}/kardex', InventoryProductKardex::class)
+            ->whereNumber('product')
+            ->name('products.kardex');
     });
 
 Route::middleware(['auth', 'active', 'can:inventory.manage'])

@@ -81,14 +81,14 @@ development_status:
   4-3-ficha-de-empleado-detalle-y-activos-asociados-si-existen: done
   epic-4-retrospective: done
 
-  epic-5: in-progress
+  epic-5: done
   5-1-reglas-de-estado-y-transiciones-para-activos-serializados: done
   5-2-asignar-un-activo-serializado-a-un-empleado: done
   5-3-prestar-y-devolver-un-activo-serializado: done
   5-4-movimientos-por-cantidad-vinculados-a-producto-y-empleado: done
   5-5-kardex-historial-para-productos-por-cantidad: done
   5-6-dashboard-minimo-de-metricas-operativas-polling: done
-  epic-5-retrospective: optional
+  epic-5-retrospective: done
 
   epic-6: backlog
   6-1-busqueda-unificada-productos-activos-con-salto-directo-por-match-exacto: backlog

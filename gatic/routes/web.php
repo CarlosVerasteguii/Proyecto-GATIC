@@ -25,6 +25,7 @@ use App\Livewire\Movements\Assets\AssignAssetForm as MovementsAssignAssetForm;
 use App\Livewire\Movements\Assets\LoanAssetForm as MovementsLoanAssetForm;
 use App\Livewire\Movements\Assets\ReturnAssetForm as MovementsReturnAssetForm;
 use App\Livewire\Movements\Products\QuantityMovementForm as MovementsQuantityMovementForm;
+use App\Livewire\Search\InventorySearch;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -77,6 +78,7 @@ Route::middleware(['auth', 'active', 'can:inventory.view'])
     ->prefix('inventory')
     ->name('inventory.')
     ->group(function () {
+        Route::get('/search', InventorySearch::class)->name('search');
         Route::get('/products', InventoryProductsIndex::class)->name('products.index');
         Route::get('/products/{product}', InventoryProductShow::class)
             ->whereNumber('product')

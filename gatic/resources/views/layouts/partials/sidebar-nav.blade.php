@@ -6,6 +6,7 @@
     $catalogsBrandsActive = request()->routeIs('catalogs.brands.*');
     $catalogsLocationsActive = request()->routeIs('catalogs.locations.*');
     $catalogsTrashActive = request()->routeIs('catalogs.trash.*');
+    $inventorySearchActive = request()->routeIs('inventory.search');
     $inventoryProductsActive = request()->routeIs('inventory.products.*');
 @endphp
 
@@ -33,6 +34,16 @@
     @endcan
 
     @can('inventory.view')
+        <li class="nav-item">
+            <a
+                class="nav-link @if ($inventorySearchActive) active @endif"
+                href="{{ route('inventory.search') }}"
+                @if ($inventorySearchActive) aria-current="page" @endif
+            >
+                Inventario &gt; B&uacute;squeda
+            </a>
+        </li>
+
         <li class="nav-item">
             <a
                 class="nav-link @if ($inventoryProductsActive) active @endif"

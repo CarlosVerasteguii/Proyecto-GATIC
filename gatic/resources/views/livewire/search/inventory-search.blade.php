@@ -1,0 +1,180 @@
+<div class="container position-relative">
+    <x-ui.long-request />
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="card">
+                <div class="card-header">
+                    <span>Buscar en Inventario</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="row g-3 align-items-end mb-3">
+                        <div class="col-12 col-md-8 col-lg-6">
+                            <label for="inventory-search" class="form-label">
+                                Buscar por nombre de producto, serial o asset tag
+                            </label>
+                            <input
+                                id="inventory-search"
+                                type="text"
+                                class="form-control"
+                                placeholder="Ej: Laptop Dell, SN12345, GATIC-001..."
+                                wire:model.live.debounce.300ms="search"
+                                autofocus
+                            />
+                        </div>
+                    </div>
+
+                    @if ($this->showMinCharsMessage)
+                        <div class="alert alert-info mb-3" role="alert">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Ingresa al menos {{ $minChars }} caracteres para buscar.
+                        </div>
+                    @elseif ($this->showNoResultsMessage)
+                        <div class="alert alert-warning mb-3" role="alert">
+                            <i class="bi bi-search me-1"></i>
+                            No se encontraron resultados para "<strong>{{ $this->search }}</strong>".
+                        </div>
+                    @elseif ($this->search === '')
+                        <div class="text-muted mb-3">
+                            <i class="bi bi-lightbulb me-1"></i>
+                            Tip: Ingresa un serial o asset tag exacto para ir directamente al activo.
+                        </div>
+                    @endif
+
+                    @if ($this->assets->isNotEmpty())
+                        <div class="mb-4">
+                            <h5 class="mb-3">
+                                <i class="bi bi-hdd me-1"></i>
+                                Activos
+                                <span class="badge bg-secondary">{{ $this->assets->count() }}</span>
+                            </h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Serial</th>
+                                            <th>Asset Tag</th>
+                                            <th>Producto</th>
+                                            <th>Estado</th>
+                                            <th>Ubicación</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($this->assets as $asset)
+                                            <tr>
+                                                <td>
+                                                    <code>{{ $asset->serial }}</code>
+                                                </td>
+                                                <td>
+                                                    @if ($asset->asset_tag)
+                                                        <code>{{ $asset->asset_tag }}</code>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <a
+                                                        class="text-decoration-none"
+                                                        href="{{ route('inventory.products.show', ['product' => $asset->product_id]) }}"
+                                                    >
+                                                        {{ $asset->product?->name ?? '-' }}
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    @php
+                                                        $statusClass = match ($asset->status) {
+                                                            \App\Models\Asset::STATUS_AVAILABLE => 'bg-success',
+                                                            \App\Models\Asset::STATUS_ASSIGNED => 'bg-primary',
+                                                            \App\Models\Asset::STATUS_LOANED => 'bg-info',
+                                                            \App\Models\Asset::STATUS_PENDING_RETIREMENT => 'bg-warning text-dark',
+                                                            \App\Models\Asset::STATUS_RETIRED => 'bg-secondary',
+                                                            default => 'bg-secondary',
+                                                        };
+                                                    @endphp
+                                                    <span class="badge {{ $statusClass }}">{{ $asset->status }}</span>
+                                                </td>
+                                                <td>{{ $asset->location?->name ?? '-' }}</td>
+                                                <td class="text-end">
+                                                    <a
+                                                        class="btn btn-sm btn-outline-primary"
+                                                        href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id]) }}"
+                                                    >
+                                                        Ver detalle
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($this->products->isNotEmpty())
+                        <div class="mb-4">
+                            <h5 class="mb-3">
+                                <i class="bi bi-box me-1"></i>
+                                Productos
+                                <span class="badge bg-secondary">{{ $this->products->count() }}</span>
+                            </h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Categoría</th>
+                                            <th>Marca</th>
+                                            <th>Tipo</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($this->products as $product)
+                                            <tr>
+                                                <td>
+                                                    <a
+                                                        class="text-decoration-none"
+                                                        href="{{ route('inventory.products.show', ['product' => $product->id]) }}"
+                                                    >
+                                                        {{ $product->name }}
+                                                    </a>
+                                                </td>
+                                                <td>{{ $product->category?->name ?? '-' }}</td>
+                                                <td>{{ $product->brand?->name ?? '-' }}</td>
+                                                <td>
+                                                    @if ($product->category?->is_serialized)
+                                                        <span class="badge bg-info">Serializado</span>
+                                                    @else
+                                                        <span class="badge bg-secondary">Por cantidad</span>
+                                                    @endif
+                                                </td>
+                                                <td class="text-end">
+                                                    <a
+                                                        class="btn btn-sm btn-outline-primary"
+                                                        href="{{ route('inventory.products.show', ['product' => $product->id]) }}"
+                                                    >
+                                                        Ver detalle
+                                                    </a>
+                                                    @if ($product->category?->is_serialized)
+                                                        <a
+                                                            class="btn btn-sm btn-outline-secondary"
+                                                            href="{{ route('inventory.products.assets.index', ['product' => $product->id]) }}"
+                                                        >
+                                                            Activos
+                                                        </a>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

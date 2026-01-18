@@ -92,7 +92,7 @@ development_status:
 
   epic-6: backlog
   6-1-busqueda-unificada-productos-activos-con-salto-directo-por-match-exacto: done
-  6-2-filtros-de-inventario-por-catalogos-y-estado-disponibilidad: backlog
+  6-2-filtros-de-inventario-por-catalogos-y-estado-disponibilidad: done
   epic-6-retrospective: optional
 
   epic-7: backlog

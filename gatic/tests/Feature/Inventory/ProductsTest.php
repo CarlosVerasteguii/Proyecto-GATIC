@@ -294,6 +294,14 @@ class ProductsTest extends TestCase
             'asset_tag' => null,
             'status' => Asset::STATUS_PENDING_RETIREMENT,
         ]);
+        $softDeletedUnavailable = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'A-DELETED',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_ASSIGNED,
+        ]);
+        $softDeletedUnavailable->delete();
         Asset::query()->create([
             'product_id' => $product->id,
             'location_id' => $location->id,
@@ -510,5 +518,239 @@ class ProductsTest extends TestCase
             'No disponibles',
             '0',
         ]);
+    }
+
+    public function test_products_index_can_filter_by_category(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $categoryLaptops = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $categoryConsumibles = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $categoryLaptops->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Product::query()->create([
+            'name' => 'Cables HDMI',
+            'category_id' => $categoryConsumibles->id,
+            'brand_id' => null,
+            'qty_total' => 10,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductsIndex::class)
+            ->assertSee('Dell X1')
+            ->assertSee('Cables HDMI')
+            ->set('categoryId', $categoryLaptops->id)
+            ->assertSee('Dell X1')
+            ->assertDontSee('Cables HDMI');
+    }
+
+    public function test_products_index_can_filter_by_brand(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $brandDell = Brand::query()->create(['name' => 'Dell']);
+        $brandHp = Brand::query()->create(['name' => 'HP']);
+
+        Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => $brandDell->id,
+            'qty_total' => null,
+        ]);
+
+        Product::query()->create([
+            'name' => 'HP Pavilion',
+            'category_id' => $category->id,
+            'brand_id' => $brandHp->id,
+            'qty_total' => null,
+        ]);
+
+        Product::query()->create([
+            'name' => 'Genérico',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductsIndex::class)
+            ->assertSee('Dell X1')
+            ->assertSee('HP Pavilion')
+            ->assertSee('Genérico')
+            ->set('brandId', $brandDell->id)
+            ->assertSee('Dell X1')
+            ->assertDontSee('HP Pavilion')
+            ->assertDontSee('Genérico');
+    }
+
+    public function test_products_index_can_filter_by_availability_with_available(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $categorySerialized = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $categoryQty = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        $productWithAvailable = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $categorySerialized->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        Asset::query()->create([
+            'product_id' => $productWithAvailable->id,
+            'location_id' => $location->id,
+            'serial' => 'A-1',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+
+        $productWithoutAvailable = Product::query()->create([
+            'name' => 'HP Z1',
+            'category_id' => $categorySerialized->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        Asset::query()->create([
+            'product_id' => $productWithoutAvailable->id,
+            'location_id' => $location->id,
+            'serial' => 'B-1',
+            'status' => Asset::STATUS_ASSIGNED,
+        ]);
+
+        Product::query()->create([
+            'name' => 'Cables HDMI',
+            'category_id' => $categoryQty->id,
+            'brand_id' => null,
+            'qty_total' => 10,
+        ]);
+
+        Product::query()->create([
+            'name' => 'Cables VGA',
+            'category_id' => $categoryQty->id,
+            'brand_id' => null,
+            'qty_total' => 0,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductsIndex::class)
+            ->set('availability', 'with_available')
+            ->assertSee('Dell X1')
+            ->assertDontSee('HP Z1')
+            ->assertSee('Cables HDMI')
+            ->assertDontSee('Cables VGA');
+    }
+
+    public function test_products_index_can_filter_by_availability_without_available(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $categorySerialized = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $categoryQty = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        $productWithAvailable = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $categorySerialized->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        Asset::query()->create([
+            'product_id' => $productWithAvailable->id,
+            'location_id' => $location->id,
+            'serial' => 'A-1',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+
+        $productWithoutAvailable = Product::query()->create([
+            'name' => 'HP Z1',
+            'category_id' => $categorySerialized->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        Asset::query()->create([
+            'product_id' => $productWithoutAvailable->id,
+            'location_id' => $location->id,
+            'serial' => 'B-1',
+            'status' => Asset::STATUS_ASSIGNED,
+        ]);
+
+        Product::query()->create([
+            'name' => 'Cables HDMI',
+            'category_id' => $categoryQty->id,
+            'brand_id' => null,
+            'qty_total' => 10,
+        ]);
+
+        Product::query()->create([
+            'name' => 'Cables VGA',
+            'category_id' => $categoryQty->id,
+            'brand_id' => null,
+            'qty_total' => 0,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductsIndex::class)
+            ->set('availability', 'without_available')
+            ->assertDontSee('Dell X1')
+            ->assertSee('HP Z1')
+            ->assertDontSee('Cables HDMI')
+            ->assertSee('Cables VGA');
+    }
+
+    public function test_products_index_resets_pagination_when_filter_changes(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        for ($i = 1; $i <= 20; $i++) {
+            Product::query()->create([
+                'name' => "Producto {$i}",
+                'category_id' => $category->id,
+                'brand_id' => null,
+                'qty_total' => 10,
+            ]);
+        }
+
+        Livewire::actingAs($admin)
+            ->test(ProductsIndex::class)
+            ->call('gotoPage', 2)
+            ->assertSet('paginators.page', 2)
+            ->set('categoryId', $category->id)
+            ->assertSet('paginators.page', 1);
     }
 }

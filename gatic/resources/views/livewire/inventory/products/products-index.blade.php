@@ -1,7 +1,8 @@
 <div class="container position-relative">
+    <x-ui.long-request />
     @php
         $returnQuery = array_filter(
-            request()->only(['q', 'page']),
+            request()->only(['q', 'category', 'brand', 'availability', 'page']),
             static fn ($value): bool => $value !== null && $value !== ''
         );
     @endphp
@@ -17,7 +18,7 @@
 
                 <div class="card-body">
                     <div class="row g-3 align-items-end mb-3">
-                        <div class="col-12 col-md-6">
+                        <div class="col-12 col-md-3">
                             <label for="products-search" class="form-label">Buscar</label>
                             <input
                                 id="products-search"
@@ -26,6 +27,59 @@
                                 placeholder="Buscar por nombre."
                                 wire:model.live.debounce.300ms="search"
                             />
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <label for="filter-category" class="form-label">Categoría</label>
+                            <select
+                                id="filter-category"
+                                class="form-select"
+                                wire:model.live="categoryId"
+                                aria-label="Filtrar por categoría"
+                            >
+                                <option value="">Todas</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <label for="filter-brand" class="form-label">Marca</label>
+                            <select
+                                id="filter-brand"
+                                class="form-select"
+                                wire:model.live="brandId"
+                                aria-label="Filtrar por marca"
+                            >
+                                <option value="">Todas</option>
+                                @foreach ($brands as $brand)
+                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label for="filter-availability" class="form-label">Disponibilidad</label>
+                            <select
+                                id="filter-availability"
+                                class="form-select"
+                                wire:model.live="availability"
+                                aria-label="Filtrar por disponibilidad"
+                            >
+                                <option value="all">Todas</option>
+                                <option value="with_available">Con disponibles</option>
+                                <option value="without_available">Sin disponibles</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            @if ($this->hasActiveFilters())
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-secondary w-100"
+                                    wire:click="clearFilters"
+                                    aria-label="Limpiar todos los filtros"
+                                >
+                                    Limpiar
+                                </button>
+                            @endif
                         </div>
                     </div>
 

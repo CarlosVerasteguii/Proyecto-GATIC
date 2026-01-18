@@ -1,4 +1,5 @@
 <div class="container position-relative">
+    <x-ui.long-request />
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             <div class="card">
@@ -26,15 +27,55 @@
                         </div>
                     @else
                         <div class="row g-3 align-items-end mb-3">
-                            <div class="col-12 col-md-6">
+                            <div class="col-12 col-md-3">
                                 <label for="assets-search" class="form-label">Buscar</label>
                                 <input
                                     id="assets-search"
                                     type="text"
                                     class="form-control"
-                                    placeholder="Buscar por serial o asset tag."
+                                    placeholder="Serial o asset tag."
                                     wire:model.live.debounce.300ms="search"
                                 />
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label for="filter-location" class="form-label">Ubicación</label>
+                                <select
+                                    id="filter-location"
+                                    class="form-select"
+                                    wire:model.live="locationId"
+                                    aria-label="Filtrar por ubicación"
+                                >
+                                    <option value="">Todas</option>
+                                    @foreach ($locations as $location)
+                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label for="filter-status" class="form-label">Estado</label>
+                                <select
+                                    id="filter-status"
+                                    class="form-select"
+                                    wire:model.live="status"
+                                    aria-label="Filtrar por estado"
+                                >
+                                    <option value="all">Todos (sin Retirado)</option>
+                                    @foreach ($assetStatuses as $assetStatus)
+                                        <option value="{{ $assetStatus }}">{{ $assetStatus }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                @if ($this->hasActiveFilters())
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-secondary w-100"
+                                        wire:click="clearFilters"
+                                        aria-label="Limpiar todos los filtros"
+                                    >
+                                        Limpiar
+                                    </button>
+                                @endif
                             </div>
                         </div>
 
@@ -60,6 +101,8 @@
                                                 @php
                                                     $returnQuery = array_filter([
                                                         'q' => $search,
+                                                        'location' => $locationId,
+                                                        'status' => $status !== 'all' ? $status : null,
                                                         'page' => $assets->currentPage(),
                                                     ], static fn ($value): bool => $value !== null && $value !== '');
                                                 @endphp

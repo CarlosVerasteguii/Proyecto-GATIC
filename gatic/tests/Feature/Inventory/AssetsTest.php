@@ -503,4 +503,160 @@ class AssetsTest extends TestCase
             ->assertSee('Disponible')
             ->assertSee('Almacén');
     }
+
+    public function test_assets_index_can_filter_by_location(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location1 = Location::query()->create(['name' => 'Almacén']);
+        $location2 = Location::query()->create(['name' => 'Oficina']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location1->id,
+            'serial' => 'SER-1',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location2->id,
+            'serial' => 'SER-2',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetsIndex::class, ['product' => (string) $product->id])
+            ->assertSee('SER-1')
+            ->assertSee('SER-2')
+            ->set('locationId', $location1->id)
+            ->assertSee('SER-1')
+            ->assertDontSee('SER-2');
+    }
+
+    public function test_assets_index_can_filter_by_status(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-1',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-2',
+            'status' => Asset::STATUS_ASSIGNED,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-3',
+            'status' => Asset::STATUS_RETIRED,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetsIndex::class, ['product' => (string) $product->id])
+            ->assertSee('SER-1')
+            ->assertSee('SER-2')
+            ->assertDontSee('SER-3')
+            ->set('status', Asset::STATUS_AVAILABLE)
+            ->assertSee('SER-1')
+            ->assertDontSee('SER-2')
+            ->assertDontSee('SER-3');
+    }
+
+    public function test_assets_index_shows_retired_only_when_explicitly_filtered(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-AVAILABLE',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-RETIRED',
+            'status' => Asset::STATUS_RETIRED,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetsIndex::class, ['product' => (string) $product->id])
+            ->assertSee('SER-AVAILABLE')
+            ->assertDontSee('SER-RETIRED')
+            ->set('status', Asset::STATUS_RETIRED)
+            ->assertDontSee('SER-AVAILABLE')
+            ->assertSee('SER-RETIRED');
+    }
+
+    public function test_assets_index_resets_pagination_when_filter_changes(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        for ($i = 1; $i <= 20; $i++) {
+            Asset::query()->create([
+                'product_id' => $product->id,
+                'location_id' => $location->id,
+                'serial' => "SER-{$i}",
+                'status' => Asset::STATUS_AVAILABLE,
+            ]);
+        }
+
+        Livewire::actingAs($admin)
+            ->test(AssetsIndex::class, ['product' => (string) $product->id])
+            ->call('gotoPage', 2)
+            ->assertSet('paginators.page', 2)
+            ->set('locationId', $location->id)
+            ->assertSet('paginators.page', 1);
+    }
 }

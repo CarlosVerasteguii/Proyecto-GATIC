@@ -17,6 +17,21 @@ You are an independent quality validator in a **FRESH CONTEXT**. Your mission is
 - **Lying about completion** - Implementing incorrectly or incompletely
 - **Not learning from past work** - Ignoring previous story learnings and patterns
 
+### **🔄 UX LONG-REQUEST CHECK (Lección Epic 5-6):**
+
+- **¿El componente Livewire hace queries que pueden tardar >3s?**
+  - Si SÍ → OBLIGATORIO integrar `<x-ui.long-request />` para loader + Cancelar
+  - Referencia: `gatic/resources/views/components/ui/long-request.blade.php`
+  - Patrón: envolver el área de resultados con el componente
+- **Este check evita el anti-patrón recurrente detectado en Epic 5.5, 5.6, 6.1 y 6.2**
+
+### **🗑️ SOFT-DELETE REGRESSION CHECK (Lección Epic 6):**
+
+- **¿La story toca conteos o queries sobre modelos con soft-delete?**
+  - Si SÍ → OBLIGATORIO agregar test de regresión que verifique exclusión de `deleted_at`
+  - Modelos afectados: Asset, Product, Category, Brand, Location, Employee
+  - Patrón: crear registros soft-deleted y verificar que NO aparecen en conteos/listados
+
 ### **🚨 EXHAUSTIVE ANALYSIS REQUIRED:**
 
 You must thoroughly analyze **ALL artifacts** to extract critical context - do NOT be lazy or skim! This is the most important quality control function in the entire development process!

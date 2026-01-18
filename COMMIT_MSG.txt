@@ -1,130 +1,113 @@
-feat(inventory): implementar filtros de inventario por catálogos y estado/disponibilidad (Story 6.2)
+docs(epic-6): retrospectiva y cierre de Épica 6 (Gate 2: Inventario navegable)
 
 DESCRIPCIÓN DETALLADA:
 =====================
-Se implementan filtros avanzados para el listado de Productos e individual de Activos,
-permitiendo a los usuarios (Admin/Editor/Lector) filtrar el inventario por categoría,
-marca, disponibilidad (Productos) y por ubicación/estado (Activos).
+Se completa la retrospectiva de la Épica 6 (Búsqueda y Filtros) que cierra el Gate 2
+del proyecto GATIC. Este commit documenta lecciones aprendidas, patrones consolidados,
+y crea artefactos para prevenir bugs recurrentes detectados en code reviews.
 
-Características principales:
-- Filtros UI en /inventory/products: Categoría, Marca, Disponibilidad (Todas/Con disponibles/Sin disponibles)
-- Filtros UI en /inventory/products/{product}/assets: Ubicación, Estado
-- Persistencia de filtros en URL via query string (#[Url] de Livewire 3)
-- Botón "Limpiar" visible cuando hay filtros activos
-- Reset automático de paginación al cambiar cualquier filtro
-- Por defecto, activos "Retirado" NO se muestran (solo cuando se filtra explícitamente)
-- Guardrail para productos no serializados: mensaje "No hay activos para productos por cantidad"
-- Integración de componente <x-ui.long-request /> para UX en requests lentos (>3s)
+Logros principales de Epic 6:
+- 2/2 stories completadas (100% delivery rate)
+- +31 tests agregados (15 búsqueda, 9 filtros, 7 regresión)
+- Suite total: 298 tests passing, 764 assertions
+- Code reviews capturaron 100% de hallazgos HIGH antes de producción
 
-Semántica de disponibilidad respetada (domain rules):
-- Serializados: Disponibles = assets_total - assets_unavailable (excluye Retirado)
-- Por cantidad: Disponibles = qty_total
+Action Items completados en este commit:
+- Action Item #1: Epic source of truth normalizado (epic-6 → done)
+- Action Item #3: Checklist de long-request UX agregado a create-story
+- Action Item #4: Template de soft-delete regression creado
+
+Hallazgos clave documentados:
+- Patrón recurrente: long-request UX olvidado (3er epic consecutivo)
+- Soft-delete semantics: requieren tests explícitos (bug HIGH en 6.2)
+- Action Items de Epic 2/5 con 4 épicas de arrastre (escalado a Carlos)
 
 PROCESO DE IMPLEMENTACIÓN Y PRUEBAS:
 ====================================
-1. LIVEWIRE COMPONENTS (ProductsIndex, AssetsIndex)
-   - Agregadas propiedades de filtros con atributo #[Url] para persistencia en query string
-   - Implementados métodos updatedX() para reset de paginación
-   - Implementados clearFilters() y hasActiveFilters()
-   - Uso de config('gatic.ui.pagination.per_page') en lugar de valor hardcodeado
+1. RETROSPECTIVA
+   - Documento completo con formato BMAD
+   - Métricas cuantificables (tests, code reviews, delivery rate)
+   - Seguimiento de Action Items desde Epic 5
+   - Patrones y anti-patrones consolidados
+   - 8 Action Items nuevos con owners y deadlines
 
-2. QUERY BUILDING (anti N+1)
-   - Filtros por category_id/brand_id via ->when() condicional
-   - Filtro de disponibilidad via HAVING con CASE expression (usa aliases assets_total/assets_unavailable)
-   - Subqueries correlacionadas para conteos, no N+1 por renglón
-   - Eager loading con with(['category', 'brand']) y with('location')
+2. TEMPLATE DE SOFT-DELETE REGRESSION
+   - Patrón reutilizable para tests de regresión
+   - Ejemplo real basado en hallazgo de Story 6.2
+   - Checklist de implementación
+   - Documentación de modelos con soft-delete en GATIC
 
-3. BLADE TEMPLATES
-   - Agregados selects Bootstrap 5 para cada filtro con labels accesibles
-   - Botón "Limpiar" condicional vía @if ($this->hasActiveFilters())
-   - Integración de <x-ui.long-request /> al inicio de cada template
+3. CHECKLIST DE CREATE-STORY
+   - Agregado item explícito: "¿Componente Livewire hace queries? → Integrar <x-ui.long-request>"
+   - Agregado item: "¿Story toca conteos/búsquedas? → Crear test de regresión soft-delete"
+   - Previene patrón recurrente detectado en 3 épicas
 
-4. RBAC
-   - Gate::authorize('inventory.view') en mount() y render()
-   - UI diferenciada por rol (Lector no ve botones de edición)
-
-5. TESTS (9 nuevos tests)
-   - 5 tests en ProductsTest.php: filtros categoría/marca, disponibilidad (with/without), paginación
-   - 4 tests en AssetsTest.php: filtros ubicación/estado, comportamiento de Retirado
-
-6. CODE REVIEW FIXES APLICADOS
-   - Corregido: conteos de assets excluyen soft-deleted assets
-   - Corregido: integración de <x-ui.long-request /> en ambos índices
-   - Refactorizado: filtro de disponibilidad usa HAVING con aliases (evita subqueries duplicadas)
-   - Agregado: test de regresión para soft-delete en conteos
+4. SPRINT STATUS
+   - epic-6: done
+   - epic-6-retrospective: done
+   - Épica 7 lista para iniciar (backlog)
 
 ARCHIVOS MODIFICADOS:
 =====================
-gatic/app/Livewire/Inventory/Products/ProductsIndex.php
-  - Propiedades categoryId, brandId, availability con #[Url]
-  - Métodos updatedX(), clearFilters(), hasActiveFilters()
-  - Query con filtros condicionales y HAVING para disponibilidad
-  - Carga de categories y brands para dropdowns
+_bmad-output/implementation-artifacts/epic-6-retro-2026-01-17.md (NUEVO)
+  - Retrospectiva completa de Epic 6
+  - Participantes: Carlos, Bob, Alice, Charlie, Dana, Elena, Winston
+  - Métricas: 2/2 stories, +31 tests, 0 bugs en producción
+  - 6 fortalezas documentadas (delivery, UX búsqueda, filtros URL, anti-N+1, code reviews, RBAC)
+  - 5 desafíos identificados (long-request, soft-delete, subquery duplication, action items, entry points)
+  - 8 Action Items con estados, owners y deadlines
+  - Ruta crítica para Epic 7
+  - Readiness assessment
 
-gatic/resources/views/livewire/inventory/products/products-index.blade.php
-  - <x-ui.long-request /> integrado (línea 2)
-  - Row de filtros: Categoría, Marca, Disponibilidad selects
-  - Botón "Limpiar" condicional
-  - Query string en $returnQuery para links de navegación
+gatic/tests/Feature/_templates/soft-delete-regression-template.md (NUEVO)
+  - Template PHP para tests de regresión
+  - Documentación de modelos con soft-delete
+  - Ejemplo real: Assets en ProductsIndex
+  - Checklist de implementación
+  - Referencias a hallazgo original (Story 6.2)
 
-gatic/app/Livewire/Inventory/Assets/AssetsIndex.php
-  - Propiedades locationId, status con #[Url]
-  - Filtro de ubicación y estado en query
-  - Exclusión por defecto de Retirado (when status === 'all')
-  - config('gatic.ui.pagination.per_page') en paginación
+_bmad/bmm/workflows/4-implementation/create-story/checklist.md (MODIFICADO)
+  - Item agregado: verificación de long-request UX para componentes Livewire
+  - Item agregado: tests de regresión para soft-delete en conteos/búsquedas
+  - Patrón: crear registros soft-deleted y verificar exclusión
 
-gatic/resources/views/livewire/inventory/assets/assets-index.blade.php
-  - <x-ui.long-request /> integrado (línea 2)
-  - Filtros: Ubicación, Estado (incluye opción "Todos sin Retirado")
-  - Botón "Limpiar" condicional
-  - Guardrail alert para productos por cantidad
-
-gatic/tests/Feature/Inventory/ProductsTest.php
-  - test_can_filter_by_category
-  - test_can_filter_by_brand
-  - test_can_filter_with_available
-  - test_can_filter_without_available
-  - test_availability_excludes_soft_deleted_assets (regresión)
-
-gatic/tests/Feature/Inventory/AssetsTest.php
-  - test_can_filter_by_location
-  - test_can_filter_by_status
-  - test_retired_excluded_by_default
-  - test_retired_shown_when_explicitly_filtered
-
-_bmad-output/implementation-artifacts/sprint-status.yaml
-  - Story 6-2: in-progress -> done
-
-_bmad-output/implementation-artifacts/6-2-filtros-de-inventario-por-catalogos-y-estado-disponibilidad.md
-  - Status: done
-  - Code review fixes documentados
-  - File list actualizada
+_bmad-output/implementation-artifacts/sprint-status.yaml (MODIFICADO)
+  - epic-6: in-progress → done
+  - epic-6-retrospective: optional → done
 
 NOTAS TÉCNICAS:
 ===============
-- El filtro de disponibilidad usa HAVING en lugar de WHERE porque opera sobre aliases
-  calculados por subqueries (assets_total, assets_unavailable). Esto evita duplicar
-  las subqueries costosas.
-  
-- El estado "Retirado" se excluye por defecto en /inventory/products/{product}/assets
-  para mantener consistencia con la semántica del dominio: "Retirado no cuenta en
-  inventario baseline" (project-context.md).
+- La retrospectiva sigue el formato BMAD definido en `_bmad/persona-docs/po.md`
+- Los Action Items #1 y #2 llevan 4 épicas de arrastre; escalados a Carlos
+- El template de soft-delete aplica a todos los modelos con trait `SoftDeletes`
+- El checklist previene el patrón recurrente de 3 épicas: olvidar long-request UX
 
-- Los catálogos (Category, Brand, Location) solo muestran registros no soft-deleted
-  usando whereNull('deleted_at') para mantener consistencia.
+Modelos con SoftDeletes en GATIC:
+- Asset: afecta assets_total, assets_unavailable, disponibilidad
+- Product: afecta conteos de productos, inventario
+- Category, Brand, Location: afectan filtros de catálogos
+- Employee: afecta búsquedas y asignaciones
 
-- El componente <x-ui.long-request /> muestra overlay de carga con opción de cancelar
-  para requests que excedan 3 segundos (UX requerida por NFR).
+Action Items pendientes (no bloqueantes para Epic 7):
+- #2: Aceptación PO por épica (pendiente definición de proceso)
+- #5: Consolidar scopes/helpers de disponibilidad
+- #6: Factories faltantes Epic 1-4
+- #7: Documentar flujo "Pendiente de Retiro"
+- #8: Roadmap auditoría post-Epic 8
 
 VERIFICACIÓN:
 =============
-- Sail artisan test: 298 tests passed, 764 assertions
-- Pint: passing (no style violations)
-- Larastan: no new errors introduced
-- Validación manual con usuarios Admin/Editor/Lector en browser
-- Filtros probados: categoría, marca, disponibilidad, ubicación, estado
-- URL persistence confirmada (?category=1&availability=with_available)
-- Guardrail de productos no serializados verificado
+- Revisión manual de retrospectiva: estructura completa, métricas verificadas
+- Template de soft-delete: ejemplo validado contra implementación real de Story 6.2
+- Sprint-status.yaml: consistente con artefactos de stories
+- Checklist: items integrados sin romper formato existente
 
-Story: 6-2-filtros-de-inventario-por-catalogos-y-estado-disponibilidad
-Epic: 6 (Gate 2: Inventario navegable — búsqueda y filtros)
+Impacto en Epic 7:
+- ✅ Gate 2 completo: inventario navegable operativo
+- ✅ Dependencias claras: movimientos (Epic 5), RBAC (Epic 1-6), UX (Epic 1)
+- ✅ Checklist actualizado: previene bugs recurrentes
+- ✅ Template de regresión: acelera testing de conteos
+
+Epic: 6 (Búsqueda y Filtros)
+Gate: 2 (Inventario navegable — búsqueda y filtros)
+Status: DONE

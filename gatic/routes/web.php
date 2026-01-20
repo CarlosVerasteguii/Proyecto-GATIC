@@ -142,6 +142,17 @@ Route::middleware(['auth', 'active', 'can:admin-only'])
     });
 
 Route::middleware(['auth', 'active', 'can:inventory.manage'])
+    ->prefix('pending-tasks')
+    ->name('pending-tasks.')
+    ->group(function () {
+        Route::get('/', \App\Livewire\PendingTasks\PendingTasksIndex::class)->name('index');
+        Route::get('/create', \App\Livewire\PendingTasks\CreatePendingTask::class)->name('create');
+        Route::get('/{pendingTask}', \App\Livewire\PendingTasks\PendingTaskShow::class)
+            ->whereNumber('pendingTask')
+            ->name('show');
+    });
+
+Route::middleware(['auth', 'active', 'can:inventory.manage'])
     ->prefix('employees')
     ->name('employees.')
     ->group(function () {

@@ -95,8 +95,8 @@ development_status:
   6-2-filtros-de-inventario-por-catalogos-y-estado-disponibilidad: done
   epic-6-retrospective: done
 
-  epic-7: backlog
-  7-1-crear-tarea-pendiente-y-administrar-renglones: backlog
+  epic-7: in-progress
+  7-1-crear-tarea-pendiente-y-administrar-renglones: done
   7-2-captura-de-renglones-serializado-cantidad-con-validaciones-minimas: backlog
   7-3-procesamiento-por-renglon-edicion-estados-y-finalizacion-parcial: backlog
   7-4-locks-de-concurrencia-claim-estado-visible-heartbeat-ttl: backlog

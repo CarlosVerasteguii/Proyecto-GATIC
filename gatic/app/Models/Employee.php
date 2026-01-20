@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $name
  * @property string|null $department
  * @property string|null $job_title
+ * @property-read string $full_name
  */
 class Employee extends Model
 {
@@ -64,6 +65,13 @@ class Employee extends Model
     {
         return Attribute::make(
             set: fn (?string $value): ?string => self::normalizeText($value),
+        );
+    }
+
+    protected function fullName(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => "{$this->rpe} - {$this->name}",
         );
     }
 

@@ -2,6 +2,7 @@
     $dashboardActive = request()->routeIs('dashboard');
     $adminUsersActive = request()->routeIs('admin.users.*');
     $employeesActive = request()->routeIs('employees.*');
+    $pendingTasksActive = request()->routeIs('pending-tasks.*');
     $catalogsCategoriesActive = request()->routeIs('catalogs.categories.*');
     $catalogsBrandsActive = request()->routeIs('catalogs.brands.*');
     $catalogsLocationsActive = request()->routeIs('catalogs.locations.*');
@@ -56,6 +57,17 @@
     @endcan
 
     @can('inventory.manage')
+        <li class="nav-item">
+            <a
+                class="nav-link @if ($pendingTasksActive) active @endif"
+                href="{{ route('pending-tasks.index') }}"
+                @if ($pendingTasksActive) aria-current="page" @endif
+            >
+                <i class="bi bi-list-task me-2"></i>
+                Tareas Pendientes
+            </a>
+        </li>
+
         <li class="nav-item">
             <a
                 class="nav-link @if ($employeesActive) active @endif"

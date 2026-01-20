@@ -1,0 +1,148 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\PendingTaskStatus;
+use App\Enums\PendingTaskType;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+/**
+ * @property int $id
+ * @property PendingTaskType $type
+ * @property string|null $description
+ * @property PendingTaskStatus $status
+ * @property int $creator_user_id
+ * @property int|null $locked_by_user_id
+ * @property \Illuminate\Support\Carbon|null $locked_at
+ * @property \Illuminate\Support\Carbon|null $heartbeat_at
+ * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read User $creator
+ * @property-read User|null $lockedBy
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, PendingTaskLine> $lines
+ */
+class PendingTask extends Model
+{
+    use HasFactory;
+    use SoftDeletes;
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'type',
+        'description',
+        'status',
+        'creator_user_id',
+        'locked_by_user_id',
+        'locked_at',
+        'heartbeat_at',
+        'expires_at',
+    ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'type' => PendingTaskType::class,
+            'status' => PendingTaskStatus::class,
+            'locked_at' => 'datetime',
+            'heartbeat_at' => 'datetime',
+            'expires_at' => 'datetime',
+        ];
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'creator_user_id');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function lockedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'locked_by_user_id');
+    }
+
+    /**
+     * @return HasMany<PendingTaskLine, $this>
+     */
+    public function lines(): HasMany
+    {
+        return $this->hasMany(PendingTaskLine::class)->orderBy('order');
+    }
+
+    /**
+     * Check if task is in draft state and allows editing
+     */
+    public function isDraft(): bool
+    {
+        return $this->status === PendingTaskStatus::Draft;
+    }
+
+    /**
+     * Check if task allows adding/editing/removing lines
+     */
+    public function allowsLineEditing(): bool
+    {
+        return $this->status->allowsLineEditing();
+    }
+
+    /**
+     * Get the count of lines in this task
+     */
+    public function getLinesCountAttribute(): int
+    {
+        // ⚠️ N+1 WARNING: This triggers a query for every task if accessed directly.
+        // Use withCount('lines') and access $task->lines_count instead when possible.
+        return $this->lines()->count();
+    }
+
+    /**
+     * Get duplicated serials/asset_tags within this task for UI highlighting
+     *
+     * @return array<string, list<int>>
+     */
+    public function getDuplicateIdentifiers(): array
+    {
+        $serials = [];
+        $assetTags = [];
+
+        foreach ($this->lines as $line) {
+            if ($line->serial !== null && $line->serial !== '') {
+                $serials[$line->serial][] = $line->id;
+            }
+            if ($line->asset_tag !== null && $line->asset_tag !== '') {
+                $assetTags[$line->asset_tag][] = $line->id;
+            }
+        }
+
+        $duplicates = [];
+
+        foreach ($serials as $serial => $lineIds) {
+            if (count($lineIds) > 1) {
+                $duplicates["serial:{$serial}"] = $lineIds;
+            }
+        }
+
+        foreach ($assetTags as $tag => $lineIds) {
+            if (count($lineIds) > 1) {
+                $duplicates["asset_tag:{$tag}"] = $lineIds;
+            }
+        }
+
+        return $duplicates;
+    }
+}

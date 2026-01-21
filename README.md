@@ -41,14 +41,12 @@ La aplicación Laravel se encuentra en: **`gatic/`**
 Para trabajar con la aplicación:
 
 ```bash
-# Verificar versión de Laravel
-php gatic/artisan --version
+# Opción A (recomendado): Sail (no depende de tu PHP en host)
+cd gatic
+./vendor/bin/sail artisan --version
 
-# Navegar a la carpeta de la aplicación
-cd gatic/
-
-# Ejecutar comandos artisan
-php artisan <comando>
+# Opción B (Windows host): usa PHP 8.2+ (en esta laptop: ver `project-context.md`)
+# C:\Users\carlo\.tools\php84\php.exe gatic\artisan --version
 ```
 
 ## Tecnologías (Stack)

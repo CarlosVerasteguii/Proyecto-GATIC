@@ -3,6 +3,8 @@
 namespace App\Livewire\PendingTasks;
 
 use App\Actions\PendingTasks\AddLineToTask;
+use App\Actions\PendingTasks\AddSerializedLinesToTask;
+use App\Actions\PendingTasks\Concerns\ValidatesTaskLines;
 use App\Actions\PendingTasks\MarkTaskAsReady;
 use App\Actions\PendingTasks\RemoveLineFromTask;
 use App\Actions\PendingTasks\UpdateTaskLine;
@@ -12,6 +14,7 @@ use App\Models\PendingTaskLine;
 use App\Models\Product;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -20,6 +23,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class PendingTaskShow extends Component
 {
+    use ValidatesTaskLines;
+
     public int $pendingTask;
 
     public ?PendingTask $task = null;
@@ -38,7 +43,24 @@ class PendingTaskShow extends Component
 
     public string $assetTag = '';
 
-    public ?int $quantity = null;
+    public ?string $quantity = null;
+
+    public string $serializedBulkInput = '';
+
+    /** @var array<int, array{line: int, value: string, status: string, status_label: string, message: string|null}> */
+    public array $serializedBulkPreview = [];
+
+    public int $serializedBulkCount = 0;
+
+    public int $serializedBulkOkCount = 0;
+
+    public int $serializedBulkDuplicateCount = 0;
+
+    public int $serializedBulkInvalidCount = 0;
+
+    public ?string $serializedBulkLimitError = null;
+
+    public int $serializedBulkMaxLines = 200;
 
     public ?int $employeeId = null;
 
@@ -56,6 +78,7 @@ class PendingTaskShow extends Component
         Gate::authorize('inventory.manage');
 
         $this->pendingTask = $pendingTask;
+        $this->serializedBulkMaxLines = (int) config('gatic.pending_tasks.bulk_paste.max_lines', 200);
         $this->loadTask();
         $this->loadProducts();
     }
@@ -112,7 +135,7 @@ class PendingTaskShow extends Component
         $this->productId = $line->product_id;
         $this->serial = $line->serial ?? '';
         $this->assetTag = $line->asset_tag ?? '';
-        $this->quantity = $line->quantity;
+        $this->quantity = $line->quantity !== null ? (string) $line->quantity : null;
         $this->employeeId = $line->employee_id;
         $this->note = $line->note;
         $this->showLineModal = true;
@@ -131,6 +154,13 @@ class PendingTaskShow extends Component
         $this->serial = '';
         $this->assetTag = '';
         $this->quantity = null;
+        $this->serializedBulkInput = '';
+        $this->serializedBulkPreview = [];
+        $this->serializedBulkCount = 0;
+        $this->serializedBulkOkCount = 0;
+        $this->serializedBulkDuplicateCount = 0;
+        $this->serializedBulkInvalidCount = 0;
+        $this->serializedBulkLimitError = null;
         $this->employeeId = null;
         $this->note = '';
         $this->editingLineId = null;
@@ -154,6 +184,22 @@ class PendingTaskShow extends Component
                     : PendingTaskLineType::Quantity->value;
             }
         }
+
+        $this->rebuildSerializedBulkPreview();
+    }
+
+    public function updatedLineType(): void
+    {
+        if ($this->lineType !== PendingTaskLineType::Serialized->value) {
+            $this->serializedBulkInput = '';
+        }
+
+        $this->rebuildSerializedBulkPreview();
+    }
+
+    public function updatedSerializedBulkInput(): void
+    {
+        $this->rebuildSerializedBulkPreview();
     }
 
     public function saveLine(): void
@@ -170,6 +216,22 @@ class PendingTaskShow extends Component
         }
 
         try {
+            $quantity = null;
+            if ($this->lineType === PendingTaskLineType::Quantity->value) {
+                $validator = Validator::make(
+                    ['quantity' => $this->quantity],
+                    ['quantity' => ['required', 'integer', 'min:1']],
+                );
+
+                if ($validator->fails()) {
+                    $this->addError('quantity', $validator->errors()->first('quantity'));
+
+                    return;
+                }
+
+                $quantity = (int) $validator->validated()['quantity'];
+            }
+
             if ($this->editingLineId) {
                 $action = new UpdateTaskLine;
                 $result = $action->execute($this->editingLineId, [
@@ -177,29 +239,56 @@ class PendingTaskShow extends Component
                     'product_id' => $this->productId,
                     'serial' => $this->lineType === PendingTaskLineType::Serialized->value ? $this->serial : null,
                     'asset_tag' => $this->lineType === PendingTaskLineType::Serialized->value ? $this->assetTag : null,
-                    'quantity' => $this->lineType === PendingTaskLineType::Quantity->value ? (int) $this->quantity : null,
+                    'quantity' => $quantity,
                     'employee_id' => $this->employeeId,
                     'note' => $this->note,
                 ]);
 
                 $message = 'Renglón actualizado.';
             } else {
-                $action = new AddLineToTask;
-                $result = $action->execute([
-                    'pending_task_id' => $this->pendingTask,
-                    'line_type' => $this->lineType,
-                    'product_id' => $this->productId,
-                    'serial' => $this->lineType === PendingTaskLineType::Serialized->value ? $this->serial : null,
-                    'asset_tag' => $this->lineType === PendingTaskLineType::Serialized->value ? $this->assetTag : null,
-                    'quantity' => $this->lineType === PendingTaskLineType::Quantity->value ? (int) $this->quantity : null,
-                    'employee_id' => $this->employeeId,
-                    'note' => $this->note,
-                ]);
+                if ($this->lineType === PendingTaskLineType::Serialized->value) {
+                    $this->rebuildSerializedBulkPreview();
 
-                $message = 'Renglón añadido.';
+                    if ($this->serializedBulkCount < 1) {
+                        $this->addError('serializedBulkInput', 'Pega al menos una serie.');
+
+                        return;
+                    }
+
+                    if ($this->serializedBulkInvalidCount > 0 || $this->serializedBulkLimitError !== null) {
+                        $this->addError('serializedBulkInput', 'Corrige las líneas inválidas antes de guardar.');
+
+                        return;
+                    }
+
+                    $action = new AddSerializedLinesToTask;
+                    $result = $action->execute([
+                        'pending_task_id' => $this->pendingTask,
+                        'product_id' => $this->productId,
+                        'serials' => $this->extractSerializedBulkSerials(),
+                        'employee_id' => $this->employeeId,
+                        'note' => $this->note,
+                    ]);
+
+                    $message = "Renglones añadidos: {$result['lines_created']}.";
+                } else {
+                    $action = new AddLineToTask;
+                    $result = $action->execute([
+                        'pending_task_id' => $this->pendingTask,
+                        'line_type' => $this->lineType,
+                        'product_id' => $this->productId,
+                        'serial' => $this->lineType === PendingTaskLineType::Serialized->value ? $this->serial : null,
+                        'asset_tag' => $this->lineType === PendingTaskLineType::Serialized->value ? $this->assetTag : null,
+                        'quantity' => $quantity,
+                        'employee_id' => $this->employeeId,
+                        'note' => $this->note,
+                    ]);
+
+                    $message = 'Renglón añadido.';
+                }
             }
 
-            if ($result['has_duplicates']) {
+            if ($result['has_duplicates'] || $this->serializedBulkDuplicateCount > 0) {
                 $message .= ' (Duplicado detectado)';
             }
 
@@ -212,7 +301,7 @@ class PendingTaskShow extends Component
             ]);
         } catch (ValidationException $e) {
             foreach ($e->errors() as $field => $messages) {
-                $this->addError($field, $messages[0]);
+                $this->addError($field === 'serials' ? 'serializedBulkInput' : $field, $messages[0]);
             }
         }
     }
@@ -288,5 +377,147 @@ class PendingTaskShow extends Component
         return view('livewire.pending-tasks.pending-task-show', [
             'lineTypes' => PendingTaskLineType::cases(),
         ]);
+    }
+
+    /**
+     * @return list<array{line: int, value: string}>
+     */
+    private function parseSerializedBulkInput(): array
+    {
+        $lines = preg_split("/\r\n|\n|\r/", $this->serializedBulkInput) ?: [];
+        $parsed = [];
+
+        foreach ($lines as $index => $line) {
+            $value = trim($line);
+            if ($value === '') {
+                continue;
+            }
+
+            $parsed[] = [
+                'line' => $index + 1,
+                'value' => $value,
+            ];
+        }
+
+        return $parsed;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractSerializedBulkSerials(): array
+    {
+        return array_map(
+            fn (array $item): string => $item['value'],
+            $this->parseSerializedBulkInput(),
+        );
+    }
+
+    private function rebuildSerializedBulkPreview(): void
+    {
+        $this->serializedBulkPreview = [];
+        $this->serializedBulkCount = 0;
+        $this->serializedBulkOkCount = 0;
+        $this->serializedBulkDuplicateCount = 0;
+        $this->serializedBulkInvalidCount = 0;
+        $this->serializedBulkLimitError = null;
+
+        if ($this->editingLineId !== null) {
+            return;
+        }
+
+        if ($this->lineType !== PendingTaskLineType::Serialized->value) {
+            return;
+        }
+
+        $parsed = $this->parseSerializedBulkInput();
+        if ($parsed === []) {
+            return;
+        }
+
+        $this->serializedBulkCount = count($parsed);
+
+        $max = max(1, $this->serializedBulkMaxLines);
+        if ($this->serializedBulkCount > $max) {
+            $this->serializedBulkLimitError = "Límite máximo: {$max} líneas. Reduce el pegado para poder guardar.";
+        }
+
+        $values = array_map(fn (array $item): string => $item['value'], $parsed);
+        $counts = array_count_values($values);
+
+        $existingSerialsSet = [];
+        if ($this->task) {
+            foreach ($this->task->lines as $line) {
+                if ($line->serial !== null && $line->serial !== '') {
+                    $existingSerialsSet[$line->serial] = true;
+                }
+            }
+        }
+
+        foreach ($parsed as $index => $item) {
+            $value = $item['value'];
+            $status = 'ok';
+            $statusLabel = 'OK';
+            $message = null;
+
+            if ($index >= $max) {
+                $status = 'invalid';
+                $statusLabel = 'Inválida';
+                $message = "Excede el límite de {$max} líneas.";
+            } else {
+                $validationError = null;
+                $status = 'invalid';
+                $statusLabel = 'Inválida';
+
+                try {
+                    $this->validateSerializedLine([
+                        'serial' => $value,
+                        'asset_tag' => null,
+                    ]);
+                } catch (ValidationException $e) {
+                    $errors = $e->errors();
+                    $validationError = $errors['serial'][0] ?? $errors['asset_tag'][0] ?? $e->getMessage();
+                }
+
+                if ($validationError !== null) {
+                    $message = $validationError;
+                } else {
+                    $status = 'ok';
+                    $statusLabel = 'OK';
+
+                    $duplicateReasons = [];
+
+                    if (($counts[$value] ?? 0) > 1) {
+                        $duplicateReasons[] = 'Repetida en el pegado';
+                    }
+
+                    if (isset($existingSerialsSet[$value])) {
+                        $duplicateReasons[] = 'Ya existe en la tarea';
+                    }
+
+                    if ($duplicateReasons !== []) {
+                        $status = 'duplicate';
+                        $statusLabel = 'Duplicada';
+                        $message = implode(' · ', $duplicateReasons);
+                    }
+                }
+            }
+
+            $this->serializedBulkPreview[] = [
+                'line' => $item['line'],
+                'value' => $value,
+                'status' => $status,
+                'status_label' => $statusLabel,
+                'message' => $message,
+            ];
+
+            if ($status === 'ok') {
+                $this->serializedBulkOkCount++;
+            } elseif ($status === 'duplicate') {
+                $this->serializedBulkDuplicateCount++;
+            } else {
+                $this->serializedBulkInvalidCount++;
+            }
+        }
     }
 }

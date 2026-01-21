@@ -206,33 +206,110 @@
                                 </div>
 
                                 @if ($lineType === 'serialized')
-                                    <div class="col-md-6">
-                                        <label for="serial" class="form-label">Serial</label>
-                                        <input
-                                            type="text"
-                                            id="serial"
-                                            class="form-control @error('serial') is-invalid @enderror"
-                                            wire:model="serial"
-                                            placeholder="Número de serie"
-                                        />
-                                        @error('serial')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
+                                    @if ($editingLineId)
+                                        <div class="col-md-6">
+                                            <label for="serial" class="form-label">Serial</label>
+                                            <input
+                                                type="text"
+                                                id="serial"
+                                                class="form-control @error('serial') is-invalid @enderror"
+                                                wire:model="serial"
+                                                placeholder="Número de serie"
+                                            />
+                                            @error('serial')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
 
-                                    <div class="col-md-6">
-                                        <label for="assetTag" class="form-label">Asset Tag</label>
-                                        <input
-                                            type="text"
-                                            id="assetTag"
-                                            class="form-control @error('asset_tag') is-invalid @enderror"
-                                            wire:model="assetTag"
-                                            placeholder="Etiqueta de activo"
-                                        />
-                                        @error('asset_tag')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
+                                        <div class="col-md-6">
+                                            <label for="assetTag" class="form-label">Asset Tag</label>
+                                            <input
+                                                type="text"
+                                                id="assetTag"
+                                                class="form-control @error('asset_tag') is-invalid @enderror"
+                                                wire:model="assetTag"
+                                                placeholder="Etiqueta de activo"
+                                            />
+                                            @error('asset_tag')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    @else
+                                        <div class="col-12">
+                                            <label for="serializedBulkInput" class="form-label">
+                                                Series (1 por línea) <span class="text-danger">*</span>
+                                            </label>
+                                            <textarea
+                                                id="serializedBulkInput"
+                                                class="form-control @error('serializedBulkInput') is-invalid @enderror"
+                                                wire:model.live.debounce.500ms="serializedBulkInput"
+                                                rows="6"
+                                                placeholder="Ej:\nABC123\nABC124\nABC125"
+                                                required
+                                            ></textarea>
+                                            @error('serializedBulkInput')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                            <div class="form-text">
+                                                Se ignoran líneas vacías. Si hay alguna inválida, no se puede guardar.
+                                            </div>
+                                        </div>
+
+                                        @if ($serializedBulkCount > 0)
+                                            <div class="col-12">
+                                                <div class="d-flex flex-wrap gap-3 align-items-center small">
+                                                    <span class="text-muted">Total: <strong>{{ $serializedBulkCount }}</strong></span>
+                                                    @if ($serializedBulkOkCount > 0)
+                                                        <span class="text-success">OK: <strong>{{ $serializedBulkOkCount }}</strong></span>
+                                                    @endif
+                                                    @if ($serializedBulkDuplicateCount > 0)
+                                                        <span class="text-warning">
+                                                            Duplicadas: <strong>{{ $serializedBulkDuplicateCount }}</strong>
+                                                        </span>
+                                                    @endif
+                                                    @if ($serializedBulkInvalidCount > 0)
+                                                        <span class="text-danger">
+                                                            Inválidas: <strong>{{ $serializedBulkInvalidCount }}</strong>
+                                                        </span>
+                                                    @endif
+                                                </div>
+
+                                                @if ($serializedBulkLimitError)
+                                                    <div class="alert alert-danger py-2 my-2 small mb-0">
+                                                        {{ $serializedBulkLimitError }}
+                                                    </div>
+                                                @endif
+
+                                                @if (count($serializedBulkPreview) > 0)
+                                                    <div class="border rounded p-2 mt-2" style="max-height: 220px; overflow: auto;">
+                                                        <ul class="list-unstyled mb-0 small">
+                                                            @foreach ($serializedBulkPreview as $item)
+                                                                <li class="d-flex justify-content-between gap-3 py-1 border-bottom">
+                                                                    <div class="flex-grow-1">
+                                                                        <strong>L{{ $item['line'] }}:</strong>
+                                                                        <span class="font-monospace">{{ $item['value'] }}</span>
+                                                                        @if ($item['message'])
+                                                                            <div class="text-muted">{{ $item['message'] }}</div>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div class="text-end">
+                                                                        <span @class([
+                                                                            'badge',
+                                                                            'bg-success' => $item['status'] === 'ok',
+                                                                            'bg-warning text-dark' => $item['status'] === 'duplicate',
+                                                                            'bg-danger' => $item['status'] === 'invalid',
+                                                                        ])>
+                                                                            {{ $item['status_label'] }}
+                                                                        </span>
+                                                                    </div>
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    @endif
                                 @endif
 
                                 @if ($lineType === 'quantity')

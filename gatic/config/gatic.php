@@ -23,4 +23,9 @@ return [
         ],
         'long_request_threshold_ms' => 3000,
     ],
+    'pending_tasks' => [
+        'bulk_paste' => [
+            'max_lines' => 200,
+        ],
+    ],
 ];

@@ -3,6 +3,7 @@
 namespace Tests\Feature\PendingTasks;
 
 use App\Actions\PendingTasks\AddLineToTask;
+use App\Actions\PendingTasks\AddSerializedLinesToTask;
 use App\Actions\PendingTasks\CreatePendingTask;
 use App\Actions\PendingTasks\MarkTaskAsReady;
 use App\Actions\PendingTasks\RemoveLineFromTask;
@@ -29,8 +30,6 @@ class PendingTaskActionsTest extends TestCase
 
     private User $editor;
 
-    private User $lector;
-
     private Category $serializedCategory;
 
     private Category $quantityCategory;
@@ -47,7 +46,6 @@ class PendingTaskActionsTest extends TestCase
 
         $this->admin = User::factory()->create(['role' => 'Admin']);
         $this->editor = User::factory()->create(['role' => 'Editor']);
-        $this->lector = User::factory()->create(['role' => 'Lector']);
 
         $this->serializedCategory = Category::factory()->create([
             'is_serialized' => true,
@@ -105,6 +103,7 @@ class PendingTaskActionsTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $action->execute([
+            'type' => '',
             'creator_user_id' => $this->admin->id,
         ]);
     }
@@ -175,7 +174,8 @@ class PendingTaskActionsTest extends TestCase
             'line_type' => PendingTaskLineType::Quantity->value,
             'product_id' => $this->quantityProduct->id,
             'quantity' => 5,
-            // Missing employee_id and note
+            'employee_id' => 0,
+            'note' => '',
         ]);
     }
 
@@ -308,6 +308,102 @@ class PendingTaskActionsTest extends TestCase
                 ['El producto seleccionado es de categoría serializada, no se puede usar tipo "Por cantidad".'],
                 $e->errors()['line_type'] ?? []
             );
+        }
+    }
+
+    // === AddSerializedLinesToTask Tests ===
+
+    public function test_add_serialized_lines_batch_creates_lines_with_sequential_order(): void
+    {
+        $task = PendingTask::factory()->create([
+            'status' => PendingTaskStatus::Draft,
+            'creator_user_id' => $this->admin->id,
+        ]);
+
+        $existing = PendingTaskLine::factory()->create([
+            'pending_task_id' => $task->id,
+            'line_type' => PendingTaskLineType::Serialized,
+            'product_id' => $this->serializedProduct->id,
+            'serial' => 'EXIST001',
+            'employee_id' => $this->employee->id,
+            'note' => 'Existing',
+            'order' => 5,
+        ]);
+
+        $action = new AddSerializedLinesToTask;
+
+        $result = $action->execute([
+            'pending_task_id' => $task->id,
+            'product_id' => $this->serializedProduct->id,
+            'serials' => ['ABC123', 'ABC124', 'ABC125'],
+            'employee_id' => $this->employee->id,
+            'note' => 'Bulk note',
+        ]);
+
+        $this->assertSame(3, $result['lines_created']);
+        $this->assertFalse($result['has_duplicates']);
+
+        $lines = PendingTaskLine::query()
+            ->where('pending_task_id', $task->id)
+            ->where('id', '!=', $existing->id)
+            ->orderBy('order')
+            ->get();
+
+        $this->assertCount(3, $lines);
+        $this->assertSame([6, 7, 8], $lines->pluck('order')->all());
+        $this->assertSame(['ABC123', 'ABC124', 'ABC125'], $lines->pluck('serial')->all());
+        $this->assertSame([$this->employee->id, $this->employee->id, $this->employee->id], $lines->pluck('employee_id')->all());
+        $this->assertSame(['Bulk note', 'Bulk note', 'Bulk note'], $lines->pluck('note')->all());
+    }
+
+    public function test_add_serialized_lines_batch_allows_duplicates(): void
+    {
+        $task = PendingTask::factory()->create([
+            'status' => PendingTaskStatus::Draft,
+            'creator_user_id' => $this->admin->id,
+        ]);
+
+        $action = new AddSerializedLinesToTask;
+
+        $result = $action->execute([
+            'pending_task_id' => $task->id,
+            'product_id' => $this->serializedProduct->id,
+            'serials' => ['DUP001', 'DUP001'],
+            'employee_id' => $this->employee->id,
+            'note' => 'Bulk note',
+        ]);
+
+        $this->assertSame(2, $result['lines_created']);
+        $this->assertTrue($result['has_duplicates']);
+
+        $this->assertDatabaseCount('pending_task_lines', 2);
+        $this->assertDatabaseHas('pending_task_lines', [
+            'pending_task_id' => $task->id,
+            'serial' => 'DUP001',
+        ]);
+    }
+
+    public function test_add_serialized_lines_batch_rejects_invalid_serial(): void
+    {
+        $task = PendingTask::factory()->create([
+            'status' => PendingTaskStatus::Draft,
+            'creator_user_id' => $this->admin->id,
+        ]);
+
+        $action = new AddSerializedLinesToTask;
+
+        try {
+            $action->execute([
+                'pending_task_id' => $task->id,
+                'product_id' => $this->serializedProduct->id,
+                'serials' => ['INV@LID'],
+                'employee_id' => $this->employee->id,
+                'note' => 'Bulk note',
+            ]);
+
+            $this->fail('Expected ValidationException for invalid serials.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('serials', $e->errors());
         }
     }
 

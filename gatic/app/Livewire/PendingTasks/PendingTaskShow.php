@@ -4,16 +4,23 @@ namespace App\Livewire\PendingTasks;
 
 use App\Actions\PendingTasks\AddLineToTask;
 use App\Actions\PendingTasks\AddSerializedLinesToTask;
+use App\Actions\PendingTasks\ClearLineError;
 use App\Actions\PendingTasks\Concerns\ValidatesTaskLines;
+use App\Actions\PendingTasks\FinalizePendingTask;
 use App\Actions\PendingTasks\MarkTaskAsReady;
 use App\Actions\PendingTasks\RemoveLineFromTask;
 use App\Actions\PendingTasks\UpdateTaskLine;
+use App\Actions\PendingTasks\ValidatePendingTaskLine;
+use App\Enums\PendingTaskLineStatus;
 use App\Enums\PendingTaskLineType;
+use App\Enums\PendingTaskStatus;
 use App\Models\PendingTask;
 use App\Models\PendingTaskLine;
 use App\Models\Product;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -72,6 +79,29 @@ class PendingTaskShow extends Component
 
     /** @var array<string, list<int>> */
     public array $duplicates = [];
+
+    // Process mode state
+    public bool $isProcessMode = false;
+
+    public bool $showFinalizeConfirmModal = false;
+
+    /** @var array{applied_count: int, error_count: int, skipped_count: int}|null */
+    public ?array $finalizeResult = null;
+
+    // Edit line in process mode
+    public bool $showProcessLineModal = false;
+
+    public ?int $editingProcessLineId = null;
+
+    public string $processLineSerial = '';
+
+    public string $processLineAssetTag = '';
+
+    public ?string $processLineQuantity = null;
+
+    public ?int $processLineEmployeeId = null;
+
+    public string $processLineNote = '';
 
     public function mount(int $pendingTask): void
     {
@@ -370,12 +400,363 @@ class PendingTaskShow extends Component
         return false;
     }
 
+    // =========================================================================
+    // Process Mode Methods
+    // =========================================================================
+
+    /**
+     * Check if task can enter process mode
+     */
+    public function canProcess(): bool
+    {
+        if (! $this->task) {
+            return false;
+        }
+
+        return in_array($this->task->status, [
+            PendingTaskStatus::Ready,
+            PendingTaskStatus::Processing,
+            PendingTaskStatus::PartiallyCompleted,
+        ], true);
+    }
+
+    /**
+     * Enter process mode
+     */
+    public function enterProcessMode(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        if (! $this->canProcess()) {
+            session()->flash('toast', [
+                'type' => 'error',
+                'message' => 'La tarea no está en un estado que permita procesarla.',
+            ]);
+
+            return;
+        }
+
+        $this->isProcessMode = true;
+        $this->finalizeResult = null;
+
+        // Update task status to processing if it was ready
+        if ($this->task && $this->task->status === PendingTaskStatus::Ready) {
+            $this->task->status = PendingTaskStatus::Processing;
+            $this->task->save();
+            $this->loadTask();
+        }
+    }
+
+    /**
+     * Exit process mode
+     */
+    public function exitProcessMode(): void
+    {
+        $this->isProcessMode = false;
+        $this->finalizeResult = null;
+        $this->closeProcessLineModal();
+    }
+
+    /**
+     * Validate a single line
+     */
+    public function validateLine(int $lineId): void
+    {
+        Gate::authorize('inventory.manage');
+
+        try {
+            $action = new ValidatePendingTaskLine;
+            $result = $action->execute($lineId);
+
+            $this->loadTask();
+
+            if ($result['valid']) {
+                session()->flash('toast', [
+                    'type' => 'success',
+                    'message' => 'Renglón validado correctamente.',
+                ]);
+            } else {
+                session()->flash('toast', [
+                    'type' => 'error',
+                    'message' => $result['error_message'] ?? 'Error de validación.',
+                ]);
+            }
+        } catch (\Throwable $e) {
+            $this->flashUnexpectedError($e, 'validar el renglón');
+        }
+    }
+
+    /**
+     * Clear error from a line
+     */
+    public function clearLineError(int $lineId): void
+    {
+        Gate::authorize('inventory.manage');
+
+        try {
+            $action = new ClearLineError;
+            $action->execute($lineId);
+
+            $this->loadTask();
+
+            session()->flash('toast', [
+                'type' => 'success',
+                'message' => 'Error limpiado. El renglón está pendiente de validación.',
+            ]);
+        } catch (ValidationException $e) {
+            session()->flash('toast', [
+                'type' => 'error',
+                'message' => $e->errors()['line_status'][0] ?? $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Open modal to edit a line in process mode
+     */
+    public function openProcessLineModal(int $lineId): void
+    {
+        Gate::authorize('inventory.manage');
+
+        $line = PendingTaskLine::find($lineId);
+        if (! $line || $line->pending_task_id !== $this->pendingTask) {
+            return;
+        }
+
+        // Can't edit applied lines
+        if ($line->line_status === PendingTaskLineStatus::Applied) {
+            session()->flash('toast', [
+                'type' => 'error',
+                'message' => 'No se puede editar un renglón ya aplicado.',
+            ]);
+
+            return;
+        }
+
+        $this->editingProcessLineId = $lineId;
+        $this->processLineSerial = $line->serial ?? '';
+        $this->processLineAssetTag = $line->asset_tag ?? '';
+        $this->processLineQuantity = $line->quantity !== null ? (string) $line->quantity : null;
+        $this->processLineEmployeeId = $line->employee_id;
+        $this->processLineNote = $line->note;
+        $this->showProcessLineModal = true;
+    }
+
+    /**
+     * Close process line modal
+     */
+    public function closeProcessLineModal(): void
+    {
+        $this->showProcessLineModal = false;
+        $this->editingProcessLineId = null;
+        $this->processLineSerial = '';
+        $this->processLineAssetTag = '';
+        $this->processLineQuantity = null;
+        $this->processLineEmployeeId = null;
+        $this->processLineNote = '';
+        $this->resetErrorBag();
+    }
+
+    #[On('process-employee-selected')]
+    public function onProcessEmployeeSelected(?int $employeeId): void
+    {
+        $this->processLineEmployeeId = $employeeId;
+    }
+
+    /**
+     * Save line edit in process mode
+     */
+    public function saveProcessLine(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        if (! $this->editingProcessLineId) {
+            return;
+        }
+
+        $line = PendingTaskLine::find($this->editingProcessLineId);
+        if (! $line || $line->pending_task_id !== $this->pendingTask) {
+            return;
+        }
+
+        try {
+            $quantity = null;
+            if ($line->line_type === PendingTaskLineType::Quantity) {
+                $validator = Validator::make(
+                    ['quantity' => $this->processLineQuantity],
+                    ['quantity' => ['required', 'integer', 'min:1']],
+                );
+
+                if ($validator->fails()) {
+                    $this->addError('processLineQuantity', $validator->errors()->first('quantity'));
+
+                    return;
+                }
+
+                $quantity = (int) $validator->validated()['quantity'];
+            }
+
+            $action = new UpdateTaskLine;
+            $action->execute($this->editingProcessLineId, [
+                'line_type' => $line->line_type->value,
+                'product_id' => $line->product_id,
+                'serial' => $line->isSerialized() ? $this->processLineSerial : null,
+                'asset_tag' => $line->isSerialized() ? $this->processLineAssetTag : null,
+                'quantity' => $quantity,
+                'employee_id' => $this->processLineEmployeeId,
+                'note' => $this->processLineNote,
+            ]);
+
+            // Clear any previous error and set to pending
+            $line->line_status = PendingTaskLineStatus::Pending;
+            $line->error_message = null;
+            $line->save();
+
+            $this->closeProcessLineModal();
+            $this->loadTask();
+
+            session()->flash('toast', [
+                'type' => 'success',
+                'message' => 'Renglón actualizado. Re-valida para verificar.',
+            ]);
+        } catch (ValidationException $e) {
+            foreach ($e->errors() as $field => $messages) {
+                $mappedField = match ($field) {
+                    'serial' => 'processLineSerial',
+                    'asset_tag' => 'processLineAssetTag',
+                    'quantity' => 'processLineQuantity',
+                    'employee_id' => 'processLineEmployeeId',
+                    'note' => 'processLineNote',
+                    default => $field,
+                };
+                $this->addError($mappedField, $messages[0]);
+            }
+        }
+    }
+
+    /**
+     * Show finalize confirmation modal
+     */
+    public function showFinalizeConfirm(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        $this->showFinalizeConfirmModal = true;
+    }
+
+    /**
+     * Hide finalize confirmation modal
+     */
+    public function hideFinalizeConfirm(): void
+    {
+        $this->showFinalizeConfirmModal = false;
+    }
+
+    /**
+     * Execute finalize task
+     */
+    public function finalizeTask(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        $this->hideFinalizeConfirm();
+
+        if (! $this->task) {
+            return;
+        }
+
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $action = new FinalizePendingTask;
+            $result = $action->execute($this->pendingTask, $user->id);
+
+            $this->loadTask();
+
+            $this->finalizeResult = [
+                'applied_count' => $result['applied_count'],
+                'error_count' => $result['error_count'],
+                'skipped_count' => $result['skipped_count'],
+            ];
+
+            $message = "Finalización completada: {$result['applied_count']} aplicados";
+            if ($result['error_count'] > 0) {
+                $message .= ", {$result['error_count']} errores";
+            }
+            if ($result['skipped_count'] > 0) {
+                $message .= ", {$result['skipped_count']} ya aplicados";
+            }
+
+            session()->flash('toast', [
+                'type' => $result['error_count'] > 0 ? 'warning' : 'success',
+                'message' => $message,
+            ]);
+        } catch (ValidationException $e) {
+            $firstError = collect($e->errors())->flatten()->first();
+            session()->flash('toast', [
+                'type' => 'error',
+                'message' => $firstError ?? 'Error al finalizar la tarea.',
+            ]);
+        } catch (\Throwable $e) {
+            $this->flashUnexpectedError($e, 'finalizar la tarea');
+        }
+    }
+
+    private function flashUnexpectedError(\Throwable $e, string $action): void
+    {
+        $errorId = uniqid('ERR-');
+
+        Log::error("PendingTaskShow unexpected error [{$errorId}] ({$action})", [
+            'pending_task_id' => $this->pendingTask,
+            'user_id' => Auth::id(),
+            'exception' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        $message = "Error inesperado al {$action} (ID: {$errorId}). Contacta a soporte.";
+
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+        if ($user && ($user->role ?? null) === 'Admin') {
+            $message .= ' '.$e->getMessage();
+        }
+
+        session()->flash('toast', [
+            'type' => 'error',
+            'message' => $message,
+        ]);
+    }
+
+    /**
+     * Get summary of line statuses for process mode
+     *
+     * @return array{pending: int, processing: int, applied: int, error: int}
+     */
+    public function getLineStatusSummary(): array
+    {
+        if (! $this->task) {
+            return ['pending' => 0, 'processing' => 0, 'applied' => 0, 'error' => 0];
+        }
+
+        $summary = ['pending' => 0, 'processing' => 0, 'applied' => 0, 'error' => 0];
+
+        foreach ($this->task->lines as $line) {
+            $key = $line->line_status->value;
+            if (array_key_exists($key, $summary)) {
+                $summary[$key]++;
+            }
+        }
+
+        return $summary;
+    }
+
     public function render(): View
     {
         Gate::authorize('inventory.manage');
 
         return view('livewire.pending-tasks.pending-task-show', [
             'lineTypes' => PendingTaskLineType::cases(),
+            'lineStatusSummary' => $this->getLineStatusSummary(),
         ]);
     }
 

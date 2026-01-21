@@ -1,5 +1,5 @@
 <div class="container position-relative">
-    <x-ui.long-request />
+    <x-ui.long-request target="finalizeTask" />
 
     @if ($task)
     <div class="row justify-content-center">
@@ -12,9 +12,19 @@
                         <span class="badge {{ $task->status->badgeClass() }}">
                             {{ $task->status->label() }}
                         </span>
-                        <a href="{{ route('pending-tasks.index') }}" class="btn btn-sm btn-outline-secondary">
-                            Volver
-                        </a>
+                        @if ($isProcessMode)
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                wire:click="exitProcessMode"
+                            >
+                                Salir de Procesar
+                            </button>
+                        @else
+                            <a href="{{ route('pending-tasks.index') }}" class="btn btn-sm btn-outline-secondary">
+                                Volver
+                            </a>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body">
@@ -31,46 +41,115 @@
                     </div>
                     @if ($task->description)
                         <div class="mt-2">
-                            <strong>Descripción:</strong>
+                            <strong>Descripcion:</strong>
                             <p class="mb-0 text-muted">{{ $task->description }}</p>
                         </div>
                     @endif
                 </div>
             </div>
 
+            {{-- Finalize Result Summary --}}
+            @if ($finalizeResult)
+                <div class="alert {{ $finalizeResult['error_count'] > 0 ? 'alert-warning' : 'alert-success' }} mb-4">
+                    <h5 class="alert-heading mb-2">Resumen de Finalizacion</h5>
+                    <div class="d-flex flex-wrap gap-4">
+                        <div>
+                            <span class="badge bg-success fs-6">{{ $finalizeResult['applied_count'] }}</span>
+                            <span class="ms-1">Aplicados</span>
+                        </div>
+                        @if ($finalizeResult['error_count'] > 0)
+                            <div>
+                                <span class="badge bg-danger fs-6">{{ $finalizeResult['error_count'] }}</span>
+                                <span class="ms-1">Errores</span>
+                            </div>
+                        @endif
+                        @if ($finalizeResult['skipped_count'] > 0)
+                            <div>
+                                <span class="badge bg-secondary fs-6">{{ $finalizeResult['skipped_count'] }}</span>
+                                <span class="ms-1">Ya aplicados</span>
+                            </div>
+                        @endif
+                    </div>
+                    @if ($finalizeResult['error_count'] > 0)
+                        <hr>
+                        <p class="mb-0 small">
+                            Los renglones con error no fueron aplicados. Puedes corregirlos y volver a intentar.
+                        </p>
+                    @endif
+                </div>
+            @endif
+
             {{-- Lines Section --}}
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>
-                        Renglones
-                        <span class="badge bg-secondary ms-2">{{ $task->lines->count() }}</span>
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span>Renglones</span>
+                        <span class="badge bg-secondary">{{ $task->lines->count() }}</span>
                         @if (count($duplicates) > 0)
-                            <span class="badge bg-warning text-dark ms-1" title="Duplicados detectados">
+                            <span class="badge bg-warning text-dark" title="Duplicados detectados">
                                 {{ count($duplicates) }} duplicados
                             </span>
                         @endif
-                    </span>
-                    @if ($task->isDraft())
-                        <div class="d-flex gap-2">
+
+                        {{-- Line status summary in process mode --}}
+                        @if ($isProcessMode)
+                            <span class="border-start ps-2 ms-2"></span>
+                            @if ($lineStatusSummary['applied'] > 0)
+                                <span class="badge bg-success" title="Aplicados">
+                                    {{ $lineStatusSummary['applied'] }} aplicados
+                                </span>
+                            @endif
+                            @if ($lineStatusSummary['pending'] > 0)
+                                <span class="badge bg-secondary" title="Pendientes">
+                                    {{ $lineStatusSummary['pending'] }} pendientes
+                                </span>
+                            @endif
+                            @if ($lineStatusSummary['error'] > 0)
+                                <span class="badge bg-danger" title="Con error">
+                                    {{ $lineStatusSummary['error'] }} errores
+                                </span>
+                            @endif
+                        @endif
+                    </div>
+
+                    {{-- Action buttons --}}
+                    <div class="d-flex gap-2 flex-wrap">
+                        @if ($task->isDraft())
                             <button
                                 type="button"
                                 class="btn btn-sm btn-primary"
                                 wire:click="openAddLineModal"
                             >
-                                Añadir renglón
+                                Agregar renglon
                             </button>
                             @if ($task->lines->count() > 0)
                                 <button
                                     type="button"
                                     class="btn btn-sm btn-success"
                                     wire:click="markAsReady"
-                                    wire:confirm="¿Marcar como lista? Ya no podrás editar los renglones."
+                                    wire:confirm="Marcar como lista? Ya no podras editar los renglones."
                                 >
                                     Marcar como lista
                                 </button>
                             @endif
-                        </div>
-                    @endif
+                        @elseif ($this->canProcess() && !$isProcessMode)
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-primary"
+                                wire:click="enterProcessMode"
+                            >
+                                Procesar
+                            </button>
+                        @elseif ($isProcessMode)
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-success"
+                                wire:click="showFinalizeConfirm"
+                            >
+                                Finalizar
+                            </button>
+                        @endif
+                    </div>
                 </div>
                 <div class="card-body">
                     @if ($task->lines->count() > 0)
@@ -79,20 +158,36 @@
                                 <thead>
                                     <tr>
                                         <th>#</th>
+                                        @if ($isProcessMode)
+                                            <th>Estado</th>
+                                        @endif
                                         <th>Tipo</th>
                                         <th>Producto</th>
                                         <th>Identificador</th>
                                         <th>Empleado</th>
                                         <th>Nota</th>
-                                        @if ($task->isDraft())
+                                        @if ($task->isDraft() || $isProcessMode)
                                             <th class="text-end">Acciones</th>
                                         @endif
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($task->lines as $line)
-                                        <tr @class(['table-warning' => $this->isDuplicate($line->id)])>
+                                        <tr @class([
+                                            'table-warning' => $this->isDuplicate($line->id) && !$isProcessMode,
+                                            'table-success' => $isProcessMode && $line->line_status->value === 'applied',
+                                            'table-danger' => $isProcessMode && $line->line_status->value === 'error',
+                                        ])>
                                             <td>{{ $line->order }}</td>
+
+                                            @if ($isProcessMode)
+                                                <td>
+                                                    <span class="badge {{ $line->line_status->badgeClass() }}">
+                                                        {{ $line->line_status->label() }}
+                                                    </span>
+                                                </td>
+                                            @endif
+
                                             <td>{{ $line->line_type->label() }}</td>
                                             <td>{{ $line->product->name ?? '-' }}</td>
                                             <td>
@@ -100,16 +195,17 @@
                                                 @if ($this->isDuplicate($line->id))
                                                     <span
                                                         class="badge bg-warning text-dark"
-                                                        title="Este identificador está duplicado en la tarea"
+                                                        title="Este identificador esta duplicado en la tarea"
                                                     >
                                                         Duplicado
                                                     </span>
                                                 @endif
                                             </td>
                                             <td>{{ $line->employee->full_name ?? '-' }}</td>
-                                            <td class="text-truncate" style="max-width: 200px;" title="{{ $line->note }}">
+                                            <td class="text-truncate" style="max-width: 150px;" title="{{ $line->note }}">
                                                 {{ $line->note }}
                                             </td>
+
                                             @if ($task->isDraft())
                                                 <td class="text-end">
                                                     <button
@@ -123,13 +219,60 @@
                                                         type="button"
                                                         class="btn btn-sm btn-outline-danger"
                                                         wire:click="removeLine({{ $line->id }})"
-                                                        wire:confirm="¿Eliminar este renglón?"
+                                                        wire:confirm="Eliminar este renglon?"
                                                     >
                                                         Eliminar
                                                     </button>
                                                 </td>
+                                            @elseif ($isProcessMode)
+                                                <td class="text-end">
+                                                    @if ($line->line_status->value === 'applied')
+                                                        <span class="text-success small">
+                                                            <i class="bi bi-check-circle"></i> Aplicado
+                                                        </span>
+                                                    @else
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-outline-primary"
+                                                                wire:click="openProcessLineModal({{ $line->id }})"
+                                                                title="Editar"
+                                                            >
+                                                                <i class="bi bi-pencil"></i>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-outline-info"
+                                                                wire:click="validateLine({{ $line->id }})"
+                                                                title="Validar"
+                                                            >
+                                                                <i class="bi bi-check2"></i>
+                                                            </button>
+                                                            @if ($line->line_status->value === 'error')
+                                                                <button
+                                                                    type="button"
+                                                                    class="btn btn-outline-secondary"
+                                                                    wire:click="clearLineError({{ $line->id }})"
+                                                                    title="Limpiar error"
+                                                                >
+                                                                    <i class="bi bi-x-lg"></i>
+                                                                </button>
+                                                            @endif
+                                                        </div>
+                                                    @endif
+                                                </td>
                                             @endif
                                         </tr>
+                                        {{-- Error message row in process mode --}}
+                                        @if ($isProcessMode && $line->line_status->value === 'error' && $line->error_message)
+                                            <tr class="table-danger">
+                                                <td></td>
+                                                <td colspan="{{ $task->isDraft() || $isProcessMode ? 7 : 6 }}" class="text-danger small py-1">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                                    {{ $line->error_message }}
+                                                </td>
+                                            </tr>
+                                        @endif
                                     @endforeach
                                 </tbody>
                             </table>
@@ -137,7 +280,7 @@
                     @else
                         <p class="text-muted mb-0">
                             @if ($task->isDraft())
-                                No hay renglones. Haz clic en "Añadir renglón" para comenzar.
+                                No hay renglones. Haz clic en "Agregar renglon" para comenzar.
                             @else
                                 No hay renglones en esta tarea.
                             @endif
@@ -148,14 +291,14 @@
         </div>
     </div>
 
-    {{-- Line Modal --}}
+    {{-- Line Modal (Draft mode) --}}
     @if ($showLineModal)
         <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            {{ $editingLineId ? 'Editar renglón' : 'Añadir renglón' }}
+                            {{ $editingLineId ? 'Editar renglon' : 'Agregar renglon' }}
                         </h5>
                         <button type="button" class="btn-close" wire:click="closeModal"></button>
                     </div>
@@ -187,7 +330,7 @@
 
                                 <div class="col-md-6">
                                     <label for="lineType" class="form-label">
-                                        Tipo de renglón <span class="text-danger">*</span>
+                                        Tipo de renglon <span class="text-danger">*</span>
                                     </label>
                                     <select
                                         id="lineType"
@@ -214,7 +357,7 @@
                                                 id="serial"
                                                 class="form-control @error('serial') is-invalid @enderror"
                                                 wire:model="serial"
-                                                placeholder="Número de serie"
+                                                placeholder="Numero de serie"
                                             />
                                             @error('serial')
                                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -237,7 +380,7 @@
                                     @else
                                         <div class="col-12">
                                             <label for="serializedBulkInput" class="form-label">
-                                                Series (1 por línea) <span class="text-danger">*</span>
+                                                Series (1 por linea) <span class="text-danger">*</span>
                                             </label>
                                             <textarea
                                                 id="serializedBulkInput"
@@ -251,7 +394,7 @@
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
                                             <div class="form-text">
-                                                Se ignoran líneas vacías. Si hay alguna inválida, no se puede guardar.
+                                                Se ignoran lineas vacias. Si hay alguna invalida, no se puede guardar.
                                             </div>
                                         </div>
 
@@ -269,7 +412,7 @@
                                                     @endif
                                                     @if ($serializedBulkInvalidCount > 0)
                                                         <span class="text-danger">
-                                                            Inválidas: <strong>{{ $serializedBulkInvalidCount }}</strong>
+                                                            Invalidas: <strong>{{ $serializedBulkInvalidCount }}</strong>
                                                         </span>
                                                     @endif
                                                 </div>
@@ -355,7 +498,7 @@
                                         wire:model="note"
                                         rows="2"
                                         required
-                                        placeholder="Motivo o descripción del movimiento..."
+                                        placeholder="Motivo o descripcion del movimiento..."
                                     ></textarea>
                                     @error('note')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -368,10 +511,182 @@
                                 Cancelar
                             </button>
                             <button type="submit" class="btn btn-primary">
-                                {{ $editingLineId ? 'Actualizar' : 'Añadir' }}
+                                {{ $editingLineId ? 'Actualizar' : 'Agregar' }}
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Process Line Edit Modal --}}
+    @if ($showProcessLineModal)
+        @php
+            $editLine = $task->lines->firstWhere('id', $editingProcessLineId);
+        @endphp
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Renglon</h5>
+                        <button type="button" class="btn-close" wire:click="closeProcessLineModal"></button>
+                    </div>
+                    <form wire:submit="saveProcessLine">
+                        <div class="modal-body">
+                            @if ($editLine)
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">Producto</label>
+                                    <div class="form-control-plaintext">{{ $editLine->product->name ?? '-' }}</div>
+                                </div>
+
+                                @if ($editLine->isSerialized())
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="processLineSerial" class="form-label">Serial</label>
+                                            <input
+                                                type="text"
+                                                id="processLineSerial"
+                                                class="form-control @error('processLineSerial') is-invalid @enderror"
+                                                wire:model="processLineSerial"
+                                                placeholder="Numero de serie"
+                                            />
+                                            @error('processLineSerial')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="processLineAssetTag" class="form-label">Asset Tag</label>
+                                            <input
+                                                type="text"
+                                                id="processLineAssetTag"
+                                                class="form-control @error('processLineAssetTag') is-invalid @enderror"
+                                                wire:model="processLineAssetTag"
+                                                placeholder="Etiqueta de activo"
+                                            />
+                                            @error('processLineAssetTag')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="mb-3">
+                                        <label for="processLineQuantity" class="form-label">
+                                            Cantidad <span class="text-danger">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="processLineQuantity"
+                                            class="form-control @error('processLineQuantity') is-invalid @enderror"
+                                            wire:model="processLineQuantity"
+                                            min="1"
+                                            required
+                                        />
+                                        @error('processLineQuantity')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                @endif
+
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Empleado <span class="text-danger">*</span>
+                                    </label>
+                                    <livewire:ui.employee-combobox
+                                        :selected-employee-id="$processLineEmployeeId"
+                                        event-name="process-employee-selected"
+                                        :key="'process-employee-combobox-' . $editingProcessLineId"
+                                    />
+                                    @error('processLineEmployeeId')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="processLineNote" class="form-label">
+                                        Nota <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea
+                                        id="processLineNote"
+                                        class="form-control @error('processLineNote') is-invalid @enderror"
+                                        wire:model="processLineNote"
+                                        rows="2"
+                                        required
+                                        placeholder="Motivo o descripcion del movimiento..."
+                                    ></textarea>
+                                    @error('processLineNote')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            @endif
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" wire:click="closeProcessLineModal">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Finalize Confirmation Modal --}}
+    @if ($showFinalizeConfirmModal)
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirmar Finalizacion</h5>
+                        <button type="button" class="btn-close" wire:click="hideFinalizeConfirm"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Estas a punto de finalizar esta tarea. Se aplicaran los movimientos de los renglones validos.</p>
+
+                        <div class="alert alert-info mb-0">
+                            <strong>Resumen:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>
+                                    <strong>{{ $lineStatusSummary['pending'] + $lineStatusSummary['processing'] }}</strong>
+                                    renglones pendientes de aplicar
+                                </li>
+                                @if ($lineStatusSummary['applied'] > 0)
+                                    <li>
+                                        <strong>{{ $lineStatusSummary['applied'] }}</strong>
+                                        renglones ya aplicados (se omitiran)
+                                    </li>
+                                @endif
+                                @if ($lineStatusSummary['error'] > 0)
+                                    <li class="text-danger">
+                                        <strong>{{ $lineStatusSummary['error'] }}</strong>
+                                        renglones con error (se intentaran aplicar)
+                                    </li>
+                                @endif
+                            </ul>
+                        </div>
+
+                        @if (count($duplicates) > 0)
+                            <div class="alert alert-warning mt-3 mb-0">
+                                <strong>Advertencia:</strong> Hay {{ count($duplicates) }} duplicados en la tarea.
+                                Los renglones duplicados no seran aplicados.
+                            </div>
+                        @endif
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" wire:click="hideFinalizeConfirm">
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-success"
+                            wire:click="finalizeTask"
+                        >
+                            Finalizar Tarea
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

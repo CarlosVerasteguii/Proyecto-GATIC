@@ -33,4 +33,54 @@ enum PendingTaskType: string
             self::Retirement => 'Retiro',
         };
     }
+
+    /**
+     * Check if this task type supports serialized lines (Assets).
+     *
+     * Matriz de aplicación task.type × line_type:
+     * - assign/loan/return: Soportan serializado (Asset movements)
+     * - stock_in/stock_out/retirement: Solo cantidad (no manejan Assets)
+     */
+    public function supportsSerialized(): bool
+    {
+        return match ($this) {
+            self::Assign, self::Loan, self::Return => true,
+            self::StockIn, self::StockOut, self::Retirement => false,
+        };
+    }
+
+    /**
+     * Check if this task type supports quantity lines (Product qty movements).
+     *
+     * Todos los tipos soportan renglones por cantidad.
+     */
+    public function supportsQuantity(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the direction for quantity movements ('in' or 'out').
+     *
+     * - stock_in/return: Entradas (incrementan stock)
+     * - stock_out/assign/loan/retirement: Salidas (decrementan stock)
+     */
+    public function quantityDirection(): string
+    {
+        return match ($this) {
+            self::StockIn, self::Return => 'in',
+            self::StockOut, self::Assign, self::Loan, self::Retirement => 'out',
+        };
+    }
+
+    /**
+     * Get human-readable error message when line type is not supported.
+     */
+    public function unsupportedLineTypeMessage(PendingTaskLineType $lineType): string
+    {
+        return match ($lineType) {
+            PendingTaskLineType::Serialized => "El tipo de tarea \"{$this->label()}\" no admite renglones serializados (Assets).",
+            PendingTaskLineType::Quantity => "El tipo de tarea \"{$this->label()}\" no admite renglones por cantidad.",
+        };
+    }
 }

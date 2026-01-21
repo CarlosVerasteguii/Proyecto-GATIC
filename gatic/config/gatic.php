@@ -27,5 +27,12 @@ return [
         'bulk_paste' => [
             'max_lines' => 200,
         ],
+        'locks' => [
+            // Lease TTL: how long a lock is valid after claim/heartbeat (in seconds)
+            'lease_ttl_s' => 180, // 3 minutes
+            // Idle guard: no heartbeat renewal if no user activity for this long (in seconds)
+            'idle_guard_s' => 120, // 2 minutes
+            // Heartbeat interval configured in ui.polling.locks_heartbeat_interval_s
+        ],
     ],
 ];

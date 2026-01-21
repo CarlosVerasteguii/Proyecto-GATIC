@@ -2,12 +2,15 @@
 
 namespace App\Livewire\PendingTasks;
 
+use App\Actions\PendingTasks\AcquirePendingTaskLock;
 use App\Actions\PendingTasks\AddLineToTask;
 use App\Actions\PendingTasks\AddSerializedLinesToTask;
 use App\Actions\PendingTasks\ClearLineError;
 use App\Actions\PendingTasks\Concerns\ValidatesTaskLines;
 use App\Actions\PendingTasks\FinalizePendingTask;
+use App\Actions\PendingTasks\HeartbeatPendingTaskLock;
 use App\Actions\PendingTasks\MarkTaskAsReady;
+use App\Actions\PendingTasks\ReleasePendingTaskLock;
 use App\Actions\PendingTasks\RemoveLineFromTask;
 use App\Actions\PendingTasks\UpdateTaskLine;
 use App\Actions\PendingTasks\ValidatePendingTaskLine;
@@ -88,6 +91,11 @@ class PendingTaskShow extends Component
     /** @var array{applied_count: int, error_count: int, skipped_count: int}|null */
     public ?array $finalizeResult = null;
 
+    // Lock state
+    public bool $hasLock = false;
+
+    public bool $lockLost = false;
+
     // Edit line in process mode
     public bool $showProcessLineModal = false;
 
@@ -110,15 +118,51 @@ class PendingTaskShow extends Component
         $this->pendingTask = $pendingTask;
         $this->serializedBulkMaxLines = (int) config('gatic.pending_tasks.bulk_paste.max_lines', 200);
         $this->loadTask();
+        $this->resumeProcessModeIfOwnLock();
         $this->loadProducts();
+    }
+
+    private function resumeProcessModeIfOwnLock(): void
+    {
+        if (! $this->task) {
+            return;
+        }
+
+        if (! $this->hasLock) {
+            return;
+        }
+
+        if (! $this->canProcess()) {
+            return;
+        }
+
+        $this->isProcessMode = true;
+        $this->lockLost = false;
+        $this->finalizeResult = null;
+
+        if ($this->task->status === PendingTaskStatus::Ready) {
+            $this->task->status = PendingTaskStatus::Processing;
+            $this->task->save();
+            $this->loadTask();
+        }
     }
 
     private function loadTask(): void
     {
-        $this->task = PendingTask::with(['creator', 'lines.product', 'lines.employee'])
+        $this->task = PendingTask::with(['creator', 'lockedBy', 'lines.product', 'lines.employee'])
             ->findOrFail($this->pendingTask);
 
         $this->duplicates = $this->task->getDuplicateIdentifiers();
+
+        // Update lock state
+        /** @var int $userId */
+        $userId = Auth::id();
+        $this->hasLock = $this->task->isLockedBy($userId);
+
+        // If we were in process mode but lost the lock, set lockLost flag
+        if ($this->isProcessMode && ! $this->hasLock && $this->task->hasActiveLock()) {
+            $this->lockLost = true;
+        }
     }
 
     private function loadProducts(): void
@@ -436,14 +480,43 @@ class PendingTaskShow extends Component
             return;
         }
 
-        $this->isProcessMode = true;
-        $this->finalizeResult = null;
+        // Try to acquire lock before entering process mode
+        /** @var int $userId */
+        $userId = Auth::id();
 
-        // Update task status to processing if it was ready
-        if ($this->task && $this->task->status === PendingTaskStatus::Ready) {
-            $this->task->status = PendingTaskStatus::Processing;
-            $this->task->save();
+        try {
+            $action = new AcquirePendingTaskLock;
+            $result = $action->execute($this->pendingTask, $userId);
+
+            if (! $result['success']) {
+                // Lock is held by another user
+                $this->loadTask();
+                session()->flash('toast', [
+                    'type' => 'error',
+                    'message' => $result['message'],
+                ]);
+
+                return;
+            }
+
+            // Lock acquired successfully
+            $this->hasLock = true;
+            $this->lockLost = false;
+            $this->isProcessMode = true;
+            $this->finalizeResult = null;
+
+            // Update task status to processing if it was ready
+            if ($this->task && $this->task->status === PendingTaskStatus::Ready) {
+                $this->task->status = PendingTaskStatus::Processing;
+                $this->task->save();
+            }
+
             $this->loadTask();
+        } catch (ValidationException $e) {
+            session()->flash('toast', [
+                'type' => 'error',
+                'message' => $e->errors()['status'][0] ?? $e->errors()['pending_task_id'][0] ?? $e->getMessage(),
+            ]);
         }
     }
 
@@ -452,9 +525,133 @@ class PendingTaskShow extends Component
      */
     public function exitProcessMode(): void
     {
+        Gate::authorize('inventory.manage');
+
+        // Release lock if we have it
+        if ($this->hasLock) {
+            /** @var int $userId */
+            $userId = Auth::id();
+
+            try {
+                $action = new ReleasePendingTaskLock;
+                $action->execute($this->pendingTask, $userId);
+            } catch (\Throwable $e) {
+                // Best effort - log but don't fail
+                Log::warning('exitProcessMode: failed to release lock', [
+                    'task_id' => $this->pendingTask,
+                    'user_id' => $userId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         $this->isProcessMode = false;
+        $this->hasLock = false;
+        $this->lockLost = false;
         $this->finalizeResult = null;
         $this->closeProcessLineModal();
+        $this->loadTask();
+    }
+
+    /**
+     * Check if we have an active lock - if not, block the action
+     */
+    private function requireActiveLock(): bool
+    {
+        $this->loadTask();
+
+        if (! $this->hasLock) {
+            if ($this->isProcessMode) {
+                $this->lockLost = true;
+            }
+
+            if ($this->task?->hasActiveLock()) {
+                session()->flash('toast', [
+                    'type' => 'error',
+                    'message' => 'Has perdido el lock. Otro usuario lo tiene.',
+                ]);
+            } else {
+                session()->flash('toast', [
+                    'type' => 'error',
+                    'message' => 'Tu lock ya no está activo. Haz clic en "Reintentar claim".',
+                ]);
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Retry acquiring the lock (from lock lost state)
+     */
+    public function retryLock(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        /** @var int $userId */
+        $userId = Auth::id();
+
+        try {
+            $action = new AcquirePendingTaskLock;
+            $result = $action->execute($this->pendingTask, $userId);
+
+            if ($result['success']) {
+                $this->hasLock = true;
+                $this->lockLost = false;
+                $this->loadTask();
+
+                session()->flash('toast', [
+                    'type' => 'success',
+                    'message' => 'Lock adquirido. Puedes continuar procesando.',
+                ]);
+            } else {
+                $this->loadTask();
+                session()->flash('toast', [
+                    'type' => 'error',
+                    'message' => $result['message'],
+                ]);
+            }
+        } catch (ValidationException $e) {
+            session()->flash('toast', [
+                'type' => 'error',
+                'message' => $e->errors()['pending_task_id'][0] ?? $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Heartbeat to renew lock lease
+     */
+    public function heartbeat(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        if (! $this->isProcessMode || ! $this->hasLock) {
+            return;
+        }
+
+        /** @var int $userId */
+        $userId = Auth::id();
+
+        try {
+            $action = new HeartbeatPendingTaskLock;
+            $result = $action->execute($this->pendingTask, $userId);
+
+            if (! $result['success']) {
+                // Lock expired or lost
+                $this->hasLock = false;
+                $this->lockLost = true;
+                $this->loadTask();
+            }
+        } catch (\Throwable $e) {
+            Log::warning('heartbeat failed', [
+                'task_id' => $this->pendingTask,
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -463,6 +660,11 @@ class PendingTaskShow extends Component
     public function validateLine(int $lineId): void
     {
         Gate::authorize('inventory.manage');
+
+        // Require lock for process mode actions
+        if ($this->isProcessMode && ! $this->requireActiveLock()) {
+            return;
+        }
 
         try {
             $action = new ValidatePendingTaskLine;
@@ -493,6 +695,11 @@ class PendingTaskShow extends Component
     {
         Gate::authorize('inventory.manage');
 
+        // Require lock for process mode actions
+        if ($this->isProcessMode && ! $this->requireActiveLock()) {
+            return;
+        }
+
         try {
             $action = new ClearLineError;
             $action->execute($lineId);
@@ -517,6 +724,11 @@ class PendingTaskShow extends Component
     public function openProcessLineModal(int $lineId): void
     {
         Gate::authorize('inventory.manage');
+
+        // Require lock for process mode actions
+        if (! $this->requireActiveLock()) {
+            return;
+        }
 
         $line = PendingTaskLine::find($lineId);
         if (! $line || $line->pending_task_id !== $this->pendingTask) {
@@ -569,6 +781,13 @@ class PendingTaskShow extends Component
     public function saveProcessLine(): void
     {
         Gate::authorize('inventory.manage');
+
+        // Require lock for process mode actions
+        if (! $this->requireActiveLock()) {
+            $this->closeProcessLineModal();
+
+            return;
+        }
 
         if (! $this->editingProcessLineId) {
             return;
@@ -661,6 +880,11 @@ class PendingTaskShow extends Component
 
         $this->hideFinalizeConfirm();
 
+        // Require lock for finalization
+        if (! $this->requireActiveLock()) {
+            return;
+        }
+
         if (! $this->task) {
             return;
         }
@@ -685,6 +909,26 @@ class PendingTaskShow extends Component
             }
             if ($result['skipped_count'] > 0) {
                 $message .= ", {$result['skipped_count']} ya aplicados";
+            }
+
+            // Release lock after finalization (task may be completed or partially completed)
+            if ($this->hasLock) {
+                try {
+                    $releaseAction = new ReleasePendingTaskLock;
+                    $releaseAction->execute($this->pendingTask, $user->id);
+                    $this->hasLock = false;
+                } catch (\Throwable $e) {
+                    // Best effort
+                    Log::warning('finalizeTask: failed to release lock after finalization', [
+                        'task_id' => $this->pendingTask,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            // Exit process mode if task is completed
+            if ($this->task && in_array($this->task->status, [PendingTaskStatus::Completed, PendingTaskStatus::Cancelled], true)) {
+                $this->isProcessMode = false;
             }
 
             session()->flash('toast', [

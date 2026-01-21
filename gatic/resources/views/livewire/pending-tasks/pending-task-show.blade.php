@@ -41,12 +41,73 @@
                     </div>
                     @if ($task->description)
                         <div class="mt-2">
-                            <strong>Descripcion:</strong>
+                            <strong>Descripción:</strong>
                             <p class="mb-0 text-muted">{{ $task->description }}</p>
                         </div>
                     @endif
                 </div>
             </div>
+
+            {{-- Lock Status Banner (visible to third parties) --}}
+            @if ($this->canProcess())
+                @php
+                    $currentUserId = auth()->id();
+                    $hasActiveLock = $task->hasActiveLock();
+                    $isMyLock = $task->isLockedBy($currentUserId);
+                    $isOtherLock = $hasActiveLock && !$isMyLock;
+                @endphp
+                <div class="alert {{ $isOtherLock ? 'alert-warning' : ($isMyLock ? 'alert-info' : 'alert-secondary') }} mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        @if ($isMyLock)
+                            <i class="bi bi-lock-fill"></i>
+                            <span>
+                                <strong>Bloqueada por ti</strong>
+                                @if ($task->locked_at)
+                                    <span class="text-muted small ms-2">desde {{ $task->locked_at->diffForHumans() }}</span>
+                                @endif
+                            </span>
+                        @elseif ($isOtherLock)
+                            <i class="bi bi-lock-fill"></i>
+                            <span>
+                                <strong>Bloqueada por {{ $task->lockedBy?->name ?? 'otro usuario' }}</strong>
+                                @if ($task->locked_at)
+                                    <span class="text-muted small ms-2">desde {{ $task->locked_at->diffForHumans() }}</span>
+                                @endif
+                            </span>
+                        @else
+                            <i class="bi bi-unlock"></i>
+                            <span><strong>Libre</strong> - Nadie está procesando esta tarea</span>
+                        @endif
+                    </div>
+                    @if ($isMyLock)
+                        <span class="badge bg-primary">Tu tienes el lock</span>
+                    @elseif ($isOtherLock)
+                        <span class="badge bg-warning text-dark">Solo lectura</span>
+                    @endif
+                </div>
+            @endif
+
+            {{-- Lock Lost Banner (shown when user loses lock during processing) --}}
+            @if ($lockLost)
+                <div class="alert alert-danger mb-4">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <span>
+                                <strong>Lock perdido</strong> - Tu sesión de procesamiento ha expirado o alguien más reclamó la tarea.
+                            </span>
+                        </div>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-danger"
+                            wire:click="retryLock"
+                        >
+                            <i class="bi bi-arrow-repeat me-1"></i>
+                            Reintentar claim
+                        </button>
+                    </div>
+                </div>
+            @endif
 
             {{-- Finalize Result Summary --}}
             @if ($finalizeResult)
@@ -133,10 +194,14 @@
                                 </button>
                             @endif
                         @elseif ($this->canProcess() && !$isProcessMode)
+                            @php
+                                $canStartProcess = !$task->isLockedByOther(auth()->id());
+                            @endphp
                             <button
                                 type="button"
                                 class="btn btn-sm btn-primary"
                                 wire:click="enterProcessMode"
+                                @if (!$canStartProcess) disabled title="Bloqueada por otro usuario" @endif
                             >
                                 Procesar
                             </button>
@@ -145,6 +210,7 @@
                                 type="button"
                                 class="btn btn-sm btn-success"
                                 wire:click="showFinalizeConfirm"
+                                @if ($lockLost || !$hasLock) disabled title="No tienes el lock" @endif
                             >
                                 Finalizar
                             </button>
@@ -229,6 +295,10 @@
                                                     @if ($line->line_status->value === 'applied')
                                                         <span class="text-success small">
                                                             <i class="bi bi-check-circle"></i> Aplicado
+                                                        </span>
+                                                    @elseif ($lockLost || !$hasLock)
+                                                        <span class="text-muted small">
+                                                            <i class="bi bi-lock"></i> Sin lock
                                                         </span>
                                                     @else
                                                         <div class="btn-group btn-group-sm">
@@ -644,7 +714,7 @@
                         <button type="button" class="btn-close" wire:click="hideFinalizeConfirm"></button>
                     </div>
                     <div class="modal-body">
-                        <p>Estas a punto de finalizar esta tarea. Se aplicaran los movimientos de los renglones validos.</p>
+                        <p>Estás a punto de finalizar esta tarea. Se aplicarán los movimientos de los renglones válidos.</p>
 
                         <div class="alert alert-info mb-0">
                             <strong>Resumen:</strong>
@@ -656,13 +726,13 @@
                                 @if ($lineStatusSummary['applied'] > 0)
                                     <li>
                                         <strong>{{ $lineStatusSummary['applied'] }}</strong>
-                                        renglones ya aplicados (se omitiran)
+                                        renglones ya aplicados (se omitirán)
                                     </li>
                                 @endif
                                 @if ($lineStatusSummary['error'] > 0)
                                     <li class="text-danger">
                                         <strong>{{ $lineStatusSummary['error'] }}</strong>
-                                        renglones con error (se intentaran aplicar)
+                                        renglones con error (se intentarán aplicar)
                                     </li>
                                 @endif
                             </ul>
@@ -691,5 +761,77 @@
             </div>
         </div>
     @endif
+    @endif
+
+    {{-- Heartbeat script for lock renewal with idle guard --}}
+    @if ($isProcessMode && $hasLock)
+        @script
+        <script>
+
+                const HEARTBEAT_INTERVAL_MS = {{ (int) config('gatic.ui.polling.locks_heartbeat_interval_s', 10) * 1000 }};
+                const IDLE_GUARD_MS = {{ (int) config('gatic.pending_tasks.locks.idle_guard_s', 120) * 1000 }};
+
+                let lastActivityAt = Date.now();
+                let heartbeatTimer = null;
+
+                // Track user activity with debounce
+                const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+
+                function updateActivity() {
+                    lastActivityAt = Date.now();
+                }
+
+                activityEvents.forEach(event => {
+                    document.addEventListener(event, updateActivity, { passive: true });
+                });
+
+                function sendHeartbeat() {
+                    // Only send if tab is visible and user was active recently
+                    if (document.visibilityState !== 'visible') {
+                        return;
+                    }
+
+                    const idleTime = Date.now() - lastActivityAt;
+                    if (idleTime > IDLE_GUARD_MS) {
+                        // User is idle - don't renew lock
+                        return;
+                    }
+
+                    // Call Livewire heartbeat method
+                    $wire.heartbeat();
+                }
+
+                // Start heartbeat interval
+                heartbeatTimer = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+
+                // Cleanup when Livewire removes/replaces this component's DOM
+                const componentRoot = $wire.$el;
+                let unhook = null;
+
+                function cleanup() {
+                    if (heartbeatTimer) {
+                        clearInterval(heartbeatTimer);
+                        heartbeatTimer = null;
+                    }
+
+                    activityEvents.forEach(event => {
+                        document.removeEventListener(event, updateActivity);
+                    });
+
+                    if (typeof unhook === 'function') {
+                        unhook();
+                        unhook = null;
+                    }
+                }
+
+                if (window.Livewire?.hook) {
+                    unhook = Livewire.hook('morph.removing', ({ el }) => {
+                        if (el !== componentRoot) return;
+                        cleanup();
+                    });
+                }
+
+        </script>
+        @endscript
     @endif
 </div>

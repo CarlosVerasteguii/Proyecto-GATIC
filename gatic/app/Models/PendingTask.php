@@ -40,10 +40,6 @@ class PendingTask extends Model
         'description',
         'status',
         'creator_user_id',
-        'locked_by_user_id',
-        'locked_at',
-        'heartbeat_at',
-        'expires_at',
     ];
 
     /**
@@ -108,6 +104,32 @@ class PendingTask extends Model
         // ⚠️ N+1 WARNING: This triggers a query for every task if accessed directly.
         // Use withCount('lines') and access $task->lines_count instead when possible.
         return $this->lines()->count();
+    }
+
+    /**
+     * Check if the task has an active lock (not expired)
+     */
+    public function hasActiveLock(): bool
+    {
+        return $this->locked_by_user_id !== null
+            && $this->expires_at !== null
+            && $this->expires_at->gt(now());
+    }
+
+    /**
+     * Check if a specific user owns the active lock
+     */
+    public function isLockedBy(int $userId): bool
+    {
+        return $this->hasActiveLock() && $this->locked_by_user_id === $userId;
+    }
+
+    /**
+     * Check if the task is locked by someone else (not the given user)
+     */
+    public function isLockedByOther(int $userId): bool
+    {
+        return $this->hasActiveLock() && $this->locked_by_user_id !== $userId;
     }
 
     /**

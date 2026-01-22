@@ -90,7 +90,7 @@ Version BMAD (copia): `_bmad-output/project-context.md`.
   - NO indexar/mezclar Tareas Pendientes en busqueda de inventario (MVP)
 - Locks (Tareas Pendientes):
   - claim al entrar a "Procesar" (preventivo)
-  - timeout rolling 15m + lease TTL 3m + idle guard 2m + heartbeat 10s
+  - lease TTL 3m (expires_at) + idle guard 2m + heartbeat 10s (MVP)
   - Admin puede forzar liberacion/reclamo (auditado)
 - Soft-delete: retencion indefinida hasta vaciar papelera (Admin).
 

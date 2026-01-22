@@ -99,7 +99,7 @@ development_status:
   7-1-crear-tarea-pendiente-y-administrar-renglones: done
   7-2-captura-de-renglones-serializado-cantidad-con-validaciones-minimas: done
   7-3-procesamiento-por-renglon-edicion-estados-y-finalizacion-parcial: done
-  7-4-locks-de-concurrencia-claim-estado-visible-heartbeat-ttl: backlog
+  7-4-locks-de-concurrencia-claim-estado-visible-heartbeat-ttl: done
   7-5-admin-puede-liberar-forzar-reclamo-de-lock: backlog
   epic-7-retrospective: optional
 

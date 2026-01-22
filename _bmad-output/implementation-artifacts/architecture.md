@@ -50,7 +50,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 - Operabilidad: error amigable con ID; detalle técnico solo Admin.
 - Auditoría “best effort”: si falla, NO bloquea la operación principal (registrar internamente).
 - Adjuntos: nombre saneado, almacenar UUID, mostrar nombre original; control estricto de acceso.
-- Locks: evitar bloqueos eternos (timeout rolling ~15m, lease TTL ~3m, idle guard ~2m, force-release Admin).
+- Locks: evitar bloqueos eternos (lease TTL ~3m, idle guard ~2m, force-release Admin). (MVP)
 
 **Scale & Complexity:**
 - Primary domain: web app intranet (operación TI) con workflows operativos.

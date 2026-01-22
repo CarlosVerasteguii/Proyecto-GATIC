@@ -55,34 +55,70 @@
                     $hasActiveLock = $task->hasActiveLock();
                     $isMyLock = $task->isLockedBy($currentUserId);
                     $isOtherLock = $hasActiveLock && !$isMyLock;
+                    $isAdmin = $this->isAdmin();
                 @endphp
-                <div class="alert {{ $isOtherLock ? 'alert-warning' : ($isMyLock ? 'alert-info' : 'alert-secondary') }} mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <div class="d-flex align-items-center gap-2">
-                        @if ($isMyLock)
-                            <i class="bi bi-lock-fill"></i>
-                            <span>
-                                <strong>Bloqueada por ti</strong>
-                                @if ($task->locked_at)
-                                    <span class="text-muted small ms-2">desde {{ $task->locked_at->diffForHumans() }}</span>
-                                @endif
-                            </span>
-                        @elseif ($isOtherLock)
-                            <i class="bi bi-lock-fill"></i>
-                            <span>
-                                <strong>Bloqueada por {{ $task->lockedBy?->name ?? 'otro usuario' }}</strong>
-                                @if ($task->locked_at)
-                                    <span class="text-muted small ms-2">desde {{ $task->locked_at->diffForHumans() }}</span>
-                                @endif
-                            </span>
-                        @else
-                            <i class="bi bi-unlock"></i>
-                            <span><strong>Libre</strong> - Nadie está procesando esta tarea</span>
-                        @endif
+                <div class="alert {{ $isOtherLock ? 'alert-warning' : ($isMyLock ? 'alert-info' : 'alert-secondary') }} mb-4">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            @if ($isMyLock)
+                                <i class="bi bi-lock-fill"></i>
+                                <span>
+                                    <strong>Bloqueada por ti</strong>
+                                    @if ($task->locked_at)
+                                        <span class="text-muted small ms-2">desde {{ $task->locked_at->diffForHumans() }}</span>
+                                    @endif
+                                </span>
+                            @elseif ($isOtherLock)
+                                <i class="bi bi-lock-fill"></i>
+                                <span>
+                                    <strong>Bloqueada por {{ $task->lockedBy?->name ?? 'otro usuario' }}</strong>
+                                    @if ($task->locked_at)
+                                        <span class="text-muted small ms-2">desde {{ $task->locked_at->diffForHumans() }}</span>
+                                    @endif
+                                </span>
+                            @else
+                                <i class="bi bi-unlock"></i>
+                                <span><strong>Libre</strong> - Nadie está procesando esta tarea</span>
+                            @endif
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            @if ($isMyLock)
+                                <span class="badge bg-primary">Tú tienes el lock</span>
+                            @elseif ($isOtherLock)
+                                <span class="badge bg-warning text-dark">Solo lectura</span>
+                            @endif
+                        </div>
                     </div>
-                    @if ($isMyLock)
-                        <span class="badge bg-primary">Tu tienes el lock</span>
-                    @elseif ($isOtherLock)
-                        <span class="badge bg-warning text-dark">Solo lectura</span>
+
+                    {{-- Admin Override Actions (AC1-AC4) --}}
+                    @if ($isAdmin && $isOtherLock)
+                        <hr class="my-2">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check me-1"></i>
+                                Como Admin, puedes forzar acciones sobre este lock.
+                            </small>
+                            <div class="d-flex gap-2">
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-warning"
+                                    wire:click="forceReleaseLock"
+                                    wire:confirm="¿Forzar liberación? El usuario {{ $task->lockedBy?->name ?? 'actual' }} perderá el lock."
+                                >
+                                    <i class="bi bi-unlock me-1"></i>
+                                    Forzar liberación
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-danger"
+                                    wire:click="forceClaimLock"
+                                    wire:confirm="¿Forzar reclamo? Tomarás el control del lock y el usuario {{ $task->lockedBy?->name ?? 'actual' }} lo perderá."
+                                >
+                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                    Forzar reclamo
+                                </button>
+                            </div>
+                        </div>
                     @endif
                 </div>
             @endif

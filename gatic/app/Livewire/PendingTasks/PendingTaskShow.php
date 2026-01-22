@@ -8,6 +8,8 @@ use App\Actions\PendingTasks\AddSerializedLinesToTask;
 use App\Actions\PendingTasks\ClearLineError;
 use App\Actions\PendingTasks\Concerns\ValidatesTaskLines;
 use App\Actions\PendingTasks\FinalizePendingTask;
+use App\Actions\PendingTasks\ForceClaimPendingTaskLock;
+use App\Actions\PendingTasks\ForceReleasePendingTaskLock;
 use App\Actions\PendingTasks\HeartbeatPendingTaskLock;
 use App\Actions\PendingTasks\MarkTaskAsReady;
 use App\Actions\PendingTasks\ReleasePendingTaskLock;
@@ -17,6 +19,7 @@ use App\Actions\PendingTasks\ValidatePendingTaskLine;
 use App\Enums\PendingTaskLineStatus;
 use App\Enums\PendingTaskLineType;
 use App\Enums\PendingTaskStatus;
+use App\Enums\UserRole;
 use App\Models\PendingTask;
 use App\Models\PendingTaskLine;
 use App\Models\Product;
@@ -961,7 +964,7 @@ class PendingTaskShow extends Component
 
         /** @var \App\Models\User|null $user */
         $user = Auth::user();
-        if ($user && ($user->role ?? null) === 'Admin') {
+        if ($user && $user->role === UserRole::Admin) {
             $message .= ' '.$e->getMessage();
         }
 
@@ -992,6 +995,92 @@ class PendingTaskShow extends Component
         }
 
         return $summary;
+    }
+
+    // =========================================================================
+    // Admin Override Methods (Story 7.5)
+    // =========================================================================
+
+    /**
+     * Check if current user is Admin
+     */
+    public function isAdmin(): bool
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+
+        return $user?->isAdmin() ?? false;
+    }
+
+    /**
+     * Admin-only: Force release the lock (AC1)
+     */
+    public function forceReleaseLock(): void
+    {
+        Gate::authorize('admin-only');
+
+        if (! $this->task) {
+            return;
+        }
+
+        /** @var int $userId */
+        $userId = Auth::id();
+
+        try {
+            $action = new ForceReleasePendingTaskLock;
+            $result = $action->execute($this->pendingTask, $userId);
+
+            $this->loadTask();
+
+            session()->flash('toast', [
+                'type' => 'success',
+                'message' => $result['message'],
+            ]);
+        } catch (ValidationException $e) {
+            session()->flash('toast', [
+                'type' => 'error',
+                'message' => $e->errors()['pending_task_id'][0] ?? $e->getMessage(),
+            ]);
+        } catch (\Throwable $e) {
+            $this->flashUnexpectedError($e, 'forzar liberacion del lock');
+        }
+    }
+
+    /**
+     * Admin-only: Force claim the lock (AC2)
+     */
+    public function forceClaimLock(): void
+    {
+        Gate::authorize('admin-only');
+
+        if (! $this->task) {
+            return;
+        }
+
+        /** @var int $userId */
+        $userId = Auth::id();
+
+        try {
+            $action = new ForceClaimPendingTaskLock;
+            $result = $action->execute($this->pendingTask, $userId);
+
+            // Update local state
+            $this->hasLock = true;
+            $this->lockLost = false;
+            $this->loadTask();
+
+            session()->flash('toast', [
+                'type' => 'success',
+                'message' => $result['message'],
+            ]);
+        } catch (ValidationException $e) {
+            session()->flash('toast', [
+                'type' => 'error',
+                'message' => $e->errors()['pending_task_id'][0] ?? $e->getMessage(),
+            ]);
+        } catch (\Throwable $e) {
+            $this->flashUnexpectedError($e, 'forzar reclamo del lock');
+        }
     }
 
     public function render(): View

@@ -76,7 +76,7 @@ Semántica QTY (inventario):
 Objetivo: evitar que dos editores procesen la misma Tarea simultáneamente.
 
 - El lock se adquiere al hacer clic en **“Procesar”** (preventivo, antes del formulario).
-- Timeout: **15 minutos** (rolling por actividad/heartbeat).
+- Timeout (MVP): **lease TTL 3 min** (`expires_at`) renovado por heartbeat cuando hay actividad real.
 - Heartbeat: cada **10s** renueva lock si la pestaña está activa.
 - Unlock “best effort” al cerrar pestaña/ventana + fallback por timeout.
 - Para liberar rápido si se cierra sin unlock: **lease TTL 3 min** renovado por heartbeat.

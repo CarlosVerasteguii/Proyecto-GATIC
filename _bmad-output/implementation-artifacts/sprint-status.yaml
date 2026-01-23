@@ -95,16 +95,16 @@ development_status:
   6-2-filtros-de-inventario-por-catalogos-y-estado-disponibilidad: done
   epic-6-retrospective: done
 
-  epic-7: in-progress
+  epic-7: done
   7-1-crear-tarea-pendiente-y-administrar-renglones: done
   7-2-captura-de-renglones-serializado-cantidad-con-validaciones-minimas: done
   7-3-procesamiento-por-renglon-edicion-estados-y-finalizacion-parcial: done
   7-4-locks-de-concurrencia-claim-estado-visible-heartbeat-ttl: done
   7-5-admin-puede-liberar-forzar-reclamo-de-lock: done
-  epic-7-retrospective: optional
+  epic-7-retrospective: done
 
-  epic-8: backlog
-  8-1-auditoria-consultable-best-effort: backlog
+  epic-8: in-progress
+  8-1-auditoria-consultable-best-effort: ready-for-dev
   8-2-notas-manuales-en-entidades-relevantes: backlog
   8-3-adjuntos-seguros-con-control-de-acceso: backlog
   8-4-papelera-soft-delete-restaurar-purgar: backlog

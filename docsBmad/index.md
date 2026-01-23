@@ -3,7 +3,7 @@
 **Type:** Planning + BMAD scaffolding (pre-code)
 **Primary Language:** Markdown (target: PHP/Laravel)
 **Architecture:** Laravel 11 monolith + Livewire 3
-**Last Updated:** 2025-12-27
+**Last Updated:** 2026-01-23
 
 ## Project Overview
 
@@ -16,6 +16,9 @@ Este repo hoy contiene artefactos de planificacion (brainstorming/backlog) y el 
 - [Gates 0-5 Execution Plan](./gates-execution.md) - Vista opcional para “GitHub bonito” (Milestones/Project); el backlog vive en BMAD
 - [Project Overview](./project-overview.md) - Resumen ejecutivo + stack objetivo
 - [Source Tree Analysis](./source-tree-analysis.md) - Estructura del repo y donde vive cada artefacto
+- [PO Acceptance (Sign-off)](./process/po-acceptance.md) - Proceso de aceptación por épica (evita arrastres)
+- [Audit Use Cases](./product/audit-use-cases.md) - Qué auditar (MVP) y qué NO auditar
+- [Dev Pre-flight Checklist](./checklists/dev-preflight.md) - Checklist antes de implementar stories
 
 ## Sources
 

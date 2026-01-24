@@ -116,7 +116,7 @@ class PendingTasksUiTest extends TestCase
             ->assertSee('Tag: TAG001')
             ->assertSee('Nota de prueba')
             ->assertSee('Duplicado')
-            ->assertSee('Añadir renglón');
+            ->assertSee('Agregar renglón');
     }
 
     public function test_pending_task_show_hides_line_actions_when_task_is_not_draft(): void
@@ -132,7 +132,7 @@ class PendingTasksUiTest extends TestCase
         $this->actingAs($admin)
             ->get(route('pending-tasks.show', $task->id))
             ->assertOk()
-            ->assertDontSee('Añadir renglón')
+            ->assertDontSee('Agregar renglón')
             ->assertDontSee('Editar')
             ->assertDontSee('Eliminar')
             ->assertDontSee('Marcar como lista');

@@ -1,6 +1,6 @@
 # Story 8.1: Auditoría consultable (best effort)
 
-Status: ready-for-dev
+Status: done
 
 Story Key: 8-1-auditoria-consultable-best-effort  
 Tracking: _bmad-output/implementation-artifacts/sprint-status.yaml  
@@ -70,25 +70,35 @@ Esta story implementa un **módulo de auditoría consultable** (cross-cutting) a
 
 ## Tasks / Subtasks
 
-- [ ] Modelo y persistencia de auditoría (AC: 1,2)
-  - [ ] Crear migración `audit_logs` con índices para consulta (created_at, actor_user_id, action, subject_type+subject_id)
-  - [ ] Crear `App\\Models\\AuditLog` (casts de `context` a array)
-  - [ ] Definir convención estable de `action` (strings constantes / enum ligera)
-- [ ] Registro best-effort vía job (AC: 2)
-  - [ ] Crear `App\\Jobs\\RecordAuditLog` (queue `database`, no-blocking, swallow exceptions)
-  - [ ] Crear helper/servicio `App\\Support\\Audit\\AuditRecorder` para estandarizar payload y dispatch (`->afterCommit()` cuando aplique)
-- [ ] Instrumentación de acciones clave (AC: 1,5)
-  - [ ] PendingTasks: integrar auditoría persistente en `ForceReleasePendingTaskLock` y `ForceClaimPendingTaskLock` (mantener fallback a `Log::info` como last resort)
-  - [ ] Inventory adjustments: emitir evento tras crear `InventoryAdjustment` (+ subject_type/id de `InventoryAdjustmentEntry`)
-  - [ ] Movements: emitir evento tras crear `AssetMovement` / `ProductQuantityMovement` (subject_type/id = movimiento; incluir `asset_id/product_id/employee_id`)
-- [ ] UI Admin: Auditoría consultable (AC: 3,4)
-  - [ ] Ruta protegida con `can:admin-only` (p.ej. `/admin/audit`)
-  - [ ] Livewire `App\\Livewire\\Admin\\AuditLogsIndex` con filtros, paginación y vista detalle
-  - [ ] UX: tabla densa, “Actualizado hace X”, y si consulta puede tardar >3s aplicar `<x-ui.long-request />`
-- [ ] Pruebas (AC: 1–5)
-  - [ ] Feature tests: RBAC (Editor/Lector bloqueados), Admin ve lista
-  - [ ] Tests de dispatch/registro: acciones instrumentadas emiten job (usar `Queue::fake()`), y/o persisten registros en DB
-  - [ ] Regression: si alguna query toca soft-delete indirectamente, agregar test de exclusión `deleted_at` (checklist)
+- [x] Modelo y persistencia de auditoría (AC: 1,2)
+  - [x] Crear migración `audit_logs` con índices para consulta (created_at, actor_user_id, action, subject_type+subject_id)
+  - [x] Crear `App\\Models\\AuditLog` (casts de `context` a array)
+  - [x] Definir convención estable de `action` (strings constantes / enum ligera)
+- [x] Registro best-effort vía job (AC: 2)
+  - [x] Crear `App\\Jobs\\RecordAuditLog` (queue `database`, no-blocking, swallow exceptions)
+  - [x] Crear helper/servicio `App\\Support\\Audit\\AuditRecorder` para estandarizar payload y dispatch (`->afterCommit()` cuando aplique)
+- [x] Instrumentación de acciones clave (AC: 1,5)
+  - [x] PendingTasks: integrar auditoría persistente en `ForceReleasePendingTaskLock` y `ForceClaimPendingTaskLock` (mantener fallback a `Log::info` como last resort)
+  - [x] Inventory adjustments: emitir evento tras crear `InventoryAdjustment` (+ subject_type/id de `InventoryAdjustmentEntry`)
+  - [x] Movements: emitir evento tras crear `AssetMovement` / `ProductQuantityMovement` (subject_type/id = movimiento; incluir `asset_id/product_id/employee_id`)
+- [x] UI Admin: Auditoría consultable (AC: 3,4)
+  - [x] Ruta protegida con `can:admin-only` (p.ej. `/admin/audit`)
+  - [x] Livewire `App\\Livewire\\Admin\\AuditLogsIndex` con filtros, paginación y vista detalle
+  - [x] UX: tabla densa, "Actualizado hace X", y si consulta puede tardar >3s aplicar `<x-ui.long-request />`
+- [x] Pruebas (AC: 1–5)
+  - [x] Feature tests: RBAC (Editor/Lector bloqueados), Admin ve lista
+  - [x] Tests de dispatch/registro: acciones instrumentadas emiten job (usar `Queue::fake()`), y/o persisten registros en DB
+  - [x] Regression: no aplica soft-delete en auditoría (modelo no usa SoftDeletes)
+
+### Review Follow-ups (AI)
+
+- [x] [AI-Review][HIGH] Implementar UX: "Actualizado hace X" + `<x-ui.long-request />` en el módulo de auditoría. [`gatic/resources/views/livewire/admin/audit/audit-logs-index.blade.php:1`]
+- [x] [AI-Review][HIGH] Corregir fallback de logs en overrides de locks: `Log::info` como "last resort" solo si falla persistencia de auditoría. [`gatic/app/Actions/PendingTasks/ForceReleasePendingTaskLock.php:107`, `gatic/app/Actions/PendingTasks/ForceClaimPendingTaskLock.php:108`]
+- [x] [AI-Review][HIGH] Corregir configuración de queue: eliminar `onQueue('database')` para no dejar jobs en una cola no consumida. [`gatic/app/Jobs/RecordAuditLog.php:1`]
+- [x] [AI-Review][HIGH] Ajustar `created_at` en payload: usar `toDateTimeString()` y parse robusto en el job. [`gatic/app/Support/Audit/AuditRecorder.php:1`, `gatic/app/Jobs/RecordAuditLog.php:1`]
+- [x] [AI-Review][MEDIUM] Enforzar allowlist/truncado de `context` según `docsBmad/product/audit-use-cases.md` (usar `summary`/`reason`). [`gatic/app/Support/Audit/AuditRecorder.php:1`]
+- [x] [AI-Review][MEDIUM] Endurecer tests de UI (evitar falsos positivos por dropdown/acentos/ids hardcodeados). [`gatic/tests/Feature/Audit/AuditLogsIndexTest.php:1`]
+- [x] [AI-Review][MEDIUM] Documentar tracking y cambios extra en el File List (incluye `sprint-status.yaml`). [`_bmad-output/implementation-artifacts/8-1-auditoria-consultable-best-effort.md:206`]
 
 ## Dev Notes
 
@@ -192,9 +202,38 @@ GPT-5.2 (Codex CLI)
 
 - Story creada con contexto de arquitectura + patrones existentes (Actions/Livewire/Jobs).
   - Nota: esta story está en estado `ready-for-dev`; implementación ocurre en `dev-story`.
+- 2026-01-23: Fixes aplicados post-review (UX, allowlist de context, queue, fechas, tests). Suite completo verde.
 
 ### File List
 
+**Creados:**
+- `gatic/database/migrations/2026_01_22_000000_create_audit_logs_table.php` — migración con índices optimizados
+- `gatic/app/Models/AuditLog.php` — modelo con constantes de action y accessors
+- `gatic/app/Jobs/RecordAuditLog.php` — job best-effort (swallows exceptions, single try)
+- `gatic/app/Support/Audit/AuditRecorder.php` — helper para dispatch estandarizado
+- `gatic/app/Livewire/Admin/Audit/AuditLogsIndex.php` — componente Livewire con filtros y detalle
+- `gatic/resources/views/livewire/admin/audit/audit-logs-index.blade.php` — vista Bootstrap 5
+- `gatic/tests/Feature/Audit/AuditRbacTest.php` — tests RBAC (Admin OK, Editor/Lector 403)
+- `gatic/tests/Feature/Audit/AuditBestEffortTest.php` — tests de job, recorder, exception swallowing
+- `gatic/tests/Feature/Audit/AuditInstrumentationTest.php` — tests de 8 acciones instrumentadas
+- `gatic/tests/Feature/Audit/AuditLogsIndexTest.php` — tests de UI (filtros, paginación, detalle)
+
+**Modificados:**
+- `gatic/routes/web.php` — agregada ruta `/admin/audit` con `can:admin-only`
+- `gatic/app/Actions/PendingTasks/ForceReleasePendingTaskLock.php` — instrumentación auditoría
+- `gatic/app/Actions/PendingTasks/ForceClaimPendingTaskLock.php` — instrumentación auditoría
+- `gatic/app/Actions/Inventory/Adjustments/ApplyProductQuantityAdjustment.php` — instrumentación auditoría
+- `gatic/app/Actions/Inventory/Adjustments/ApplyAssetAdjustment.php` — instrumentación auditoría
+- `gatic/app/Actions/Movements/Assets/AssignAssetToEmployee.php` — instrumentación auditoría
+- `gatic/app/Actions/Movements/Assets/LoanAssetToEmployee.php` — instrumentación auditoría
+- `gatic/app/Actions/Movements/Assets/ReturnLoanedAsset.php` — instrumentación auditoría
+- `gatic/app/Actions/Movements/Products/RegisterProductQuantityMovement.php` — instrumentación auditoría
+- `gatic/tests/Feature/PendingTasks/PendingTaskLockOverrideTest.php` — actualizado para validar auditoría persistente (job) en vez de `Log::info`
+- `gatic/resources/views/livewire/pending-tasks/pending-task-show.blade.php` — copy fix ("Agregar renglón")
+- `gatic/tests/Feature/PendingTasks/PendingTasksUiTest.php` — expectations alineadas a copy actual
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — story status sync
+
+**Docs:**
 - `_bmad-output/implementation-artifacts/8-1-auditoria-consultable-best-effort.md` (this file)
 
 ## Project Context Reference (must-read)
@@ -214,7 +253,27 @@ GPT-5.2 (Codex CLI)
 - `_bmad-output/implementation-artifacts/7-5-admin-puede-liberar-forzar-reclamo-de-lock.md`
   - Ejemplo existente de auditoría best-effort (logs) a reutilizar/elevar a persistente.
 
+## Senior Developer Review (AI)
+
+Date: 2026-01-23  
+Outcome: **Approved** (cambios aplicados y tests verdes)
+
+### Cambios aplicados
+
+- UX auditoría: se agregó `<x-ui.long-request />` y "Actualizado hace X".
+- Queue: se eliminó `onQueue('database')`.
+- Payload/fechas: `created_at` se genera con `toDateTimeString()` y el job hace parse seguro.
+- Contexto: se centralizó allowlist + truncado en `AuditRecorder` y se migró a `summary`/`reason`.
+- Tests: se corrigieron falsos positivos/fragilidad (y el suite completo quedó verde).
+
 ## Story Completion Status
 
-- Status: **ready-for-dev**
-- Completion note: **Ultimate context engine analysis completed — comprehensive developer guide created**
+- Status: **done**
+- Completion note: **Code review + fixes aplicados. Suite completo OK (443 tests) el 2026-01-23.**
+
+## Change Log
+
+| Date       | Author      | Changes                                                                                      |
+|------------|-------------|----------------------------------------------------------------------------------------------|
+| 2026-01-22 | Claude Opus | Implementación completa de Story 8.1: modelo, job best-effort, 8 acciones instrumentadas, UI Admin con filtros, 34 tests |
+| 2026-01-23 | Codex (AI Review) | Code review + fixes: UX ("Actualizado hace X" + long-request), allowlist de context, queue, fechas, tests; status done |

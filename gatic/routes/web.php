@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Admin\Audit\AuditLogsIndex;
 use App\Livewire\Admin\ErrorReports\ErrorReportsLookup;
 use App\Livewire\Admin\Users\UserForm;
 use App\Livewire\Admin\Users\UsersIndex;
@@ -54,6 +55,7 @@ Route::middleware(['auth', 'active', 'can:admin-only'])
     ->name('admin.')
     ->group(function () {
         Route::get('/error-reports', ErrorReportsLookup::class)->name('error-reports.lookup');
+        Route::get('/audit', AuditLogsIndex::class)->name('audit.index');
     });
 
 Route::middleware(['auth', 'active', 'can:catalogs.manage'])

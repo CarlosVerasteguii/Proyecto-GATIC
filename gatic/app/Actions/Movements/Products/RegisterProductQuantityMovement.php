@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Actions\Movements\Products;
 
 use App\Actions\Inventory\Products\LockQuantityProduct;
+use App\Models\AuditLog;
 use App\Models\ProductQuantityMovement;
+use App\Support\Audit\AuditRecorder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -74,7 +76,7 @@ class RegisterProductQuantityMovement
             $product->save();
 
             // Create movement record
-            return ProductQuantityMovement::create([
+            $movement = ProductQuantityMovement::create([
                 'product_id' => $product->id,
                 'employee_id' => $data['employee_id'],
                 'actor_user_id' => $data['actor_user_id'],
@@ -84,6 +86,21 @@ class RegisterProductQuantityMovement
                 'qty_after' => $qtyAfter,
                 'note' => $data['note'],
             ]);
+
+            // Best-effort audit (AC1, AC2, AC5)
+            AuditRecorder::record(
+                action: AuditLog::ACTION_PRODUCT_QTY_REGISTER,
+                subjectType: ProductQuantityMovement::class,
+                subjectId: $movement->id,
+                actorUserId: $data['actor_user_id'],
+                context: [
+                    'product_id' => $product->id,
+                    'employee_id' => $data['employee_id'],
+                    'summary' => "direction={$direction}; qty={$qty}; qty_total: {$qtyBefore} -> {$qtyAfter}",
+                ]
+            );
+
+            return $movement;
         });
     }
 }

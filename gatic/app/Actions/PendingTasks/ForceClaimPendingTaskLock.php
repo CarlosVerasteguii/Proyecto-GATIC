@@ -2,7 +2,9 @@
 
 namespace App\Actions\PendingTasks;
 
+use App\Models\AuditLog;
 use App\Models\PendingTask;
+use App\Support\Audit\AuditRecorder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -68,6 +70,7 @@ class ForceClaimPendingTaskLock
                 'new_locked_at' => $task->locked_at->toIso8601String(),
                 'new_expires_at' => $task->expires_at->toIso8601String(),
                 'timestamp' => $timestamp,
+                'summary' => $isRenewal ? 'force_claim: renewal' : 'force_claim: claimed',
             ]);
 
             $message = $isRenewal
@@ -99,10 +102,29 @@ class ForceClaimPendingTaskLock
 
     private function auditOverride(array $context): void
     {
+        // Persistent audit via job (AC1, AC2).
+        // If this fails, fallback to Log::info as a last resort (Story 8.1).
+        $persisted = false;
+        try {
+            $persisted = AuditRecorder::record(
+                action: AuditLog::ACTION_LOCK_FORCE_CLAIM,
+                subjectType: PendingTask::class,
+                subjectId: (int) $context['pending_task_id'],
+                actorUserId: (int) $context['actor_user_id'],
+                context: $context
+            );
+        } catch (\Throwable) {
+            $persisted = false;
+        }
+
+        if ($persisted) {
+            return;
+        }
+
         try {
             Log::info('PendingTaskLockOverride', $context);
         } catch (\Throwable) {
-            // Best-effort: never block the override if audit fails.
+            // Best-effort: never block the override if logging fails.
         }
     }
 }

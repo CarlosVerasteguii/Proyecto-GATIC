@@ -3,8 +3,10 @@
 namespace App\Actions\Inventory\Adjustments;
 
 use App\Models\Asset;
+use App\Models\AuditLog;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryAdjustmentEntry;
+use App\Support\Audit\AuditRecorder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -49,7 +51,7 @@ class ApplyAssetAdjustment
                 'reason' => $data['reason'],
             ]);
 
-            InventoryAdjustmentEntry::create([
+            $entry = InventoryAdjustmentEntry::create([
                 'inventory_adjustment_id' => $adjustment->id,
                 'subject_type' => Asset::class,
                 'subject_id' => $asset->id,
@@ -58,6 +60,21 @@ class ApplyAssetAdjustment
                 'before' => $before,
                 'after' => $after,
             ]);
+
+            // Best-effort audit (AC1, AC2, AC5)
+            AuditRecorder::record(
+                action: AuditLog::ACTION_INVENTORY_ADJUSTMENT,
+                subjectType: InventoryAdjustmentEntry::class,
+                subjectId: $entry->id,
+                actorUserId: $data['actor_user_id'],
+                context: [
+                    'asset_id' => $asset->id,
+                    'product_id' => $asset->product_id,
+                    'inventory_adjustment_id' => $adjustment->id,
+                    'reason' => $data['reason'],
+                    'summary' => "status: {$before['status']} -> {$after['status']}; location_id: {$before['location_id']} -> {$after['location_id']}",
+                ]
+            );
 
             return $adjustment;
         });

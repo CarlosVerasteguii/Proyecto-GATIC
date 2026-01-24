@@ -1,0 +1,49 @@
+feat(audit): implementacion modulo auditoria best-effort (Story 8.1)
+
+DESCRIPCIÓN DETALLADA:
+=====================
+Se implementa el modulo de auditoria para registrar eventos clave (locks, ajustes, movimientos)
+de forma persistente y consultable por Admin. La auditoria es "best-effort" (no bloqueante)
+y utiliza un job en cola para el registro.
+
+PROCESO DE IMPLEMENTACIÓN Y PRUEBAS:
+====================================
+1. MODELO Y MIGRACION
+   - Tabla unique `audit_logs` con indices optimizados (created_at, actor, action, subject).
+   - Modelo AuditLog con casts y constantes.
+2. JOB Y SUPPORT
+   - `RecordAuditLog` job (swallows exceptions, single try).
+   - `AuditRecorder` helper para dispatch estandarizado (afterCommit).
+3. INSTRUMENTACION
+   - PendingTasks (locks override).
+   - Inventory Adjustments (apply).
+   - Movements (assets & product qty).
+4. UI ADMIN
+   - Modulo Livewire `AuditLogsIndex` protegido (can:admin-only).
+   - Filtros, paginacion, detalle JSON, UX long-request.
+5. PRUEBAS
+   - Feature tests para RBAC, instrumentacion, UI y resiliencia (best-effort).
+   - Verificacion manual completa (ver artifacts/8-1...).
+
+ARCHIVOS MODIFICADOS:
+=====================
+gatic/app/Models/AuditLog.php
+gatic/app/Jobs/RecordAuditLog.php
+gatic/app/Support/Audit/AuditRecorder.php
+gatic/app/Livewire/Admin/Audit/AuditLogsIndex.php
+gatic/resources/views/livewire/admin/audit/audit-logs-index.blade.php
+gatic/database/migrations/2026_01_22_000000_create_audit_logs_table.php
+gatic/tests/Feature/Audit/*
+gatic/routes/web.php
+gatic/app/Actions/*
+
+NOTAS TÉCNICAS:
+===============
+- Use `toDateTimeString` para created_at.
+- Allowlist de context en AuditRecorder.
+- Job sin `onQueue('database')` hardcodeado (usa default).
+
+VERIFICACIÓN:
+=============
+- 36 tests pasados (feature/unit).
+- Validacion manual OK (ver artifacts/8-1...md).

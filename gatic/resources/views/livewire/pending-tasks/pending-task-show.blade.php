@@ -217,7 +217,7 @@
                                 class="btn btn-sm btn-primary"
                                 wire:click="openAddLineModal"
                             >
-                                Agregar renglon
+                                Agregar renglón
                             </button>
                             @if ($task->lines->count() > 0)
                                 <button
@@ -321,7 +321,7 @@
                                                         type="button"
                                                         class="btn btn-sm btn-outline-danger"
                                                         wire:click="removeLine({{ $line->id }})"
-                                                        wire:confirm="Eliminar este renglon?"
+                                                        wire:confirm="Eliminar este renglón?"
                                                     >
                                                         Eliminar
                                                     </button>
@@ -386,7 +386,7 @@
                     @else
                         <p class="text-muted mb-0">
                             @if ($task->isDraft())
-                                No hay renglones. Haz clic en "Agregar renglon" para comenzar.
+                                No hay renglones. Haz clic en "Agregar renglón" para comenzar.
                             @else
                                 No hay renglones en esta tarea.
                             @endif
@@ -404,7 +404,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            {{ $editingLineId ? 'Editar renglon' : 'Agregar renglon' }}
+                            {{ $editingLineId ? 'Editar renglón' : 'Agregar renglón' }}
                         </h5>
                         <button type="button" class="btn-close" wire:click="closeModal"></button>
                     </div>
@@ -436,7 +436,7 @@
 
                                 <div class="col-md-6">
                                     <label for="lineType" class="form-label">
-                                        Tipo de renglon <span class="text-danger">*</span>
+                                        Tipo de renglón <span class="text-danger">*</span>
                                     </label>
                                     <select
                                         id="lineType"

@@ -104,7 +104,7 @@ development_status:
   epic-7-retrospective: done
 
   epic-8: in-progress
-  8-1-auditoria-consultable-best-effort: ready-for-dev
+  8-1-auditoria-consultable-best-effort: done
   8-2-notas-manuales-en-entidades-relevantes: backlog
   8-3-adjuntos-seguros-con-control-de-acceso: backlog
   8-4-papelera-soft-delete-restaurar-purgar: backlog

@@ -3,9 +3,11 @@
 namespace App\Actions\Inventory\Adjustments;
 
 use App\Actions\Inventory\Products\LockQuantityProduct;
+use App\Models\AuditLog;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryAdjustmentEntry;
 use App\Models\Product;
+use App\Support\Audit\AuditRecorder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -38,7 +40,7 @@ class ApplyProductQuantityAdjustment
                 'reason' => $data['reason'],
             ]);
 
-            InventoryAdjustmentEntry::create([
+            $entry = InventoryAdjustmentEntry::create([
                 'inventory_adjustment_id' => $adjustment->id,
                 'subject_type' => Product::class,
                 'subject_id' => $product->id,
@@ -47,6 +49,20 @@ class ApplyProductQuantityAdjustment
                 'before' => $before,
                 'after' => $after,
             ]);
+
+            // Best-effort audit (AC1, AC2, AC5)
+            AuditRecorder::record(
+                action: AuditLog::ACTION_INVENTORY_ADJUSTMENT,
+                subjectType: InventoryAdjustmentEntry::class,
+                subjectId: $entry->id,
+                actorUserId: $data['actor_user_id'],
+                context: [
+                    'product_id' => $product->id,
+                    'inventory_adjustment_id' => $adjustment->id,
+                    'reason' => $data['reason'],
+                    'summary' => "qty_total: {$before['qty_total']} -> {$after['qty_total']}",
+                ]
+            );
 
             return $adjustment;
         });

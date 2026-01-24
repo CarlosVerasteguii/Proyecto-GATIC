@@ -7,7 +7,9 @@ namespace App\Actions\Movements\Assets;
 use App\Exceptions\AssetTransitionException;
 use App\Models\Asset;
 use App\Models\AssetMovement;
+use App\Models\AuditLog;
 use App\Support\Assets\AssetStatusTransitions;
+use App\Support\Audit\AuditRecorder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -52,13 +54,27 @@ class AssignAssetToEmployee
             $asset->current_employee_id = $data['employee_id'];
             $asset->save();
 
-            return AssetMovement::create([
+            $movement = AssetMovement::create([
                 'asset_id' => $asset->id,
                 'employee_id' => $data['employee_id'],
                 'actor_user_id' => $data['actor_user_id'],
                 'type' => AssetMovement::TYPE_ASSIGN,
                 'note' => $data['note'],
             ]);
+
+            // Best-effort audit (AC1, AC2, AC5)
+            AuditRecorder::record(
+                action: AuditLog::ACTION_ASSET_ASSIGN,
+                subjectType: AssetMovement::class,
+                subjectId: $movement->id,
+                actorUserId: $data['actor_user_id'],
+                context: [
+                    'asset_id' => $asset->id,
+                    'employee_id' => $data['employee_id'],
+                ]
+            );
+
+            return $movement;
         });
     }
 }

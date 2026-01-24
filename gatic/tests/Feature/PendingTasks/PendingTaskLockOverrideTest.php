@@ -8,12 +8,14 @@ use App\Actions\PendingTasks\ForceReleasePendingTaskLock;
 use App\Actions\PendingTasks\HeartbeatPendingTaskLock;
 use App\Enums\PendingTaskStatus;
 use App\Enums\PendingTaskType;
+use App\Jobs\RecordAuditLog;
+use App\Models\AuditLog;
 use App\Livewire\PendingTasks\PendingTaskShow;
 use App\Models\PendingTask;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -100,23 +102,24 @@ class PendingTaskLockOverrideTest extends TestCase
 
     public function test_force_release_logs_audit_event(): void
     {
+        Queue::fake();
+
         // Editor acquires lock
         $acquireAction = new AcquirePendingTaskLock;
         $acquireAction->execute($this->task->id, $this->editor->id);
 
-        Log::shouldReceive('info')
-            ->once()
-            ->withArgs(function ($message, $context) {
-                return $message === 'PendingTaskLockOverride'
-                    && $context['action'] === 'force_release'
-                    && $context['pending_task_id'] === $this->task->id
-                    && $context['actor_user_id'] === $this->admin->id
-                    && $context['previous_locked_by_user_id'] === $this->editor->id
-                    && $context['new_locked_by_user_id'] === null;
-            });
-
         $action = new ForceReleasePendingTaskLock;
         $action->execute($this->task->id, $this->admin->id);
+
+        Queue::assertPushed(RecordAuditLog::class, function ($job) {
+            return $job->payload['action'] === AuditLog::ACTION_LOCK_FORCE_RELEASE
+                && $job->payload['subject_type'] === PendingTask::class
+                && $job->payload['subject_id'] === $this->task->id
+                && $job->payload['actor_user_id'] === $this->admin->id
+                && $job->payload['context']['pending_task_id'] === $this->task->id
+                && $job->payload['context']['previous_locked_by_user_id'] === $this->editor->id
+                && $job->payload['context']['new_locked_by_user_id'] === null;
+        });
     }
 
     // =========================================================================
@@ -198,25 +201,24 @@ class PendingTaskLockOverrideTest extends TestCase
 
     public function test_force_claim_logs_audit_event(): void
     {
+        Queue::fake();
+
         // Editor acquires lock
         $acquireAction = new AcquirePendingTaskLock;
         $acquireAction->execute($this->task->id, $this->editor->id);
 
-        Log::shouldReceive('info')
-            ->once()
-            ->withArgs(function ($message, $context) {
-                return $message === 'PendingTaskLockOverride'
-                    && $context['action'] === 'force_claim'
-                    && $context['pending_task_id'] === $this->task->id
-                    && $context['actor_user_id'] === $this->admin->id
-                    && $context['previous_locked_by_user_id'] === $this->editor->id
-                    && $context['new_locked_by_user_id'] === $this->admin->id;
-            });
-
-        Log::shouldReceive('info')->andReturnNull(); // Allow other info logs
-
         $action = new ForceClaimPendingTaskLock;
         $action->execute($this->task->id, $this->admin->id);
+
+        Queue::assertPushed(RecordAuditLog::class, function ($job) {
+            return $job->payload['action'] === AuditLog::ACTION_LOCK_FORCE_CLAIM
+                && $job->payload['subject_type'] === PendingTask::class
+                && $job->payload['subject_id'] === $this->task->id
+                && $job->payload['actor_user_id'] === $this->admin->id
+                && $job->payload['context']['pending_task_id'] === $this->task->id
+                && $job->payload['context']['previous_locked_by_user_id'] === $this->editor->id
+                && $job->payload['context']['new_locked_by_user_id'] === $this->admin->id;
+        });
     }
 
     // =========================================================================

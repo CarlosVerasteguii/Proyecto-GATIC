@@ -129,6 +129,14 @@
                 :noteable-type="\App\Models\Product::class"
                 :noteable-id="$product->id"
             />
+
+            {{-- Attachments panel (Admin/Editor only) --}}
+            @can('attachments.view')
+                <livewire:ui.attachments-panel
+                    :attachable-type="\App\Models\Product::class"
+                    :attachable-id="$product->id"
+                />
+            @endcan
         </div>
     </div>
 </div>

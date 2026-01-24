@@ -73,6 +73,11 @@ class AuditLog extends Model
     // Manual notes (Story 8.2)
     public const ACTION_NOTE_MANUAL_CREATE = 'notes.manual.create';
 
+    // Attachments (Story 8.3)
+    public const ACTION_ATTACHMENT_UPLOAD = 'attachments.upload';
+
+    public const ACTION_ATTACHMENT_DELETE = 'attachments.delete';
+
     /**
      * All defined actions for filtering/validation.
      *
@@ -87,6 +92,8 @@ class AuditLog extends Model
         self::ACTION_ASSET_RETURN,
         self::ACTION_PRODUCT_QTY_REGISTER,
         self::ACTION_NOTE_MANUAL_CREATE,
+        self::ACTION_ATTACHMENT_UPLOAD,
+        self::ACTION_ATTACHMENT_DELETE,
     ];
 
     /**
@@ -103,6 +110,8 @@ class AuditLog extends Model
         self::ACTION_ASSET_RETURN => 'Devolución de activo',
         self::ACTION_PRODUCT_QTY_REGISTER => 'Movimiento de cantidad',
         self::ACTION_NOTE_MANUAL_CREATE => 'Nota manual creada',
+        self::ACTION_ATTACHMENT_UPLOAD => 'Adjunto subido',
+        self::ACTION_ATTACHMENT_DELETE => 'Adjunto eliminado',
     ];
 
     // ──────────────────────────────────────────────────────────────────────────

@@ -2,14 +2,14 @@
 
 namespace App\Livewire\Ui;
 
-use App\Models\AuditLog;
 use App\Models\Asset;
+use App\Models\AuditLog;
 use App\Models\Employee;
 use App\Models\Note;
 use App\Models\Product;
 use App\Support\Audit\AuditRecorder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;

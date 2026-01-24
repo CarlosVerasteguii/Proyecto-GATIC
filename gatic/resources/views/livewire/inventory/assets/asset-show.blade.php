@@ -116,6 +116,14 @@
                 :noteable-type="\App\Models\Asset::class"
                 :noteable-id="$asset->id"
             />
+
+            {{-- Attachments panel (Admin/Editor only) --}}
+            @can('attachments.view')
+                <livewire:ui.attachments-panel
+                    :attachable-type="\App\Models\Asset::class"
+                    :attachable-id="$asset->id"
+                />
+            @endcan
         </div>
     </div>
 </div>

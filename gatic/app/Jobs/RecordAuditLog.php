@@ -26,8 +26,7 @@ class RecordAuditLog implements ShouldQueue
      */
     public function __construct(
         public array $payload
-    ) {
-    }
+    ) {}
 
     /**
      * Execute the job.

@@ -115,4 +115,12 @@ class Employee extends Model
     {
         return $this->morphMany(Note::class, 'noteable');
     }
+
+    /**
+     * @return MorphMany<Attachment, $this>
+     */
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
 }

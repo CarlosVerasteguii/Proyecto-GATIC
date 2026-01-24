@@ -41,6 +41,7 @@ class AuditRecorder
         'inventory_adjustment_id',
         'movement_id',
         'note_id',
+        'attachment_id',
         'summary',
         'reason',
     ];

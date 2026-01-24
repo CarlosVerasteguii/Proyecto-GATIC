@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Attachments\DownloadAttachmentController;
 use App\Livewire\Admin\Audit\AuditLogsIndex;
 use App\Livewire\Admin\ErrorReports\ErrorReportsLookup;
 use App\Livewire\Admin\Users\UserForm;
@@ -163,6 +164,12 @@ Route::middleware(['auth', 'active', 'can:inventory.manage'])
             ->whereNumber('employee')
             ->name('show');
     });
+
+// Attachments download (requires attachments.view gate + entity visibility)
+Route::middleware(['auth', 'active', 'can:attachments.view'])
+    ->get('/attachments/{id}/download', DownloadAttachmentController::class)
+    ->whereNumber('id')
+    ->name('attachments.download');
 
 if (app()->environment(['local', 'testing'])) {
     Route::get('/dev/livewire-smoke', LivewireSmokeTest::class)

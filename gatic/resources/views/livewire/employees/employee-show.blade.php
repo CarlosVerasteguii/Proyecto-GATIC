@@ -115,6 +115,12 @@
                     @endif
                 </div>
             </div>
+
+            {{-- Notes panel --}}
+            <livewire:ui.notes-panel
+                :noteable-type="\App\Models\Employee::class"
+                :noteable-id="$employee->id"
+            />
         </div>
     </div>
 </div>

@@ -40,6 +40,7 @@ class AuditRecorder
         'employee_id',
         'inventory_adjustment_id',
         'movement_id',
+        'note_id',
         'summary',
         'reason',
     ];
@@ -166,17 +167,20 @@ class AuditRecorder
 
                 if ($value === '') {
                     $sanitized[$key] = '';
+
                     continue;
                 }
 
                 $value = Str::limit($value, self::MAX_TEXT_LENGTH, '...');
 
                 $sanitized[$key] = $value;
+
                 continue;
             }
 
             if (is_int($value) || is_bool($value) || is_float($value) || $value === null) {
                 $sanitized[$key] = $value;
+
                 continue;
             }
         }

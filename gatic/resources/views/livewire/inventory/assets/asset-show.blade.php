@@ -110,6 +110,12 @@
                     @endif
                 </div>
             </div>
+
+            {{-- Notes panel --}}
+            <livewire:ui.notes-panel
+                :noteable-type="\App\Models\Asset::class"
+                :noteable-id="$asset->id"
+            />
         </div>
     </div>
 </div>

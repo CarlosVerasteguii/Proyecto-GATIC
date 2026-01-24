@@ -70,6 +70,9 @@ class AuditLog extends Model
     // Product quantity movements
     public const ACTION_PRODUCT_QTY_REGISTER = 'movements.product_qty.register';
 
+    // Manual notes (Story 8.2)
+    public const ACTION_NOTE_MANUAL_CREATE = 'notes.manual.create';
+
     /**
      * All defined actions for filtering/validation.
      *
@@ -83,6 +86,7 @@ class AuditLog extends Model
         self::ACTION_ASSET_LOAN,
         self::ACTION_ASSET_RETURN,
         self::ACTION_PRODUCT_QTY_REGISTER,
+        self::ACTION_NOTE_MANUAL_CREATE,
     ];
 
     /**
@@ -98,6 +102,7 @@ class AuditLog extends Model
         self::ACTION_ASSET_LOAN => 'Préstamo de activo',
         self::ACTION_ASSET_RETURN => 'Devolución de activo',
         self::ACTION_PRODUCT_QTY_REGISTER => 'Movimiento de cantidad',
+        self::ACTION_NOTE_MANUAL_CREATE => 'Nota manual creada',
     ];
 
     // ──────────────────────────────────────────────────────────────────────────

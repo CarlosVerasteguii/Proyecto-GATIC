@@ -55,5 +55,11 @@ class AuthServiceProvider extends ServiceProvider
             'inventory.manage',
             static fn (User $user): bool => RoleAccess::isAdminOrEditor($user)
         );
+
+        // Notes: view follows entity visibility, manage restricted to Admin/Editor
+        Gate::define(
+            'notes.manage',
+            static fn (User $user): bool => RoleAccess::isAdminOrEditor($user)
+        );
     }
 }

@@ -78,6 +78,13 @@ class AuditLog extends Model
 
     public const ACTION_ATTACHMENT_DELETE = 'attachments.delete';
 
+    // Trash operations (Story 8.4)
+    public const ACTION_TRASH_SOFT_DELETE = 'trash.soft_delete';
+
+    public const ACTION_TRASH_RESTORE = 'trash.restore';
+
+    public const ACTION_TRASH_PURGE = 'trash.purge';
+
     /**
      * All defined actions for filtering/validation.
      *
@@ -94,6 +101,9 @@ class AuditLog extends Model
         self::ACTION_NOTE_MANUAL_CREATE,
         self::ACTION_ATTACHMENT_UPLOAD,
         self::ACTION_ATTACHMENT_DELETE,
+        self::ACTION_TRASH_SOFT_DELETE,
+        self::ACTION_TRASH_RESTORE,
+        self::ACTION_TRASH_PURGE,
     ];
 
     /**
@@ -112,6 +122,9 @@ class AuditLog extends Model
         self::ACTION_NOTE_MANUAL_CREATE => 'Nota manual creada',
         self::ACTION_ATTACHMENT_UPLOAD => 'Adjunto subido',
         self::ACTION_ATTACHMENT_DELETE => 'Adjunto eliminado',
+        self::ACTION_TRASH_SOFT_DELETE => 'Registro eliminado',
+        self::ACTION_TRASH_RESTORE => 'Registro restaurado',
+        self::ACTION_TRASH_PURGE => 'Registro purgado',
     ];
 
     // ──────────────────────────────────────────────────────────────────────────

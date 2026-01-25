@@ -1,6 +1,7 @@
 @php
     $dashboardActive = request()->routeIs('dashboard');
     $adminUsersActive = request()->routeIs('admin.users.*');
+    $adminTrashActive = request()->routeIs('admin.trash.*');
     $employeesActive = request()->routeIs('employees.*');
     $pendingTasksActive = request()->routeIs('pending-tasks.*');
     $catalogsCategoriesActive = request()->routeIs('catalogs.categories.*');
@@ -30,6 +31,18 @@
                 @if ($adminUsersActive) aria-current="page" @endif
             >
                 Usuarios
+            </a>
+        </li>
+    @endcan
+
+    @can('admin-only')
+        <li class="nav-item">
+            <a
+                class="nav-link @if ($adminTrashActive) active @endif"
+                href="{{ route('admin.trash.index') }}"
+                @if ($adminTrashActive) aria-current="page" @endif
+            >
+                Papelera
             </a>
         </li>
     @endcan
@@ -114,7 +127,7 @@
                     href="{{ route('catalogs.trash.index') }}"
                     @if ($catalogsTrashActive) aria-current="page" @endif
                 >
-                    Papelera
+                    Papelera de catálogos
                 </a>
             </li>
         @endcan

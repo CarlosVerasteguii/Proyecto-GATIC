@@ -57,6 +57,7 @@ Route::middleware(['auth', 'active', 'can:admin-only'])
     ->group(function () {
         Route::get('/error-reports', ErrorReportsLookup::class)->name('error-reports.lookup');
         Route::get('/audit', AuditLogsIndex::class)->name('audit.index');
+        Route::get('/trash', \App\Livewire\Admin\Trash\TrashIndex::class)->name('trash.index');
     });
 
 Route::middleware(['auth', 'active', 'can:catalogs.manage'])

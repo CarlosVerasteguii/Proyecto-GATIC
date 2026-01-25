@@ -151,7 +151,7 @@ class EmployeesTest extends TestCase
             ->call('delete', $employee->id)
             ->assertDispatched('ui:toast', type: 'success');
 
-        $this->assertDatabaseMissing('employees', [
+        $this->assertSoftDeleted('employees', [
             'id' => $employee->id,
         ]);
     }

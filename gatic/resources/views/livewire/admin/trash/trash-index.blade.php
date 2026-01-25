@@ -5,7 +5,7 @@
         <div class="col-12 col-lg-10">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Papelera de catálogos</span>
+                    <span>Papelera</span>
                     <button
                         type="button"
                         class="btn btn-sm btn-outline-danger"
@@ -24,74 +24,79 @@
                         <li class="nav-item">
                             <button
                                 type="button"
-                                class="nav-link @if ($tab === 'categories') active @endif"
-                                wire:click="setTab('categories')"
+                                class="nav-link @if ($tab === 'products') active @endif"
+                                wire:click="setTab('products')"
                                 wire:loading.attr="disabled"
                                 wire:target="setTab"
                             >
-                                Categorias
+                                Productos
                             </button>
                         </li>
                         <li class="nav-item">
                             <button
                                 type="button"
-                                class="nav-link @if ($tab === 'brands') active @endif"
-                                wire:click="setTab('brands')"
+                                class="nav-link @if ($tab === 'assets') active @endif"
+                                wire:click="setTab('assets')"
                                 wire:loading.attr="disabled"
                                 wire:target="setTab"
                             >
-                                Marcas
+                                Activos
                             </button>
                         </li>
                         <li class="nav-item">
                             <button
                                 type="button"
-                                class="nav-link @if ($tab === 'locations') active @endif"
-                                wire:click="setTab('locations')"
+                                class="nav-link @if ($tab === 'employees') active @endif"
+                                wire:click="setTab('employees')"
                                 wire:loading.attr="disabled"
                                 wire:target="setTab"
                             >
-                                Ubicaciones
+                                Empleados
                             </button>
                         </li>
                     </ul>
 
                     <div class="row g-3 align-items-end mb-3">
                         <div class="col-12 col-md-6">
-                            <label for="catalogs-trash-search" class="form-label">Buscar</label>
+                            <label for="trash-search" class="form-label">Buscar</label>
                             <input
-                                id="catalogs-trash-search"
+                                id="trash-search"
                                 type="text"
                                 class="form-control"
-                                placeholder="Buscar por nombre."
+                                placeholder="@if ($tab === 'products') Buscar por nombre @elseif ($tab === 'assets') Buscar por serial o asset_tag @else Buscar por RPE o nombre @endif"
                                 wire:model.live.debounce.300ms="search"
                             />
                         </div>
                     </div>
 
-                    @if ($tab === 'categories' && $categories)
+                    {{-- Products Tab --}}
+                    @if ($tab === 'products' && $products)
                         <div class="table-responsive">
                             <table class="table table-striped align-middle mb-0">
                                 <thead>
                                     <tr>
                                         <th>Nombre</th>
-                                        <th>Serializado</th>
-                                        <th>Requiere asset_tag</th>
+                                        <th>Categoría</th>
+                                        <th>Marca</th>
+                                        <th>Eliminado</th>
                                         <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse ($categories as $category)
+                                    @forelse ($products as $product)
                                         <tr>
-                                            <td>{{ $category->name }}</td>
-                                            <td>{{ $category->is_serialized ? 'Si' : 'No' }}</td>
-                                            <td>{{ $category->requires_asset_tag ? 'Si' : 'No' }}</td>
+                                            <td>{{ $product->name }}</td>
+                                            <td>{{ $product->category?->name ?? '—' }}</td>
+                                            <td>{{ $product->brand?->name ?? '—' }}</td>
+                                            <td>
+                                                <small class="text-muted">{{ $product->deleted_at?->format('d/m/Y H:i') }}</small>
+                                            </td>
                                             <td class="text-end">
                                                 <button
                                                     type="button"
                                                     class="btn btn-sm btn-outline-success"
-                                                    wire:click="restore('categories', {{ $category->id }})"
-                                                    wire:confirm="¿Confirmas que deseas restaurar esta categoría?"
+                                                    wire:click="restore('products', {{ $product->id }})"
+                                                    wire:confirm="¿Confirmas que deseas restaurar este producto?"
                                                     wire:loading.attr="disabled"
                                                     wire:target="restore"
                                                 >
@@ -100,8 +105,8 @@
                                                 <button
                                                     type="button"
                                                     class="btn btn-sm btn-outline-danger"
-                                                    wire:click="purge('categories', {{ $category->id }})"
-                                                    wire:confirm="¿Estás seguro de eliminar PERMANENTEMENTE esta categoría? Esta acción es IRREVERSIBLE."
+                                                    wire:click="purge('products', {{ $product->id }})"
+                                                    wire:confirm="¿Estás seguro de eliminar PERMANENTEMENTE este producto? Esta acción es IRREVERSIBLE."
                                                     wire:loading.attr="disabled"
                                                     wire:target="purge"
                                                 >
@@ -111,7 +116,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-muted">No hay categorias eliminadas.</td>
+                                            <td colspan="5" class="text-muted">No hay productos eliminados.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -119,29 +124,40 @@
                         </div>
 
                         <div class="mt-3">
-                            {{ $categories->links() }}
+                            {{ $products->links() }}
                         </div>
                     @endif
 
-                    @if ($tab === 'brands' && $brands)
+                    {{-- Assets Tab --}}
+                    @if ($tab === 'assets' && $assets)
                         <div class="table-responsive">
                             <table class="table table-striped align-middle mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Nombre</th>
+                                        <th>Serial</th>
+                                        <th>Asset Tag</th>
+                                        <th>Producto</th>
+                                        <th>Estado</th>
+                                        <th>Eliminado</th>
                                         <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse ($brands as $brand)
+                                    @forelse ($assets as $asset)
                                         <tr>
-                                            <td>{{ $brand->name }}</td>
+                                            <td>{{ $asset->serial }}</td>
+                                            <td>{{ $asset->asset_tag ?? '—' }}</td>
+                                            <td>{{ $asset->product?->name ?? '—' }}</td>
+                                            <td>{{ $asset->status }}</td>
+                                            <td>
+                                                <small class="text-muted">{{ $asset->deleted_at?->format('d/m/Y H:i') }}</small>
+                                            </td>
                                             <td class="text-end">
                                                 <button
                                                     type="button"
                                                     class="btn btn-sm btn-outline-success"
-                                                    wire:click="restore('brands', {{ $brand->id }})"
-                                                    wire:confirm="¿Confirmas que deseas restaurar esta marca?"
+                                                    wire:click="restore('assets', {{ $asset->id }})"
+                                                    wire:confirm="¿Confirmas que deseas restaurar este activo?"
                                                     wire:loading.attr="disabled"
                                                     wire:target="restore"
                                                 >
@@ -150,8 +166,8 @@
                                                 <button
                                                     type="button"
                                                     class="btn btn-sm btn-outline-danger"
-                                                    wire:click="purge('brands', {{ $brand->id }})"
-                                                    wire:confirm="¿Estás seguro de eliminar PERMANENTEMENTE esta marca? Esta acción es IRREVERSIBLE."
+                                                    wire:click="purge('assets', {{ $asset->id }})"
+                                                    wire:confirm="¿Estás seguro de eliminar PERMANENTEMENTE este activo? Esta acción es IRREVERSIBLE."
                                                     wire:loading.attr="disabled"
                                                     wire:target="purge"
                                                 >
@@ -161,7 +177,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="2" class="text-muted">No hay marcas eliminadas.</td>
+                                            <td colspan="6" class="text-muted">No hay activos eliminados.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -169,29 +185,38 @@
                         </div>
 
                         <div class="mt-3">
-                            {{ $brands->links() }}
+                            {{ $assets->links() }}
                         </div>
                     @endif
 
-                    @if ($tab === 'locations' && $locations)
+                    {{-- Employees Tab --}}
+                    @if ($tab === 'employees' && $employees)
                         <div class="table-responsive">
                             <table class="table table-striped align-middle mb-0">
                                 <thead>
                                     <tr>
+                                        <th>RPE</th>
                                         <th>Nombre</th>
+                                        <th>Departamento</th>
+                                        <th>Eliminado</th>
                                         <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse ($locations as $location)
+                                    @forelse ($employees as $employee)
                                         <tr>
-                                            <td>{{ $location->name }}</td>
+                                            <td>{{ $employee->rpe }}</td>
+                                            <td>{{ $employee->name }}</td>
+                                            <td>{{ $employee->department ?? '—' }}</td>
+                                            <td>
+                                                <small class="text-muted">{{ $employee->deleted_at?->format('d/m/Y H:i') }}</small>
+                                            </td>
                                             <td class="text-end">
                                                 <button
                                                     type="button"
                                                     class="btn btn-sm btn-outline-success"
-                                                    wire:click="restore('locations', {{ $location->id }})"
-                                                    wire:confirm="¿Confirmas que deseas restaurar esta ubicación?"
+                                                    wire:click="restore('employees', {{ $employee->id }})"
+                                                    wire:confirm="¿Confirmas que deseas restaurar este empleado?"
                                                     wire:loading.attr="disabled"
                                                     wire:target="restore"
                                                 >
@@ -200,8 +225,8 @@
                                                 <button
                                                     type="button"
                                                     class="btn btn-sm btn-outline-danger"
-                                                    wire:click="purge('locations', {{ $location->id }})"
-                                                    wire:confirm="¿Estás seguro de eliminar PERMANENTEMENTE esta ubicación? Esta acción es IRREVERSIBLE."
+                                                    wire:click="purge('employees', {{ $employee->id }})"
+                                                    wire:confirm="¿Estás seguro de eliminar PERMANENTEMENTE este empleado? Esta acción es IRREVERSIBLE."
                                                     wire:loading.attr="disabled"
                                                     wire:target="purge"
                                                 >
@@ -211,7 +236,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="2" class="text-muted">No hay ubicaciones eliminadas.</td>
+                                            <td colspan="5" class="text-muted">No hay empleados eliminados.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -219,7 +244,7 @@
                         </div>
 
                         <div class="mt-3">
-                            {{ $locations->links() }}
+                            {{ $employees->links() }}
                         </div>
                     @endif
                 </div>
@@ -227,4 +252,3 @@
         </div>
     </div>
 </div>
-

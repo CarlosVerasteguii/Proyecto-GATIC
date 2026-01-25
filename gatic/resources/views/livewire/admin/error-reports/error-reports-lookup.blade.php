@@ -78,7 +78,11 @@
                                 <div class="small opacity-75">Request</div>
                                 <div class="d-flex flex-column gap-1">
                                     <div><span class="opacity-75">Método:</span> {{ $report->method ?? 'N/A' }}</div>
-                                    <div><span class="opacity-75">Ruta:</span> {{ $report->route ?? 'N/A' }}</div>
+                                    <div><span class="opacity-75">Ruta (nombre):</span> {{ $report->route ?? 'N/A' }}</div>
+                                    @php($path = is_array($report->context) ? ($report->context['request']['path'] ?? null) : null)
+                                    @if (is_string($path) && $path !== '')
+                                        <div class="text-break"><span class="opacity-75">Path:</span> {{ $path }}</div>
+                                    @endif
                                     <div class="text-break"><span class="opacity-75">URL:</span> {{ $report->url ?? 'N/A' }}</div>
                                 </div>
                             </div>
@@ -113,4 +117,3 @@
         </div>
     </div>
 </div>
-

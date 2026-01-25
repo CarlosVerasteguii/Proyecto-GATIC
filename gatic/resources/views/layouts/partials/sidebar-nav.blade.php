@@ -2,6 +2,7 @@
     $dashboardActive = request()->routeIs('dashboard');
     $adminUsersActive = request()->routeIs('admin.users.*');
     $adminTrashActive = request()->routeIs('admin.trash.*');
+    $adminErrorReportsActive = request()->routeIs('admin.error-reports.*');
     $employeesActive = request()->routeIs('employees.*');
     $pendingTasksActive = request()->routeIs('pending-tasks.*');
     $catalogsCategoriesActive = request()->routeIs('catalogs.categories.*');
@@ -43,6 +44,15 @@
                 @if ($adminTrashActive) aria-current="page" @endif
             >
                 Papelera
+            </a>
+        </li>
+        <li class="nav-item">
+            <a
+                class="nav-link @if ($adminErrorReportsActive) active @endif"
+                href="{{ route('admin.error-reports.lookup') }}"
+                @if ($adminErrorReportsActive) aria-current="page" @endif
+            >
+                Errores (soporte)
             </a>
         </li>
     @endcan

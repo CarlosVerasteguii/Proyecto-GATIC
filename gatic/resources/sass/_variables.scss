@@ -1,7 +1,15 @@
+// =============================================================================
+// Bootstrap SCSS Variables
+// =============================================================================
+// These SCSS variables are used by Bootstrap at compile time.
+// For runtime theming, see _tokens.scss which defines CSS custom properties.
+// The values here should match those in _tokens.scss for consistency.
+
 // Body
 $body-bg: #f8fafc;
 
 // Branding (CFE/GATIC)
+// Note: These are mirrored in _tokens.scss as --cfe-green and --cfe-green-dark
 $cfe-green: #008e5a;
 $cfe-green-dark: #006b47;
 

@@ -1,0 +1,283 @@
+// =============================================================================
+// Design Tokens - GATIC UI
+// =============================================================================
+// CSS Custom Properties for consistent theming across the application.
+// These tokens are the single source of truth for colors, spacing, and states.
+
+:root {
+  // ---------------------------------------------------------------------------
+  // CFE Brand Colors
+  // ---------------------------------------------------------------------------
+  --cfe-green: #008e5a;
+  --cfe-green-dark: #006b47;
+  --cfe-green-light: #00b36f;
+  --cfe-green-bg: rgba(0, 142, 90, 0.1);
+
+  // ---------------------------------------------------------------------------
+  // Semantic Colors (States)
+  // ---------------------------------------------------------------------------
+  --color-success: #198754;
+  --color-success-bg: rgba(25, 135, 84, 0.15);
+  --color-warning: #ffc107;
+  --color-warning-bg: rgba(255, 193, 7, 0.15);
+  --color-danger: #dc3545;
+  --color-danger-bg: rgba(220, 53, 69, 0.15);
+  --color-info: #0dcaf0;
+  --color-info-bg: rgba(13, 202, 240, 0.15);
+  --color-secondary: #6c757d;
+  --color-secondary-bg: rgba(108, 117, 125, 0.15);
+
+  // ---------------------------------------------------------------------------
+  // Asset Status Colors
+  // ---------------------------------------------------------------------------
+  // Disponible - Green (success)
+  --status-available: var(--color-success);
+  --status-available-bg: var(--color-success-bg);
+  --status-available-text: #fff;
+
+  // Prestado - Yellow/Warning
+  --status-loaned: #b45309;
+  --status-loaned-bg: rgba(180, 83, 9, 0.15);
+  --status-loaned-text: #fff;
+
+  // Asignado - Purple
+  --status-assigned: #7c3aed;
+  --status-assigned-bg: rgba(124, 58, 237, 0.15);
+  --status-assigned-text: #fff;
+
+  // Pendiente de Retiro - Orange
+  --status-pending: #ea580c;
+  --status-pending-bg: rgba(234, 88, 12, 0.15);
+  --status-pending-text: #fff;
+
+  // Retirado - Red (danger)
+  --status-retired: var(--color-danger);
+  --status-retired-bg: var(--color-danger-bg);
+  --status-retired-text: #fff;
+
+  // ---------------------------------------------------------------------------
+  // Spacing Scale (8px base)
+  // ---------------------------------------------------------------------------
+  --space-0: 0;
+  --space-1: 0.25rem;  // 4px
+  --space-2: 0.5rem;   // 8px
+  --space-3: 0.75rem;  // 12px
+  --space-4: 1rem;     // 16px
+  --space-5: 1.25rem;  // 20px
+  --space-6: 1.5rem;   // 24px
+  --space-8: 2rem;     // 32px
+  --space-10: 2.5rem;  // 40px
+  --space-12: 3rem;    // 48px
+
+  // ---------------------------------------------------------------------------
+  // Border Radius
+  // ---------------------------------------------------------------------------
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-full: 9999px;
+
+  // ---------------------------------------------------------------------------
+  // Shadows
+  // ---------------------------------------------------------------------------
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+  // ---------------------------------------------------------------------------
+  // Transitions
+  // ---------------------------------------------------------------------------
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  // ---------------------------------------------------------------------------
+  // Layout
+  // ---------------------------------------------------------------------------
+  --sidebar-width: 18rem;
+  --sidebar-collapsed-width: 4.5rem;
+  --topbar-height: 3.5rem;
+}
+
+// =============================================================================
+// Status Badge Classes (generated from tokens)
+// =============================================================================
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+
+  &--available {
+    background-color: var(--status-available-bg);
+    color: var(--status-available);
+  }
+
+  &--loaned {
+    background-color: var(--status-loaned-bg);
+    color: var(--status-loaned);
+  }
+
+  &--assigned {
+    background-color: var(--status-assigned-bg);
+    color: var(--status-assigned);
+  }
+
+  &--pending {
+    background-color: var(--status-pending-bg);
+    color: var(--status-pending);
+  }
+
+  &--retired {
+    background-color: var(--status-retired-bg);
+    color: var(--status-retired);
+  }
+
+  // Solid variants (for high emphasis)
+  &--solid {
+    &.status-badge--available {
+      background-color: var(--status-available);
+      color: var(--status-available-text);
+    }
+
+    &.status-badge--loaned {
+      background-color: var(--status-loaned);
+      color: var(--status-loaned-text);
+    }
+
+    &.status-badge--assigned {
+      background-color: var(--status-assigned);
+      color: var(--status-assigned-text);
+    }
+
+    &.status-badge--pending {
+      background-color: var(--status-pending);
+      color: var(--status-pending-text);
+    }
+
+    &.status-badge--retired {
+      background-color: var(--status-retired);
+      color: var(--status-retired-text);
+    }
+  }
+}
+
+// =============================================================================
+// Utility Classes
+// =============================================================================
+
+// Display contents at md breakpoint (for toolbar filters)
+// This allows child elements to participate in parent grid layout
+@media (min-width: 768px) {
+  .d-md-contents {
+    display: contents !important;
+  }
+}
+
+// Toolbar filter animations
+.toolbar-filters {
+  .collapse {
+    transition: height var(--transition-normal);
+  }
+}
+
+// =============================================================================
+// Drawer Component
+// =============================================================================
+.drawer {
+  position: fixed;
+  inset: 0;
+  z-index: $zindex-modal;
+  display: none;
+  pointer-events: none;
+
+  &.show {
+    display: block;
+    pointer-events: auto;
+  }
+}
+
+.drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+
+  .drawer.show & {
+    opacity: 1;
+  }
+}
+
+.drawer-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: $white;
+  box-shadow: var(--shadow-lg);
+  transform: translateX(100%);
+  transition: transform var(--transition-slow);
+
+  .drawer.show & {
+    transform: translateX(0);
+  }
+}
+
+// Drawer sizes
+.drawer-sm .drawer-panel {
+  width: 320px;
+  max-width: 90vw;
+}
+
+.drawer-md .drawer-panel {
+  width: 480px;
+  max-width: 90vw;
+}
+
+.drawer-lg .drawer-panel {
+  width: 640px;
+  max-width: 90vw;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid $border-color;
+  flex-shrink: 0;
+}
+
+.drawer-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+.drawer-footer {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  padding: var(--space-4);
+  border-top: 1px solid $border-color;
+  flex-shrink: 0;
+}
+
+// Body class when drawer is open (prevents scroll)
+body.drawer-open {
+  overflow: hidden;
+}

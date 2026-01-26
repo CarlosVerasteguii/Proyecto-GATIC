@@ -41,10 +41,22 @@
             </form>
         @endcan
 
-        <div class="ms-auto d-flex align-items-center">
+        <div class="ms-auto d-flex align-items-center gap-2">
+            {{-- Density toggle --}}
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-light d-none d-md-inline-flex align-items-center"
+                data-density-toggle
+                aria-pressed="false"
+                title="Cambiar a modo compacto"
+            >
+                <i class="bi bi-arrows-angle-expand" aria-hidden="true"></i>
+                <span class="density-text ms-1 d-none d-lg-inline">Compacto</span>
+            </button>
+
             @can('inventory.view')
                 <a
-                    class="btn btn-sm btn-outline-light d-md-none me-2"
+                    class="btn btn-sm btn-outline-light d-md-none"
                     href="{{ route('inventory.search') }}"
                     aria-label="Buscar en inventario"
                 >

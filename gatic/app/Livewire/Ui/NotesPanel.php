@@ -149,19 +149,14 @@ class NotesPanel extends Component
     /**
      * Resolve the noteable entity for safe note creation.
      */
-    private function resolveNoteable(): Model
+    private function resolveNoteable(): Product|Asset|Employee
     {
-        /** @var class-string<Model> $noteableType */
-        $noteableType = $this->noteableType;
-
-        /** @var Model $noteable */
-        $noteable = $noteableType::query()->findOrFail($this->noteableId);
-
-        if (! method_exists($noteable, 'notes')) {
-            abort(500);
-        }
-
-        return $noteable;
+        return match ($this->noteableType) {
+            Product::class => Product::query()->findOrFail($this->noteableId),
+            Asset::class => Asset::query()->findOrFail($this->noteableId),
+            Employee::class => Employee::query()->findOrFail($this->noteableId),
+            default => abort(404),
+        };
     }
 
     /**

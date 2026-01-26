@@ -4,15 +4,6 @@
             request()->only(['q', 'page']),
             static fn ($value): bool => $value !== null && $value !== ''
         );
-
-        $statusBadgeClass = match ($asset->status) {
-            \App\Models\Asset::STATUS_AVAILABLE => 'bg-success',
-            \App\Models\Asset::STATUS_ASSIGNED => 'bg-warning text-dark',
-            \App\Models\Asset::STATUS_LOANED => 'bg-info text-dark',
-            \App\Models\Asset::STATUS_PENDING_RETIREMENT => 'bg-warning text-dark',
-            \App\Models\Asset::STATUS_RETIRED => 'bg-secondary',
-            default => 'bg-secondary',
-        };
     @endphp
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
@@ -71,7 +62,7 @@
 
                         <dt class="col-sm-3">Estado</dt>
                         <dd class="col-sm-9">
-                            <span class="badge {{ $statusBadgeClass }}">{{ $asset->status }}</span>
+                            <x-ui.status-badge :status="$asset->status" />
                         </dd>
 
                         <dt class="col-sm-3">Ubicación</dt>

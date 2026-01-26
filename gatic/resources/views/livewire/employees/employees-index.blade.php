@@ -111,7 +111,7 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-striped align-middle mb-0">
+                        <table class="table table-sm table-striped align-middle mb-0">
                             <thead>
                                 <tr>
                                     <th>RPE</th>

@@ -50,7 +50,7 @@
                                 <span class="badge bg-secondary">{{ $this->assets->count() }}</span>
                             </h5>
                             <div class="table-responsive">
-                                <table class="table table-striped align-middle mb-0">
+                                <table class="table table-sm table-striped align-middle mb-0">
                                     <thead>
                                         <tr>
                                             <th>Serial</th>
@@ -120,7 +120,7 @@
                                 <span class="badge bg-secondary">{{ $this->products->count() }}</span>
                             </h5>
                             <div class="table-responsive">
-                                <table class="table table-striped align-middle mb-0">
+                                <table class="table table-sm table-striped align-middle mb-0">
                                     <thead>
                                         <tr>
                                             <th>Nombre</th>

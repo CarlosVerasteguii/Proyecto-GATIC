@@ -72,7 +72,7 @@
                     {{-- Products Tab --}}
                     @if ($tab === 'products' && $products)
                         <div class="table-responsive">
-                            <table class="table table-striped align-middle mb-0">
+                            <table class="table table-sm table-striped align-middle mb-0">
                                 <thead>
                                     <tr>
                                         <th>Nombre</th>
@@ -131,7 +131,7 @@
                     {{-- Assets Tab --}}
                     @if ($tab === 'assets' && $assets)
                         <div class="table-responsive">
-                            <table class="table table-striped align-middle mb-0">
+                            <table class="table table-sm table-striped align-middle mb-0">
                                 <thead>
                                     <tr>
                                         <th>Serial</th>
@@ -192,7 +192,7 @@
                     {{-- Employees Tab --}}
                     @if ($tab === 'employees' && $employees)
                         <div class="table-responsive">
-                            <table class="table table-striped align-middle mb-0">
+                            <table class="table table-sm table-striped align-middle mb-0">
                                 <thead>
                                     <tr>
                                         <th>RPE</th>

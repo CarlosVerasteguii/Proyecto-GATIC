@@ -34,6 +34,11 @@ $app-sidebar-width: 18rem;
     z-index: $zindex-sticky;
 }
 
+.app-topbar-search {
+    max-width: 40rem;
+    width: 100%;
+}
+
 .app-main {
     grid-area: main;
 }

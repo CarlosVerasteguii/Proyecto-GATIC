@@ -15,8 +15,43 @@
             {{ config('app.name', 'GATIC') }}
         </a>
 
-        <div class="ms-auto">
-            <ul class="navbar-nav ms-auto">
+        @can('inventory.view')
+            <form
+                class="d-none d-md-flex ms-3 app-topbar-search"
+                action="{{ route('inventory.search') }}"
+                method="GET"
+                role="search"
+                data-testid="global-search-form"
+            >
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white">
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                    </span>
+                    <input
+                        type="search"
+                        name="q"
+                        class="form-control"
+                        value="{{ request()->query('q') }}"
+                        placeholder="Buscar inventario (/)…"
+                        aria-label="Buscar en inventario"
+                        autocomplete="off"
+                        data-global-search="true"
+                    />
+                </div>
+            </form>
+        @endcan
+
+        <div class="ms-auto d-flex align-items-center">
+            @can('inventory.view')
+                <a
+                    class="btn btn-sm btn-outline-light d-md-none me-2"
+                    href="{{ route('inventory.search') }}"
+                    aria-label="Buscar en inventario"
+                >
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                </a>
+            @endcan
+            <ul class="navbar-nav">
                 <li class="nav-item dropdown">
                     <button
                         id="navbarUserDropdown"

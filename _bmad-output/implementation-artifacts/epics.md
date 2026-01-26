@@ -158,6 +158,14 @@ Permite crear y procesar tareas por renglón con finalización parcial y exclusi
 Permite auditoría consultable, notas, adjuntos con permisos, papelera (soft-delete/restaurar/purgar) y errores con ID.
 **FRs covered:** FR32, FR33, FR34, FR35, FR36
 
+### Epic 9: Hardening y operación (post Gate 5)
+Consolidación post-Gate 5: documentación crítica, runbooks de operación y eliminación de “parches” recurrentes.
+**FRs covered:** N/A (hardening)
+
+### Epic 10: UI uplift (desktop-first productividad)
+Mejora incremental de UI para acercarla al UX spec (densidad, velocidad, atajos, consistencia visual) sin reescribir el sistema.
+**FRs covered:** N/A (UX/productividad)
+
 ## Epic 1: Acceso seguro y administración de usuarios
 
 Permite que el equipo TI acceda al sistema y que Admin gestione usuarios/roles para operar el inventario con permisos consistentes.
@@ -917,3 +925,128 @@ So that pueda diagnosticar incidentes reportados por usuarios (FR36, NFR10).
 **When** Admin lo consulta
 **Then** puede ver stack/contexto relevante
 **And** queda claro cuándo ocurrió y en qué endpoint/acción
+
+## Epic 9: Hardening y operación (post Gate 5)
+
+Consolidación post-Gate 5: documentación crítica, runbooks de operación y eliminación de “parches” recurrentes.
+
+### Story 9.1: Diagramas de estado (Mermaid) para entidades principales
+
+As a equipo (Dev/QA/PO),
+I want diagramas de estado claros para entidades críticas,
+So that haya una fuente de verdad para UX/validaciones y no se “adivinen” transiciones.
+
+**Acceptance Criteria:**
+
+**Given** los estados canon definidos en `docsBmad/project-context.md`
+**When** se consulta la documentación del proyecto
+**Then** existen diagramas Mermaid en `gatic/docs/state-machines/` para:
+- `asset-states.md` (Disponible → Asignado → Prestado → Pendiente de Retiro → Retirado)
+- `pending-task-states.md` (borrador/procesando/finalización según diseño actual)
+- `pending-task-line-states.md` (sin procesar/procesado/error)
+
+**And** cada doc incluye una tabla “Acción → permitido en estado(s)” alineada a lo implementado.
+
+### Story 9.2: Documentar patrón de locks de concurrencia (Tareas Pendientes)
+
+As a equipo de desarrollo,
+I want una guía de patrón de locks reutilizable,
+So that podamos extender concurrencia sin re-inventar ni introducir race conditions.
+
+**Acceptance Criteria:**
+
+**Given** el patrón actual (claim + heartbeat + TTL + idle guard + override Admin)
+**When** se consulta la documentación
+**Then** existe `gatic/docs/patterns/concurrency-locks.md` con:
+- decisión (columnas en tabla vs tabla genérica),
+- trade-offs y umbral de refactor,
+- snippet/pseudocódigo de claim atómico + renovación + expiración,
+- UX esperada (lock visible, “lock perdido”, retry, mensajes seguros).
+
+### Story 9.3: Consolidar y documentar conteos/scopes de inventario
+
+As a equipo,
+I want conteos de disponibilidad centralizados y documentados,
+So that la semántica no se duplique en Livewire/queries y sea consistente en todo el sistema.
+
+**Acceptance Criteria:**
+
+**Given** la semántica actual (Disponibles / No disponibles / Retirado no cuenta por defecto)
+**When** se revisa el código base
+**Then** las reglas viven en un lugar claro (scopes/helpers en modelos o servicio dedicado)
+**And** se documentan en `gatic/app/Models/README.md` con ejemplos de uso.
+
+### Story 9.4: Runbook Gate 5 (retención, purga, storage privado)
+
+As a operación/soporte,
+I want un runbook para Gate 5,
+So that el sistema sea operable sin sorpresas (crecimiento de datos, purga, permisos, storage).
+
+**Acceptance Criteria:**
+
+**Given** módulos `audit_logs`, `error_reports`, adjuntos y papelera
+**When** se consulta documentación de operación
+**Then** existe `gatic/docs/ops/gate-5-runbook.md` que define:
+- qué se retiene y qué se purga, y cómo,
+- riesgos típicos (growth, permisos, storage),
+- checklist de verificación en entorno real (descargas privadas, RBAC, `error_id`).
+
+### Story 9.5: Guía Admin/Soporte (auditoría + papelera + error_id)
+
+As a Admin/Soporte,
+I want una guía práctica de investigación,
+So that pueda diagnosticar incidentes sin depender de “memoria tribal”.
+
+**Acceptance Criteria:**
+
+**Given** un incidente reportado con `error_id` o una entidad eliminada por error
+**When** el Admin sigue la guía
+**Then** existe `gatic/docs/support/admin-support-guide.md` que cubre flujos concretos:
+- lookup por `error_id`,
+- revisar auditoría (filtros + detalle),
+- restaurar/purgar en papelera de forma segura,
+- cómo escalar (qué evidencia adjuntar).
+
+## Epic 10: UI uplift (desktop-first productividad)
+
+Mejora incremental de UI para acercarla al UX spec (densidad, velocidad, atajos, consistencia visual) sin reescribir el sistema.
+
+### Story 10.1: Iconografía Bootstrap Icons + consistencia visual base
+
+As a usuario interno,
+I want iconografía consistente y clara,
+So that identifique acciones rápido y la UI se sienta “pro”.
+
+**Acceptance Criteria:**
+
+**Given** la UI usa clases `bi bi-*`
+**When** el usuario navega el sistema
+**Then** los íconos se renderizan correctamente en todas las pantallas
+**And** se estandarizan íconos para acciones repetidas (ver, editar, eliminar, descargar, adjuntar, buscar).
+
+### Story 10.2: Búsqueda rápida en topbar + atajos mínimos
+
+As a usuario interno,
+I want buscar sin perder el contexto,
+So that el loop “Search → Resolve → Record” sea rápido.
+
+**Acceptance Criteria:**
+
+**Given** el usuario está en cualquier pantalla
+**When** presiona `/`
+**Then** el foco cae en el input de búsqueda rápida (topbar)
+**And** `Esc` cierra/cancela interacciones visibles (cuando aplique).
+
+### Story 10.3: Layout más denso (toolbars/tablas/empty states)
+
+As a usuario interno (desktop-first),
+I want tablas y layout más densos y consistentes,
+So that pueda operar más rápido con menos scroll.
+
+**Acceptance Criteria:**
+
+**Given** pantallas de listado repetitivas (inventario, catálogos, empleados)
+**When** el usuario las usa
+**Then** las tablas adoptan estilo compacto donde aplique (`table-sm`)
+**And** los headers incluyen toolbar consistente (título + acciones + filtros)
+**And** los empty states son claros y accionables.

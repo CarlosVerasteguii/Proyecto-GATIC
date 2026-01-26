@@ -16,7 +16,7 @@
 #   - skipped: Optional/conditional workflow that was skipped
 
 generated: "2025-12-25T18:07:08.8574841-06:00"
-last_updated: "2025-12-27T21:10:02.9243768-06:00"
+last_updated: "2026-01-25"
 project: "GATIC"
 project_type: "web_app"
 selected_track: "enterprise"
@@ -30,7 +30,7 @@ workflow_status:
   create-ux-design: _bmad-output/project-planning-artifacts/ux-design-specification.md
   create-architecture: _bmad-output/architecture.md
   test-design: required
-  validate-architecture: required
-  create-epics-and-stories: required
-  implementation-readiness: required
-  sprint-planning: required
+  validate-architecture: skipped
+  create-epics-and-stories: _bmad-output/project-planning-artifacts/epics.md
+  implementation-readiness: _bmad-output/project-planning-artifacts/implementation-readiness-report-2025-12-27.md
+  sprint-planning: _bmad-output/implementation-artifacts/sprint-status.yaml

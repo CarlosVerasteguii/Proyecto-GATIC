@@ -103,11 +103,25 @@ development_status:
   7-5-admin-puede-liberar-forzar-reclamo-de-lock: done
   epic-7-retrospective: done
 
-  epic-8: in-progress
+  epic-8: done
   8-1-auditoria-consultable-best-effort: done
   8-2-notas-manuales-en-entidades-relevantes: done
   8-3-adjuntos-seguros-con-control-de-acceso: done
   8-4-papelera-soft-delete-restaurar-purgar: done
   8-5-error-id-consultable-por-admin-end-to-end: done
   epic-8-retrospective: done
+
+  epic-9: done
+  9-1-diagramas-de-estado-mermaid: done
+  9-2-documentar-patron-de-locks-de-concurrencia: done
+  9-3-documentar-scopes-y-conteos-de-inventario: done
+  9-4-runbook-gate-5-retencion-purga-y-storage: done
+  9-5-guia-admin-soporte-auditoria-papelera-error-id: done
+  epic-9-retrospective: optional
+
+  epic-10: done
+  10-1-iconografia-bootstrap-icons-y-consistencia-ui: done
+  10-2-topbar-busqueda-rapida-y-atajos-teclado: done
+  10-3-layout-denso-toolbars-tablas-empty-states: done
+  epic-10-retrospective: optional
 

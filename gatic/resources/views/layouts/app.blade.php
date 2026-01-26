@@ -33,6 +33,7 @@
     </div>
 
     <x-ui.toast-container />
+    <x-ui.hotkeys-help />
 
     @livewireScripts
     @stack('scripts')

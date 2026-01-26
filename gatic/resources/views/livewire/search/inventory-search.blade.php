@@ -83,17 +83,7 @@
                                                     </a>
                                                 </td>
                                                 <td>
-                                                    @php
-                                                        $statusClass = match ($asset->status) {
-                                                            \App\Models\Asset::STATUS_AVAILABLE => 'bg-success',
-                                                            \App\Models\Asset::STATUS_ASSIGNED => 'bg-primary',
-                                                            \App\Models\Asset::STATUS_LOANED => 'bg-info',
-                                                            \App\Models\Asset::STATUS_PENDING_RETIREMENT => 'bg-warning text-dark',
-                                                            \App\Models\Asset::STATUS_RETIRED => 'bg-secondary',
-                                                            default => 'bg-secondary',
-                                                        };
-                                                    @endphp
-                                                    <span class="badge {{ $statusClass }}">{{ $asset->status }}</span>
+                                                    <x-ui.status-badge :status="$asset->status" />
                                                 </td>
                                                 <td>{{ $asset->location?->name ?? '-' }}</td>
                                                 <td class="text-end">

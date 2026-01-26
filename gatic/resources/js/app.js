@@ -6,6 +6,10 @@ import { registerLongRequestUi } from './ui/long-request';
 import { registerCopyToClipboard } from './ui/copy-to-clipboard';
 import { registerLivewireErrorHandling } from './ui/livewire-error-handling';
 import { registerGlobalSearchShortcuts } from './ui/global-search-shortcuts';
+import { registerHotkeys } from './ui/hotkeys';
+import { registerSidebarToggle } from './ui/sidebar-toggle';
+import { registerDrawer } from './ui/drawer';
+import { registerDensityToggle } from './ui/density-toggle';
 
 registerToasts();
 registerFreshness();
@@ -13,3 +17,7 @@ registerLongRequestUi();
 registerCopyToClipboard();
 registerLivewireErrorHandling();
 registerGlobalSearchShortcuts();
+registerHotkeys();
+registerSidebarToggle();
+registerDrawer();
+registerDensityToggle();

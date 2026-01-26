@@ -1,13 +1,20 @@
 // Fonts
 @import url('https://fonts.bunny.net/css?family=Nunito');
 
-// Variables
+// Variables (must come before Bootstrap)
 @import 'variables';
 
 // Bootstrap
 @import 'bootstrap/scss/bootstrap';
 
+// Layout
 @import 'layout';
+
+// Design Tokens (CSS custom properties, after Bootstrap for overrides)
+@import 'tokens';
+
+// Density modes (normal/compact)
+@import 'density';
 
 .gatic-toast-container {
     z-index: $zindex-toast;

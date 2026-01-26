@@ -1,4 +1,5 @@
 $app-sidebar-width: 18rem;
+$app-sidebar-collapsed-width: 4.5rem;
 
 .app-shell {
     min-height: 100vh;
@@ -15,16 +16,121 @@ $app-sidebar-width: 18rem;
             'sidebar topbar'
             'sidebar main';
         grid-template-columns: $app-sidebar-width 1fr;
+        transition: grid-template-columns 0.2s ease;
+
+        // Collapsed sidebar state
+        &.sidebar-collapsed {
+            grid-template-columns: $app-sidebar-collapsed-width 1fr;
+        }
     }
 }
 
 .app-sidebar {
     grid-area: sidebar;
     background: $white;
+    transition: width 0.2s ease;
+    overflow: hidden;
+}
+
+.app-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
 }
 
 .app-sidebar-brand {
     color: $primary;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transition: opacity 0.2s ease;
+
+    .sidebar-collapsed & {
+        opacity: 0;
+        width: 0;
+    }
+}
+
+.app-sidebar-toggle {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: $gray-600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+        background: $gray-100;
+        color: $gray-800;
+    }
+}
+
+// Collapsed sidebar nav styles
+.sidebar-collapsed {
+    .app-sidebar {
+        .nav-link {
+            justify-content: center;
+            padding-inline: 0.5rem;
+
+            .nav-icon {
+                margin-right: 0;
+            }
+
+            .nav-text {
+                display: none;
+            }
+        }
+    }
+}
+
+// Sidebar nav link with icon
+.app-sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+
+    .nav-icon {
+        flex-shrink: 0;
+        width: 1.25rem;
+        text-align: center;
+    }
+
+    .nav-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+// Tooltip for collapsed sidebar
+.sidebar-collapsed .app-sidebar .nav-link {
+    position: relative;
+
+    &:hover::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        margin-left: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        background: $gray-800;
+        color: $white;
+        font-size: 0.75rem;
+        border-radius: 0.25rem;
+        white-space: nowrap;
+        z-index: $zindex-tooltip;
+        pointer-events: none;
+    }
 }
 
 .app-topbar {

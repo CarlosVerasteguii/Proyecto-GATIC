@@ -1,9 +1,20 @@
 @php($appName = config('app.name', 'GATIC'))
 
 <aside class="app-sidebar d-none d-md-flex flex-column p-3 border-end" data-testid="app-sidebar">
-    <a class="app-sidebar-brand text-decoration-none mb-3" href="{{ route('dashboard') }}">
-        <span class="fw-semibold">{{ $appName }}</span>
-    </a>
+    <div class="app-sidebar-header mb-3">
+        <a class="app-sidebar-brand text-decoration-none" href="{{ route('dashboard') }}">
+            <span class="fw-semibold">{{ $appName }}</span>
+        </a>
+        <button
+            type="button"
+            class="app-sidebar-toggle"
+            data-sidebar-toggle
+            aria-expanded="true"
+            title="Colapsar sidebar"
+        >
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </button>
+    </div>
 
     @include('layouts.partials.sidebar-nav')
 </aside>

@@ -7,6 +7,7 @@ use App\Actions\Inventory\Adjustments\ApplyProductQuantityAdjustment;
 use App\Actions\Movements\Assets\AssignAssetToEmployee;
 use App\Actions\Movements\Assets\LoanAssetToEmployee;
 use App\Actions\Movements\Assets\ReturnLoanedAsset;
+use App\Actions\Movements\Assets\UnassignAssetFromEmployee;
 use App\Actions\Movements\Products\RegisterProductQuantityMovement;
 use App\Actions\PendingTasks\AcquirePendingTaskLock;
 use App\Actions\PendingTasks\ForceClaimPendingTaskLock;
@@ -282,6 +283,38 @@ class AuditInstrumentationTest extends TestCase
                 && $job->payload['subject_id'] === $movement->id
                 && $job->payload['actor_user_id'] === $this->editor->id
                 && $job->payload['context']['asset_id'] === $asset->id;
+        });
+    }
+
+    public function test_unassign_asset_dispatches_audit_job(): void
+    {
+        Queue::fake();
+
+        $product = Product::factory()->create([
+            'category_id' => $this->serializedCategory->id,
+            'brand_id' => $this->brand->id,
+        ]);
+
+        $asset = Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $this->location->id,
+            'status' => Asset::STATUS_ASSIGNED,
+            'current_employee_id' => $this->employee->id,
+        ]);
+
+        $action = new UnassignAssetFromEmployee;
+        $movement = $action->execute([
+            'asset_id' => $asset->id,
+            'note' => 'Test unassign for audit',
+            'actor_user_id' => $this->editor->id,
+        ]);
+
+        Queue::assertPushed(RecordAuditLog::class, function ($job) use ($movement, $asset) {
+            return $job->payload['action'] === AuditLog::ACTION_ASSET_UNASSIGN
+                && $job->payload['subject_id'] === $movement->id
+                && $job->payload['actor_user_id'] === $this->editor->id
+                && $job->payload['context']['asset_id'] === $asset->id
+                && $job->payload['context']['employee_id'] === $this->employee->id;
         });
     }
 

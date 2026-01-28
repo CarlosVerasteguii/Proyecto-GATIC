@@ -63,6 +63,8 @@ class AuditLog extends Model
     // Asset movements (FR17–FR22)
     public const ACTION_ASSET_ASSIGN = 'movements.asset.assign';
 
+    public const ACTION_ASSET_UNASSIGN = 'movements.asset.unassign';
+
     public const ACTION_ASSET_LOAN = 'movements.asset.loan';
 
     public const ACTION_ASSET_RETURN = 'movements.asset.return';
@@ -95,6 +97,7 @@ class AuditLog extends Model
         self::ACTION_LOCK_FORCE_CLAIM,
         self::ACTION_INVENTORY_ADJUSTMENT,
         self::ACTION_ASSET_ASSIGN,
+        self::ACTION_ASSET_UNASSIGN,
         self::ACTION_ASSET_LOAN,
         self::ACTION_ASSET_RETURN,
         self::ACTION_PRODUCT_QTY_REGISTER,
@@ -116,6 +119,7 @@ class AuditLog extends Model
         self::ACTION_LOCK_FORCE_CLAIM => 'Lock reclamado (admin)',
         self::ACTION_INVENTORY_ADJUSTMENT => 'Ajuste de inventario',
         self::ACTION_ASSET_ASSIGN => 'Asignación de activo',
+        self::ACTION_ASSET_UNASSIGN => 'Desasignación de activo',
         self::ACTION_ASSET_LOAN => 'Préstamo de activo',
         self::ACTION_ASSET_RETURN => 'Devolución de activo',
         self::ACTION_PRODUCT_QTY_REGISTER => 'Movimiento de cantidad',

@@ -215,7 +215,7 @@ class ProductsTest extends TestCase
         Livewire::actingAs($admin)
             ->test(ProductsIndex::class)
             ->set('search', 'Dell%')
-            ->assertSee('No hay productos.')
+            ->assertSee('Sin resultados')
             ->assertDontSee('Dell_1')
             ->assertDontSee('Dell X1');
     }

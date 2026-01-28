@@ -23,11 +23,12 @@
 @php
     use App\Support\Assets\AssetStatusTransitions;
     use App\Models\Asset;
+    use Illuminate\Support\Facades\Route;
 
     $canAssign = AssetStatusTransitions::canAssign($asset->status);
     $canLoan = AssetStatusTransitions::canLoan($asset->status);
     $canReturn = AssetStatusTransitions::canReturn($asset->status);
-    $canUnassign = AssetStatusTransitions::canUnassign($asset->status);
+    $canUnassign = Route::has('inventory.products.assets.unassign') && AssetStatusTransitions::canUnassign($asset->status);
 
     $hasActions = $canAssign || $canLoan || $canReturn || $canUnassign;
 
@@ -88,7 +89,7 @@
                     <li>
                         <a
                             class="dropdown-item"
-                            href="{{ route('inventory.products.assets.return', ['product' => $productId, 'asset' => $asset->id]) }}"
+                            href="{{ route('inventory.products.assets.unassign', ['product' => $productId, 'asset' => $asset->id]) }}"
                         >
                             <i class="bi bi-person-x me-2 text-danger" aria-hidden="true"></i>
                             Desasignar

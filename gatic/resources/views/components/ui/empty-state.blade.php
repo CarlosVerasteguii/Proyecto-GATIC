@@ -4,7 +4,7 @@
     Displays a helpful message when no data is available, with optional action.
 
     Usage:
-        {{-- No data --}}
+        (No data)
         <x-ui.empty-state
             icon="bi-box"
             title="No hay productos"
@@ -13,7 +13,7 @@
             <a href="..." class="btn btn-primary">Crear producto</a>
         </x-ui.empty-state>
 
-        {{-- No filter results --}}
+        (No filter results)
         <x-ui.empty-state
             variant="filter"
             title="Sin resultados"

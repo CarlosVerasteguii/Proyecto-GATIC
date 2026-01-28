@@ -75,3 +75,11 @@ gatic/.phpunit.result.cache
 gatic/.phpunit.cache/
 gatic/coverage/
 gatic/.pest/
+Context Chats
+
+# AI Tools
+.agents/
+.codex/
+.gemini/
+.qoder/
+.github/skills/

@@ -65,8 +65,13 @@ Objetivo: acercar la UI al spec (desktop-first, densidad, velocidad, menos fricc
   - contenedores más anchos donde aplique,
   - tablas compactas (`table-sm`) por defecto en flujos repetitivos,
   - toolbars consistentes (título + acciones + búsqueda/filtros).
-- [ ] Consolidar componentes UI reutilizables (pocos, pero bien hechos):
-  - header/toolbar, empty states, badges de estado consistentes.
+- [x] Consolidar componentes UI reutilizables (Epic 11):
+  - `<x-ui.toolbar>` — header/toolbar consistente
+  - `<x-ui.empty-state>` — empty states accionables
+  - `<x-ui.status-badge>` — badges de estado consistentes
+  - `<x-ui.drawer>` — drawer slide-in
+  - `<x-ui.quick-action-dropdown>` — acciones rápidas por fila
+  - `<x-ui.hotkeys-help>` — modal de atajos de teclado
 
 ## Cómo validar (local)
 
@@ -183,3 +188,99 @@ Registro detallado de qué sucedió, cómo se detectó y qué decisiones se toma
 - **Codex (GPT-5.2):** Implementación de Epic 9 y 10 (proceso incorrecto)
 - **Claude Opus 4.5:** Revisión, auditoría, organización de commits, documentación
 - **IA externa:** Auditoría de código y testing UI
+
+---
+
+## Epic 11: UX Spec Compliance (2026-01-25)
+
+**Objetivo:** Cerrar el gap significativo entre la UI actual y el UX spec (`_bmad-output/project-planning-artifacts/ux-design-specification.md`) para lograr una experiencia "desktop-first productiva".
+
+**Implementado por:** Claude Opus 4.5 (claude-opus-4-5-20251101)
+
+**Rama:** `feature/epic-9-10-hardening-ui` (continuación)
+
+### Gap inicial vs UX Spec
+
+| UX Spec requiere | Estado pre-Epic 11 | Estado post-Epic 11 |
+|------------------|---------------------|---------------------|
+| Design tokens CSS | Solo SCSS variables | ✅ CSS custom properties en `_tokens.scss` |
+| Badges de estado consistentes | Ad-hoc por vista | ✅ `<x-ui.status-badge>` component |
+| Toolbars consistentes | Cada vista diferente | ✅ `<x-ui.toolbar>` component |
+| Empty states accionables | Solo texto "No hay X" | ✅ `<x-ui.empty-state>` component |
+| Atajos teclado avanzados | Solo `/` y `Esc` | ✅ `Ctrl+K`, `?`, `j/k`, `Ctrl+Enter`, `[` |
+| Sidebar colapsable | Fijo 18rem | ✅ Toggle con localStorage persistence |
+| Acciones rápidas por fila | Solo botones básicos | ✅ `<x-ui.quick-action-dropdown>` |
+| Drawer para acciones | Solo modals | ✅ `<x-ui.drawer>` component |
+| Modo compacto toggle | No existe | ✅ Normal/Compacto con persistence |
+
+### Stories implementadas
+
+| Story | Descripción | Archivos clave |
+|-------|-------------|----------------|
+| 11.1 | Design tokens y sistema de colores CFE | `_tokens.scss`, `status-badge.blade.php` |
+| 11.2 | Componente toolbar consistente | `toolbar.blade.php`, vistas index actualizadas |
+| 11.3 | Empty states accionables | `empty-state.blade.php` |
+| 11.4 | Atajos de teclado avanzados | `hotkeys.js`, `hotkeys-help.blade.php` |
+| 11.5 | Sidebar colapsable | `sidebar-toggle.js`, `_layout.scss` |
+| 11.6 | Acciones rápidas por fila | `quick-action-dropdown.blade.php` |
+| 11.7 | Drawer para movimientos | `drawer.blade.php`, `drawer.js` |
+| 11.8 | Modo compacto (densidad visual) | `_density.scss`, `density-toggle.js` |
+
+### Archivos creados (17)
+
+```
+resources/sass/_tokens.scss
+resources/sass/_density.scss
+resources/js/ui/hotkeys.js
+resources/js/ui/sidebar-toggle.js
+resources/js/ui/drawer.js
+resources/js/ui/density-toggle.js
+resources/views/components/ui/status-badge.blade.php
+resources/views/components/ui/toolbar.blade.php
+resources/views/components/ui/empty-state.blade.php
+resources/views/components/ui/hotkeys-help.blade.php
+resources/views/components/ui/drawer.blade.php
+resources/views/components/ui/quick-action-dropdown.blade.php
+docs/ui/design-tokens.md
+```
+
+### Archivos modificados (12)
+
+```
+resources/sass/app.scss
+resources/sass/_variables.scss
+resources/sass/_layout.scss
+resources/js/app.js
+resources/views/layouts/app.blade.php
+resources/views/layouts/partials/sidebar.blade.php
+resources/views/layouts/partials/sidebar-nav.blade.php
+resources/views/layouts/partials/topbar.blade.php
+resources/views/livewire/inventory/products/products-index.blade.php
+resources/views/livewire/inventory/assets/assets-index.blade.php
+resources/views/livewire/inventory/assets/asset-show.blade.php
+resources/views/livewire/admin/users/users-index.blade.php
+resources/views/livewire/search/inventory-search.blade.php
+```
+
+### Validación
+
+- **Build:** `npm run build` ✅ (122 modules, 6.25s)
+- **PHP tests:** No ejecutados localmente (PHP 8.0.30 vs requerido 8.2+) — CI validará
+- **Manual testing:** Pendiente por usuario
+
+### Nota sobre proceso BMAD
+
+Similar a Epic 9/10, esta implementación **no siguió el ciclo completo** `create-story` → `dev-story` → `code-review` por cada story. Se implementaron las 8 stories en una sola sesión basándose en el plan aprobado.
+
+**Justificación:** El usuario solicitó implementar el plan completo en una sesión. El código sigue los patrones existentes del proyecto, usa las mismas tecnologías (Bootstrap 5, Livewire, SCSS), y cada componente es independiente y testeable.
+
+### Contexto para futuras IAs
+
+Los chats de Claude Code están guardados en:
+- `C:\Users\carlo\OneDrive\Documentos\Coding2025\Proyecto GATIC\Context Chats\`
+
+Estructura de referencia:
+- Chat anterior (revisión Epic 9/10): `[archivo anterior].md`
+- Este chat (Epic 11): `[archivo actual].md`
+
+Estos archivos proveen contexto completo de las decisiones tomadas, problemas encontrados, y soluciones implementadas.

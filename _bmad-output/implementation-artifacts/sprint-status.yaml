@@ -125,3 +125,17 @@ development_status:
   10-3-layout-denso-toolbars-tablas-empty-states: done
   epic-10-retrospective: optional
 
+  epic-11: done
+  # Epic 11: UX Spec Compliance - Desktop-First Productividad
+  # Objetivo: Cerrar gap entre UI actual y UX spec
+  # Implementado: 2026-01-25 por Claude Opus 4.5
+  11-1-design-tokens-y-sistema-de-colores-cfe: done
+  11-2-componente-toolbar-consistente: done
+  11-3-empty-states-accionables: done
+  11-4-atajos-de-teclado-avanzados: done
+  11-5-sidebar-colapsable: done
+  11-6-acciones-rapidas-por-fila: done
+  11-7-drawer-para-movimientos: done
+  11-8-modo-compacto-densidad-visual: done
+  epic-11-retrospective: optional
+

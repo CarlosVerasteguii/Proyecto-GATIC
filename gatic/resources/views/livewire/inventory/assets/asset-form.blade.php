@@ -68,7 +68,7 @@
                             <label for="asset-status" class="form-label">Estado</label>
                             <select
                                 id="asset-status"
-                                class="form-select @error('status') is-invalid @enderror"
+                                class="form-select @error('status') is-invalid @enderror @error('current_employee_id') is-invalid @enderror"
                                 wire:model.defer="status"
                             >
                                 @foreach ($statuses as $status)
@@ -77,6 +77,9 @@
                             </select>
                             @error('status')
                                 <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            @error('current_employee_id')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
 
@@ -94,4 +97,3 @@
         </div>
     </div>
 </div>
-

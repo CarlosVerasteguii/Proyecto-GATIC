@@ -32,6 +32,8 @@ class AssetForm extends Component
 
     public string $status = Asset::STATUS_AVAILABLE;
 
+    public ?int $current_employee_id = null;
+
     /**
      * @var array<int, array{id:int, name:string}>
      */
@@ -87,6 +89,7 @@ class AssetForm extends Component
         $this->asset_tag = $model->asset_tag;
         $this->location_id = $model->location_id;
         $this->status = $model->status;
+        $this->current_employee_id = $model->current_employee_id;
     }
 
     /**
@@ -127,6 +130,11 @@ class AssetForm extends Component
                 'string',
                 Rule::in($this->statuses),
             ],
+            'current_employee_id' => [
+                Rule::requiredIf($this->status === Asset::STATUS_ASSIGNED),
+                'integer',
+                Rule::exists('employees', 'id')->whereNull('deleted_at'),
+            ],
         ];
     }
 
@@ -144,6 +152,8 @@ class AssetForm extends Component
             'location_id.exists' => 'La ubicación seleccionada no es válida.',
             'status.required' => 'El estado es obligatorio.',
             'status.in' => 'El estado seleccionado no es válido.',
+            'current_employee_id.required' => 'El empleado es obligatorio cuando el estado es Asignado.',
+            'current_employee_id.exists' => 'El empleado seleccionado no es válido.',
         ];
     }
 
@@ -169,6 +179,7 @@ class AssetForm extends Component
                 'asset_tag' => $validated['asset_tag'],
                 'location_id' => $validated['location_id'],
                 'status' => $validated['status'],
+                'current_employee_id' => $validated['current_employee_id'] ?? null,
             ]);
 
             return redirect()

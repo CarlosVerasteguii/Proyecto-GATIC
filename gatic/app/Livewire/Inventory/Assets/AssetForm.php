@@ -130,11 +130,11 @@ class AssetForm extends Component
                 'string',
                 Rule::in($this->statuses),
             ],
-            'current_employee_id' => [
-                Rule::requiredIf($this->status === Asset::STATUS_ASSIGNED),
-                'integer',
-                Rule::exists('employees', 'id')->whereNull('deleted_at'),
-            ],
+            'current_employee_id' => array_filter([
+                $this->status === Asset::STATUS_ASSIGNED ? 'required' : 'nullable',
+                $this->current_employee_id !== null ? 'integer' : null,
+                $this->current_employee_id !== null ? Rule::exists('employees', 'id')->whereNull('deleted_at') : null,
+            ]),
         ];
     }
 

@@ -1,4 +1,20 @@
-<div class="container">
+<div
+    class="container"
+    x-data="{}"
+    x-on:focus-field.window="
+        const field = $event.detail.field;
+        let el = null;
+        if (field === 'employeeId') {
+            el = document.querySelector('[role=combobox]');
+        } else if (field === 'note') {
+            el = document.getElementById('note');
+        }
+        if (el) {
+            el.focus();
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    "
+>
     <x-ui.toast-container />
 
     <div class="row justify-content-center">
@@ -53,18 +69,30 @@
                             </label>
 
                             @if ($employeeLocked && $asset->currentEmployee)
-                                <div class="form-control-plaintext">
-                                    <a href="{{ route('employees.show', ['employee' => $asset->currentEmployee->id]) }}" class="text-decoration-none">
-                                        <strong>{{ $asset->currentEmployee->rpe }}</strong> - {{ $asset->currentEmployee->name }}
-                                    </a>
+                                {{-- Pill visual del empleado actual --}}
+                                <div class="d-flex align-items-center gap-2 p-2 bg-light border rounded">
+                                    <div class="flex-grow-1">
+                                        <a href="{{ route('employees.show', ['employee' => $asset->currentEmployee->id]) }}" class="text-decoration-none fw-medium">
+                                            {{ $asset->currentEmployee->rpe }}
+                                        </a>
+                                        <span class="text-muted mx-1">-</span>
+                                        <span>{{ $asset->currentEmployee->name }}</span>
+                                        @if($asset->currentEmployee->department)
+                                            <span class="text-muted small ms-2">({{ $asset->currentEmployee->department }})</span>
+                                        @endif
+                                    </div>
+                                    <span class="badge bg-info text-dark">Tenencia actual</span>
                                 </div>
                             @else
-                                <div class="text-muted small mb-2">
-                                    Sin tenencia registrada (estado legacy o ajuste manual). Selecciona un empleado para preservar trazabilidad.
+                                <div class="alert alert-warning py-2 mb-2">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Sin tenencia registrada. Selecciona un empleado para preservar trazabilidad.
                                 </div>
-                                <livewire:ui.employee-combobox wire:model="employeeId" />
+                                <livewire:ui.employee-combobox wire:model.live="employeeId" />
                                 @error('employeeId')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    <div class="invalid-feedback d-block mt-1">
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                    </div>
                                 @enderror
                             @endif
                         </div>
@@ -75,25 +103,37 @@
                             </label>
                             <textarea
                                 id="note"
-                                wire:model="note"
+                                wire:model.blur="note"
                                 class="form-control @error('note') is-invalid @enderror"
                                 rows="3"
-                                placeholder="Motivo de la desasignación (mínimo 5 caracteres)"
+                                placeholder="Motivo de la desasignacion (minimo 5 caracteres)"
                                 maxlength="1000"
                             ></textarea>
                             @error('note')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback">
+                                    <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                </div>
                             @enderror
                             <div class="form-text">
-                                {{ mb_strlen($note) }}/1000 caracteres
+                                {{ mb_strlen($note) }}/1000 caracteres (minimo 5)
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
+                            <a
+                                href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}"
+                                class="btn btn-outline-secondary"
+                                @if($isSubmitting) aria-disabled="true" style="pointer-events: none; opacity: 0.65;" @endif
+                            >
                                 Cancelar
                             </a>
-                            <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                                @if($isSubmitting) disabled @endif
+                                wire:loading.attr="disabled"
+                                style="min-width: 140px;"
+                            >
                                 <span wire:loading.remove wire:target="unassignAsset">
                                     <i class="bi bi-person-x me-1"></i> Desasignar
                                 </span>

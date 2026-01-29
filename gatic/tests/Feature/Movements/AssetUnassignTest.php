@@ -192,5 +192,44 @@ class AssetUnassignTest extends TestCase
 
         $this->assertDatabaseCount('asset_movements', 0);
     }
+
+    public function test_note_error_clears_when_note_is_corrected_in_unassign(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        ['product' => $product, 'asset' => $asset] = $this->createSerializedProductWithAsset(Asset::STATUS_ASSIGNED);
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Perez',
+        ]);
+        $asset->update(['current_employee_id' => $employee->id]);
+
+        $component = Livewire::actingAs($admin)
+            ->test(UnassignAssetForm::class, ['product' => (string) $product->id, 'asset' => (string) $asset->id])
+            ->set('note', 'ab')
+            ->call('unassignAsset')
+            ->assertHasErrors(['note']);
+
+        // Al corregir la nota, el error debe limpiarse
+        $component->set('note', 'Nota corregida valida')
+            ->assertHasNoErrors(['note']);
+    }
+
+    public function test_lector_cannot_see_unassign_button_in_asset_show(): void
+    {
+        $lector = User::factory()->create(['role' => UserRole::Lector]);
+        ['product' => $product, 'asset' => $asset] = $this->createSerializedProductWithAsset(Asset::STATUS_ASSIGNED);
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Perez',
+        ]);
+        $asset->update(['current_employee_id' => $employee->id]);
+
+        $response = $this->actingAs($lector)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}");
+
+        $response->assertOk();
+        $response->assertDontSee('bi-person-x');
+        $response->assertDontSee('Desasignar');
+    }
 }
 

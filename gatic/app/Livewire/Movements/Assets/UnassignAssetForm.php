@@ -34,6 +34,8 @@ class UnassignAssetForm extends Component
 
     public ?string $errorId = null;
 
+    public bool $isSubmitting = false;
+
     public function mount(string $product, string $asset): void
     {
         Gate::authorize('inventory.manage');
@@ -74,6 +76,16 @@ class UnassignAssetForm extends Component
                 $this->employeeLocked = true;
             }
         }
+    }
+
+    public function updatedEmployeeId(): void
+    {
+        $this->resetErrorBag('employeeId');
+    }
+
+    public function updatedNote(): void
+    {
+        $this->resetErrorBag('note');
     }
 
     /**
@@ -120,7 +132,18 @@ class UnassignAssetForm extends Component
     {
         Gate::authorize('inventory.manage');
 
-        $this->validate();
+        $this->isSubmitting = true;
+
+        try {
+            $this->validate();
+        } catch (ValidationException $e) {
+            $this->isSubmitting = false;
+            $firstErrorField = array_key_first($e->errors());
+            if ($firstErrorField) {
+                $this->dispatch('focus-field', field: $firstErrorField);
+            }
+            throw $e;
+        }
 
         try {
             $actorUserId = auth()->id();
@@ -148,6 +171,8 @@ class UnassignAssetForm extends Component
                 'asset' => $this->assetId,
             ], navigate: true);
         } catch (ValidationException $e) {
+            $this->isSubmitting = false;
+
             if (isset($e->errors()['employee_id'][0])) {
                 $this->addError('employeeId', $e->errors()['employee_id'][0]);
 
@@ -172,6 +197,7 @@ class UnassignAssetForm extends Component
 
             throw $e;
         } catch (Throwable $e) {
+            $this->isSubmitting = false;
             $this->errorId = app(\App\Support\Errors\ErrorReporter::class)->report($e, request());
 
             $this->dispatch(
@@ -191,6 +217,7 @@ class UnassignAssetForm extends Component
         return view('livewire.movements.assets.unassign-asset-form', [
             'product' => $this->productModel,
             'asset' => $this->assetModel,
+            'isSubmitting' => $this->isSubmitting,
         ]);
     }
 }

@@ -31,6 +31,8 @@ class AssignAssetForm extends Component
 
     public ?string $errorId = null;
 
+    public bool $isSubmitting = false;
+
     public function mount(string $product, string $asset): void
     {
         Gate::authorize('inventory.manage');
@@ -64,6 +66,16 @@ class AssignAssetForm extends Component
 
             return;
         }
+    }
+
+    public function updatedEmployeeId(): void
+    {
+        $this->resetErrorBag('employeeId');
+    }
+
+    public function updatedNote(): void
+    {
+        $this->resetErrorBag('note');
     }
 
     /**
@@ -104,7 +116,18 @@ class AssignAssetForm extends Component
     {
         Gate::authorize('inventory.manage');
 
-        $this->validate();
+        $this->isSubmitting = true;
+
+        try {
+            $this->validate();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->isSubmitting = false;
+            $firstErrorField = array_key_first($e->errors());
+            if ($firstErrorField) {
+                $this->dispatch('focus-field', field: $firstErrorField);
+            }
+            throw $e;
+        }
 
         try {
             $action = new AssignAssetToEmployee;
@@ -127,8 +150,10 @@ class AssignAssetForm extends Component
                 'asset' => $this->assetId,
             ], navigate: true);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->isSubmitting = false;
             throw $e;
         } catch (Throwable $e) {
+            $this->isSubmitting = false;
             $this->errorId = app(\App\Support\Errors\ErrorReporter::class)->report($e, request());
 
             $this->dispatch(
@@ -148,6 +173,7 @@ class AssignAssetForm extends Component
         return view('livewire.movements.assets.assign-asset-form', [
             'product' => $this->productModel,
             'asset' => $this->assetModel,
+            'isSubmitting' => $this->isSubmitting,
         ]);
     }
 }

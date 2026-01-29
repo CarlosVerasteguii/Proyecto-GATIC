@@ -33,21 +33,27 @@
     x-on:click.away="open = false; activeDescendantId = null; highlightedIndex = -1"
 >
     @if ($employeeId)
-        <div class="input-group">
-            <input
-                type="text"
-                class="form-control"
-                value="{{ $employeeLabel }}"
-                readonly
-                aria-label="Empleado seleccionado"
-            />
+        {{-- Pill visual del empleado seleccionado --}}
+        <div class="d-flex align-items-center gap-2 p-2 bg-success bg-opacity-10 border border-success rounded">
+            <div class="d-flex align-items-center gap-2 flex-grow-1">
+                <span class="badge bg-success">
+                    <i class="bi bi-person-check me-1"></i>{{ $employeeRpe }}
+                </span>
+                <span class="fw-medium">{{ $employeeName }}</span>
+                @if($employeeDepartment)
+                    <span class="text-muted small">({{ $employeeDepartment }})</span>
+                @endif
+            </div>
             <button
                 type="button"
-                class="btn btn-outline-secondary"
+                class="btn btn-sm btn-outline-secondary"
                 wire:click="clearSelection"
-                aria-label="Limpiar seleccion"
+                aria-label="Cambiar empleado"
+                title="Cambiar empleado"
+                style="min-width: 44px; min-height: 44px;"
             >
-                <i class="bi bi-x-lg"></i>
+                <i class="bi bi-arrow-repeat"></i>
+                <span class="visually-hidden">Cambiar</span>
             </button>
         </div>
     @else

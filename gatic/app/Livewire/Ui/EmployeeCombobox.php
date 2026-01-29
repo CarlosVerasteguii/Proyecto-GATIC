@@ -18,6 +18,12 @@ class EmployeeCombobox extends Component
 
     public string $employeeLabel = '';
 
+    public ?string $employeeRpe = null;
+
+    public ?string $employeeName = null;
+
+    public ?string $employeeDepartment = null;
+
     public string $search = '';
 
     public bool $showDropdown = false;
@@ -35,8 +41,7 @@ class EmployeeCombobox extends Component
         if ($employeeId !== null) {
             $employee = Employee::query()->find($employeeId);
             if ($employee) {
-                $this->employeeId = $employee->id;
-                $this->employeeLabel = $this->formatEmployeeLabel($employee);
+                $this->setEmployeeData($employee);
             }
         }
     }
@@ -46,7 +51,7 @@ class EmployeeCombobox extends Component
         Gate::authorize('inventory.manage');
 
         if ($employeeId === null) {
-            $this->employeeLabel = '';
+            $this->clearEmployeeData();
 
             return;
         }
@@ -54,13 +59,12 @@ class EmployeeCombobox extends Component
         $employee = Employee::query()->find($employeeId);
 
         if (! $employee) {
-            $this->employeeLabel = '';
-            $this->employeeId = null;
+            $this->clearEmployeeData();
 
             return;
         }
 
-        $this->employeeLabel = $this->formatEmployeeLabel($employee);
+        $this->setEmployeeData($employee);
     }
 
     public function updatedSearch(): void
@@ -77,8 +81,7 @@ class EmployeeCombobox extends Component
 
         $employee = Employee::query()->findOrFail($employeeId);
 
-        $this->employeeId = $employee->id;
-        $this->employeeLabel = $this->formatEmployeeLabel($employee);
+        $this->setEmployeeData($employee);
         $this->search = '';
         $this->showDropdown = false;
         $this->errorId = null;
@@ -88,8 +91,7 @@ class EmployeeCombobox extends Component
     {
         Gate::authorize('inventory.manage');
 
-        $this->employeeId = null;
-        $this->employeeLabel = '';
+        $this->clearEmployeeData();
         $this->search = '';
         $this->showDropdown = false;
         $this->errorId = null;
@@ -153,5 +155,23 @@ class EmployeeCombobox extends Component
     private function formatEmployeeLabel(Employee $employee): string
     {
         return $employee->rpe.' - '.$employee->name;
+    }
+
+    private function setEmployeeData(Employee $employee): void
+    {
+        $this->employeeId = $employee->id;
+        $this->employeeLabel = $this->formatEmployeeLabel($employee);
+        $this->employeeRpe = $employee->rpe;
+        $this->employeeName = $employee->name;
+        $this->employeeDepartment = $employee->department;
+    }
+
+    private function clearEmployeeData(): void
+    {
+        $this->employeeId = null;
+        $this->employeeLabel = '';
+        $this->employeeRpe = null;
+        $this->employeeName = null;
+        $this->employeeDepartment = null;
     }
 }

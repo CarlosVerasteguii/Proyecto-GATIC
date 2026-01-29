@@ -1,4 +1,20 @@
-<div class="container">
+<div
+    class="container"
+    x-data="{}"
+    x-on:focus-field.window="
+        const field = $event.detail.field;
+        let el = null;
+        if (field === 'employeeId') {
+            el = document.querySelector('[role=combobox]');
+        } else if (field === 'note') {
+            el = document.getElementById('note');
+        }
+        if (el) {
+            el.focus();
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    "
+>
     <x-ui.toast-container />
 
     <div class="row justify-content-center">
@@ -52,9 +68,11 @@
                             <label class="form-label">
                                 Empleado <span class="text-danger">*</span>
                             </label>
-                            <livewire:ui.employee-combobox wire:model="employeeId" />
+                            <livewire:ui.employee-combobox wire:model.live="employeeId" />
                             @error('employeeId')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                <div class="invalid-feedback d-block mt-1">
+                                    <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                </div>
                             @enderror
                         </div>
 
@@ -65,26 +83,38 @@
                             </label>
                             <textarea
                                 id="note"
-                                wire:model="note"
+                                wire:model.blur="note"
                                 class="form-control @error('note') is-invalid @enderror"
                                 rows="3"
                                 placeholder="Motivo de la asignacion (minimo 5 caracteres)"
                                 maxlength="1000"
                             ></textarea>
                             @error('note')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback">
+                                    <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                </div>
                             @enderror
                             <div class="form-text">
-                                {{ strlen($note) }}/1000 caracteres
+                                {{ strlen($note) }}/1000 caracteres (minimo 5)
                             </div>
                         </div>
 
                         {{-- Acciones --}}
                         <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
+                            <a
+                                href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}"
+                                class="btn btn-outline-secondary"
+                                @if($isSubmitting) aria-disabled="true" style="pointer-events: none; opacity: 0.65;" @endif
+                            >
                                 Cancelar
                             </a>
-                            <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                                @if($isSubmitting) disabled @endif
+                                wire:loading.attr="disabled"
+                                style="min-width: 120px;"
+                            >
                                 <span wire:loading.remove wire:target="assign">
                                     <i class="bi bi-person-check me-1"></i> Asignar
                                 </span>

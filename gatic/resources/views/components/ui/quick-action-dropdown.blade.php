@@ -43,20 +43,22 @@
                 class="btn {{ $btnSize }} btn-outline-primary dropdown-toggle"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
-                aria-label="Acciones rápidas"
+                aria-label="Acciones rapidas para este activo"
+                style="min-width: 44px; min-height: 44px; padding: 0.5rem 0.75rem;"
             >
-                <i class="bi bi-lightning-charge" aria-hidden="true"></i>
-                <span class="visually-hidden">Acciones</span>
+                <i class="bi bi-lightning-charge me-1" aria-hidden="true"></i>
+                <span>Acciones</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
                 @if($canAssign)
                     <li>
                         <a
-                            class="dropdown-item"
+                            class="dropdown-item py-2"
                             href="{{ route('inventory.products.assets.assign', ['product' => $productId, 'asset' => $asset->id]) }}"
+                            style="min-height: 44px; display: flex; align-items: center;"
                         >
                             <i class="bi bi-person-check me-2 text-success" aria-hidden="true"></i>
-                            Asignar
+                            Asignar a empleado
                         </a>
                     </li>
                 @endif
@@ -64,8 +66,9 @@
                 @if($canLoan)
                     <li>
                         <a
-                            class="dropdown-item"
+                            class="dropdown-item py-2"
                             href="{{ route('inventory.products.assets.loan', ['product' => $productId, 'asset' => $asset->id]) }}"
+                            style="min-height: 44px; display: flex; align-items: center;"
                         >
                             <i class="bi bi-box-arrow-up-right me-2 text-info" aria-hidden="true"></i>
                             Prestar
@@ -76,8 +79,9 @@
                 @if($canReturn)
                     <li>
                         <a
-                            class="dropdown-item"
+                            class="dropdown-item py-2"
                             href="{{ route('inventory.products.assets.return', ['product' => $productId, 'asset' => $asset->id]) }}"
+                            style="min-height: 44px; display: flex; align-items: center;"
                         >
                             <i class="bi bi-arrow-return-left me-2 text-warning" aria-hidden="true"></i>
                             Devolver
@@ -88,8 +92,9 @@
                 @if($canUnassign)
                     <li>
                         <a
-                            class="dropdown-item"
+                            class="dropdown-item py-2"
                             href="{{ route('inventory.products.assets.unassign', ['product' => $productId, 'asset' => $asset->id]) }}"
+                            style="min-height: 44px; display: flex; align-items: center;"
                         >
                             <i class="bi bi-person-x me-2 text-danger" aria-hidden="true"></i>
                             Desasignar
@@ -97,24 +102,18 @@
                     </li>
                 @endif
 
-                @if($canAssign || $canLoan)
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a
-                            class="dropdown-item"
-                            href="{{ route('inventory.products.assets.show', ['product' => $productId, 'asset' => $asset->id]) }}"
-                        >
-                            <i class="bi bi-eye me-2" aria-hidden="true"></i>
-                            Ver detalle
-                        </a>
-                    </li>
-                @endif
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a
+                        class="dropdown-item py-2"
+                        href="{{ route('inventory.products.assets.show', ['product' => $productId, 'asset' => $asset->id]) }}"
+                        style="min-height: 44px; display: flex; align-items: center;"
+                    >
+                        <i class="bi bi-eye me-2" aria-hidden="true"></i>
+                        Ver detalle
+                    </a>
+                </li>
             </ul>
         </div>
-    @else
-        {{-- No actions available for this status --}}
-        <span class="text-muted small" title="Sin acciones disponibles para este estado">
-            <i class="bi bi-dash" aria-hidden="true"></i>
-        </span>
     @endif
 @endcan

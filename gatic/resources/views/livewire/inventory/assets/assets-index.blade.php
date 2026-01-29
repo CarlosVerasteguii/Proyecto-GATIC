@@ -106,19 +106,28 @@
                                                     'page' => $assets->currentPage(),
                                                 ], static fn ($value): bool => $value !== null && $value !== '');
                                             @endphp
-                                            <div class="d-flex gap-1 justify-content-end">
+                                            <div class="d-flex gap-2 justify-content-end align-items-center">
+                                                {{-- Dropdown de acciones rapidas (solo Admin/Editor) --}}
                                                 <x-ui.quick-action-dropdown :asset="$asset" :productId="$product->id" />
+
+                                                {{-- Boton Ver (todos los roles) --}}
                                                 <a
                                                     class="btn btn-sm btn-outline-secondary"
                                                     href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id] + $returnQuery) }}"
+                                                    style="min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;"
                                                 >
+                                                    <i class="bi bi-eye me-1" aria-hidden="true"></i>
                                                     Ver
                                                 </a>
+
+                                                {{-- Boton Editar (solo Admin/Editor) --}}
                                                 @can('inventory.manage')
                                                     <a
                                                         class="btn btn-sm btn-outline-primary"
                                                         href="{{ route('inventory.products.assets.edit', ['product' => $product->id, 'asset' => $asset->id]) }}"
+                                                        style="min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;"
                                                     >
+                                                        <i class="bi bi-pencil me-1" aria-hidden="true"></i>
                                                         Editar
                                                     </a>
                                                 @endcan

@@ -334,4 +334,47 @@ class AssetAssignmentTest extends TestCase
             ->assertSee('Dell X1')
             ->assertSee('SER-001');
     }
+
+    public function test_employee_error_clears_when_employee_is_selected(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        ['product' => $product, 'asset' => $asset] = $this->createSerializedProductWithAsset();
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Perez',
+            'department' => 'IT',
+        ]);
+
+        $component = Livewire::actingAs($admin)
+            ->test(AssignAssetForm::class, ['product' => (string) $product->id, 'asset' => (string) $asset->id])
+            ->set('employeeId', null)
+            ->set('note', 'Nota valida de prueba')
+            ->call('assign')
+            ->assertHasErrors(['employeeId']);
+
+        // Al seleccionar un empleado, el error debe limpiarse
+        $component->set('employeeId', $employee->id)
+            ->assertHasNoErrors(['employeeId']);
+    }
+
+    public function test_note_error_clears_when_note_is_corrected(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        ['product' => $product, 'asset' => $asset] = $this->createSerializedProductWithAsset();
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Perez',
+        ]);
+
+        $component = Livewire::actingAs($admin)
+            ->test(AssignAssetForm::class, ['product' => (string) $product->id, 'asset' => (string) $asset->id])
+            ->set('employeeId', $employee->id)
+            ->set('note', 'ab')
+            ->call('assign')
+            ->assertHasErrors(['note']);
+
+        // Al corregir la nota, el error debe limpiarse
+        $component->set('note', 'Nota valida corregida')
+            ->assertHasNoErrors(['note']);
+    }
 }

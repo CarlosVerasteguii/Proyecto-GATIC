@@ -7,34 +7,40 @@
     @endphp
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="d-flex gap-2">
+            {{-- Detail Header --}}
+            <x-ui.detail-header :title="$asset->serial" :subtitle="$product->name">
+                <x-slot:breadcrumb>
                     <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery) }}">
-                        Volver
+                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
                     </a>
                     <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.show', ['product' => $product->id]) }}">
-                        Producto
+                        <i class="bi bi-box me-1" aria-hidden="true"></i>Producto
                     </a>
-                </div>
-                <div class="d-flex gap-2">
+                </x-slot:breadcrumb>
+
+                <x-slot:status>
+                    <x-ui.status-badge :status="$asset->status" solid />
+                </x-slot:status>
+
+                <x-slot:actions>
                     @can('inventory.manage')
                         @if (\App\Support\Assets\AssetStatusTransitions::canAssign($asset->status))
                             <a class="btn btn-sm btn-success" href="{{ route('inventory.products.assets.assign', ['product' => $product->id, 'asset' => $asset->id]) }}">
-                                <i class="bi bi-person-check me-1"></i> Asignar
+                                <i class="bi bi-person-check me-1" aria-hidden="true"></i>Asignar
                             </a>
                         @endif
                         @if (\App\Support\Assets\AssetStatusTransitions::canLoan($asset->status))
                             <a class="btn btn-sm btn-info text-dark" href="{{ route('inventory.products.assets.loan', ['product' => $product->id, 'asset' => $asset->id]) }}">
-                                <i class="bi bi-box-arrow-up-right me-1"></i> Prestar
+                                <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>Prestar
                             </a>
                         @endif
                         @if (\App\Support\Assets\AssetStatusTransitions::canReturn($asset->status))
                             <a class="btn btn-sm btn-info text-dark" href="{{ route('inventory.products.assets.return', ['product' => $product->id, 'asset' => $asset->id]) }}">
-                                <i class="bi bi-arrow-return-left me-1"></i> Devolver
+                                <i class="bi bi-arrow-return-left me-1" aria-hidden="true"></i>Devolver
                             </a>
                         @endif
                         <a class="btn btn-sm btn-primary" href="{{ route('inventory.products.assets.edit', ['product' => $product->id, 'asset' => $asset->id]) }}">
-                            Editar
+                            <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
                         </a>
                     @endcan
                     @can('admin-only')
@@ -42,18 +48,15 @@
                             Ajustar
                         </a>
                     @endcan
-                </div>
-            </div>
+                </x-slot:actions>
+            </x-ui.detail-header>
 
             <div class="card">
                 <div class="card-header">
-                    Detalle del Activo
+                    Información del activo
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
-                        <dt class="col-sm-3">Producto</dt>
-                        <dd class="col-sm-9">{{ $product->name }}</dd>
-
                         <dt class="col-sm-3">Serial</dt>
                         <dd class="col-sm-9">{{ $asset->serial }}</dd>
 
@@ -84,11 +87,7 @@
                         <p class="mb-0 text-muted">N/A — El activo está disponible</p>
                     @elseif ($asset->currentEmployee)
                         <div class="d-flex align-items-center gap-2">
-                            @if ($asset->status === \App\Models\Asset::STATUS_ASSIGNED)
-                                <span class="badge bg-warning text-dark">Asignado</span>
-                            @else
-                                <span class="badge bg-info text-dark">Prestado</span>
-                            @endif
+                            <x-ui.status-badge :status="$asset->status" />
                             <a href="{{ route('employees.show', ['employee' => $asset->currentEmployee->id]) }}" class="text-decoration-none">
                                 <strong>{{ $asset->currentEmployee->rpe }}</strong> — {{ $asset->currentEmployee->name }}
                             </a>

@@ -7,31 +7,41 @@
     @endphp
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.index', $returnQuery) }}">
-                    Volver
-                </a>
-                <div class="d-flex gap-2">
+            {{-- Detail Header --}}
+            <x-ui.detail-header :title="$product?->name ?? 'Producto'">
+                <x-slot:breadcrumb>
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.index', $returnQuery) }}">
+                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
+                    </a>
+                </x-slot:breadcrumb>
+
+                <x-slot:kpis>
+                    <x-ui.detail-header-kpi label="Total" :value="$total" />
+                    <x-ui.detail-header-kpi label="Disponibles" :value="$available" variant="success" />
+                    <x-ui.detail-header-kpi label="No disponibles" :value="$unavailable" variant="warning" />
+                </x-slot:kpis>
+
+                <x-slot:actions>
                     @if ($productIsSerialized)
                         <a
-                            class="btn btn-sm btn-outline-secondary"
+                            class="btn btn-sm btn-primary"
                             href="{{ route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery) }}"
                         >
-                            Activos
+                            <i class="bi bi-hdd me-1" aria-hidden="true"></i>Ver activos
                         </a>
                     @else
                         <a
                             class="btn btn-sm btn-outline-info"
                             href="{{ route('inventory.products.kardex', ['product' => $product->id] + $returnQuery) }}"
                         >
-                            <i class="bi bi-clock-history me-1"></i> Ver kardex
+                            <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Ver kardex
                         </a>
                         @can('inventory.manage')
                             <a
                                 class="btn btn-sm btn-primary"
                                 href="{{ route('inventory.products.movements.quantity', ['product' => $product->id]) }}"
                             >
-                                <i class="bi bi-arrow-left-right me-1"></i> Registrar movimiento
+                                <i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>Registrar movimiento
                             </a>
                         @endcan
                         @can('admin-only')
@@ -43,35 +53,8 @@
                             </a>
                         @endcan
                     @endif
-                </div>
-            </div>
-
-            <div class="row g-3 mb-3">
-                <div class="col-12 col-md-4">
-                    <div class="card">
-                        <div class="card-body py-3">
-                            <div class="text-muted small">Total</div>
-                            <div class="fs-4 fw-semibold">{{ $total }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4">
-                    <div class="card">
-                        <div class="card-body py-3">
-                            <div class="text-muted small">Disponibles</div>
-                            <div class="fs-4 fw-semibold">{{ $available }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4">
-                    <div class="card">
-                        <div class="card-body py-3">
-                            <div class="text-muted small">No disponibles</div>
-                            <div class="fs-4 fw-semibold">{{ $unavailable }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                </x-slot:actions>
+            </x-ui.detail-header>
 
             @if ($productIsSerialized)
                 <p class="text-muted small mb-3">
@@ -81,7 +64,7 @@
 
             <div class="card">
                 <div class="card-header">
-                    {{ $product?->name ?? 'Producto' }}
+                    Información del producto
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
@@ -109,7 +92,7 @@
                                 <tbody>
                                     @foreach ($statusBreakdown as $row)
                                         <tr @class(['table-light' => $row['status'] === \App\Models\Asset::STATUS_RETIRED])>
-                                            <td>{{ $row['status'] }}</td>
+                                            <td><x-ui.status-badge :status="$row['status']" /></td>
                                             <td class="text-end">{{ $row['count'] }}</td>
                                         </tr>
                                     @endforeach

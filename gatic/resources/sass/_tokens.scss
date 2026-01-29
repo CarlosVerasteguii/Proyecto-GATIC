@@ -281,3 +281,24 @@
 body.drawer-open {
   overflow: hidden;
 }
+
+// =============================================================================
+// Detail Header Component
+// =============================================================================
+.detail-header {
+  // Header card has subtle shadow
+  .card {
+    border-radius: var(--radius-md);
+  }
+}
+
+// KPI styling - prevent looking like form inputs
+.detail-header-kpi {
+  min-width: 4rem;
+  
+  // Visual separator between KPIs on larger screens
+  &:not(:last-child) {
+    padding-right: var(--space-4);
+    border-right: 1px solid $border-color;
+  }
+}

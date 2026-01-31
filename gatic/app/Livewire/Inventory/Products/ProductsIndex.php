@@ -7,6 +7,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -98,6 +99,21 @@ class ProductsIndex extends Component
             }
         }
 
+        $unavailableStatuses = Asset::UNAVAILABLE_STATUSES;
+        $unavailablePlaceholders = implode(',', array_fill(0, count($unavailableStatuses), '?'));
+
+        $assetCountsSubquery = Asset::query()
+            ->select('assets.product_id')
+            ->selectRaw(
+                'sum(case when assets.status <> ? then 1 else 0 end) as assets_total',
+                [Asset::STATUS_RETIRED]
+            )
+            ->selectRaw(
+                "sum(case when assets.status in ($unavailablePlaceholders) then 1 else 0 end) as assets_unavailable",
+                $unavailableStatuses
+            )
+            ->groupBy('assets.product_id');
+
         $productsQuery = Product::query()
             ->select('products.*')
             ->leftJoin('categories as categories_for_counts', function ($join) {
@@ -105,19 +121,12 @@ class ProductsIndex extends Component
                     ->on('categories_for_counts.id', '=', 'products.category_id')
                     ->whereNull('categories_for_counts.deleted_at');
             })
+            ->leftJoinSub($assetCountsSubquery, 'asset_counts', function ($join) {
+                $join->on('asset_counts.product_id', '=', 'products.id');
+            })
             ->addSelect('categories_for_counts.is_serialized as category_is_serialized')
-            ->addSelect([
-                'assets_total' => Asset::query()
-                    ->selectRaw('count(*)')
-                    ->whereColumn('assets.product_id', 'products.id')
-                    ->where('assets.status', '!=', Asset::STATUS_RETIRED)
-                    ->where('categories_for_counts.is_serialized', true),
-                'assets_unavailable' => Asset::query()
-                    ->selectRaw('count(*)')
-                    ->whereColumn('assets.product_id', 'products.id')
-                    ->whereIn('assets.status', Asset::UNAVAILABLE_STATUSES)
-                    ->where('categories_for_counts.is_serialized', true),
-            ])
+            ->addSelect(DB::raw('coalesce(asset_counts.assets_total, 0) as assets_total'))
+            ->addSelect(DB::raw('coalesce(asset_counts.assets_unavailable, 0) as assets_unavailable'))
             ->with(['category', 'brand'])
             ->when($likePattern, function ($query) use ($likePattern) {
                 $query->whereRaw("products.name like ? escape '\\\\'", [$likePattern]);

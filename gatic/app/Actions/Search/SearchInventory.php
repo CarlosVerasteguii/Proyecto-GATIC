@@ -8,6 +8,8 @@ use Illuminate\Support\Collection;
 
 class SearchInventory
 {
+    private const FULLTEXT_MIN_TOKEN_CHARS = 4;
+
     /**
      * Execute unified inventory search.
      *
@@ -117,14 +119,29 @@ class SearchInventory
             return collect();
         }
 
-        // Index-friendly pattern:
-        // - no leading wildcard (allows B-Tree range scan on products.name)
-        // - allow multi-token matching in-order: "Laptop Dell" => "Laptop%Dell%"
         $tokens = preg_split('/\\s+/u', $normalizedName, -1, PREG_SPLIT_NO_EMPTY) ?: [];
         if ($tokens === []) {
             return collect();
         }
 
+        $fullTextTokens = array_values(array_filter($tokens, function (string $token): bool {
+            return mb_strlen($token) >= self::FULLTEXT_MIN_TOKEN_CHARS;
+        }));
+
+        if (! app()->environment('testing') && $fullTextTokens !== []) {
+            $booleanQuery = $this->buildFullTextBooleanQuery($fullTextTokens);
+
+            return Product::query()
+                ->with(['category', 'brand'])
+                ->whereRaw('match(products.name) against (? in boolean mode) > 0', [$booleanQuery])
+                ->orderByRaw('match(products.name) against (? in boolean mode) desc', [$booleanQuery])
+                ->orderBy('products.name')
+                ->limit(20)
+                ->get();
+        }
+
+        // Fallback for short tokens (< ft_min_word_len by default).
+        // Keep it index-friendly (no leading wildcard) by matching from the start.
         $escapedTokens = array_map(fn (string $token): string => $this->escapeLike($token), $tokens);
         $likePattern = implode('%', $escapedTokens).'%';
 
@@ -134,6 +151,32 @@ class SearchInventory
             ->orderBy('name')
             ->limit(20)
             ->get();
+    }
+
+    /**
+     * @param list<string> $tokens
+     */
+    private function buildFullTextBooleanQuery(array $tokens): string
+    {
+        $terms = [];
+
+        foreach ($tokens as $token) {
+            $token = preg_replace('/[^\\pL\\pN]+/u', ' ', $token) ?? '';
+            $token = trim(preg_replace('/\\s+/u', ' ', $token) ?? '');
+
+            if ($token === '') {
+                continue;
+            }
+
+            $pieces = preg_split('/\\s+/u', $token, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            foreach ($pieces as $piece) {
+                if (! array_key_exists($piece, $terms)) {
+                    $terms[$piece] = '+'.$piece.'*';
+                }
+            }
+        }
+
+        return implode(' ', array_values($terms));
     }
 
     /**

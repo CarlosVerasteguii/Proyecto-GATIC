@@ -10,6 +10,7 @@
             class="app-sidebar-toggle"
             data-sidebar-toggle
             aria-expanded="true"
+            aria-label="Colapsar sidebar"
             title="Colapsar sidebar"
         >
             <i class="bi bi-chevron-left" aria-hidden="true"></i>

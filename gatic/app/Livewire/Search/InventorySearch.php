@@ -45,8 +45,14 @@ class InventorySearch extends Component
         $this->performSearch();
     }
 
-    public function updatedSearch(): void
+    public function submitSearch(): void
     {
+        $this->performSearch();
+    }
+
+    public function clearSearch(): void
+    {
+        $this->search = '';
         $this->performSearch();
     }
 

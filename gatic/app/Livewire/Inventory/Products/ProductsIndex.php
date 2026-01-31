@@ -18,6 +18,8 @@ class ProductsIndex extends Component
 {
     use WithPagination;
 
+    private const MIN_CHARS = 2;
+
     #[Url(as: 'q')]
     public string $search = '';
 
@@ -30,8 +32,18 @@ class ProductsIndex extends Component
     #[Url(as: 'availability')]
     public string $availability = 'all';
 
+    public bool $showMinCharsMessage = false;
+
+    public function mount(): void
+    {
+        $normalized = trim($this->search);
+        $this->showMinCharsMessage = $normalized !== '' && mb_strlen($normalized) < self::MIN_CHARS;
+    }
+
     public function updatedSearch(): void
     {
+        $normalized = trim($this->search);
+        $this->showMinCharsMessage = $normalized !== '' && mb_strlen($normalized) < self::MIN_CHARS;
         $this->resetPage();
     }
 
@@ -50,9 +62,17 @@ class ProductsIndex extends Component
         $this->resetPage();
     }
 
+    public function applySearch(): void
+    {
+        $normalized = trim($this->search);
+        $this->showMinCharsMessage = $normalized !== '' && mb_strlen($normalized) < self::MIN_CHARS;
+        $this->resetPage();
+    }
+
     public function clearFilters(): void
     {
         $this->reset(['search', 'categoryId', 'brandId', 'availability']);
+        $this->showMinCharsMessage = false;
         $this->resetPage();
     }
 
@@ -69,7 +89,14 @@ class ProductsIndex extends Component
         Gate::authorize('inventory.view');
 
         $search = Product::normalizeName($this->search);
-        $escapedSearch = $search !== null ? $this->escapeLike($search) : null;
+        $likePattern = null;
+        if (! $this->showMinCharsMessage && $search !== null) {
+            $tokens = preg_split('/\\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            if ($tokens !== []) {
+                $escapedTokens = array_map(fn (string $token): string => $this->escapeLike($token), $tokens);
+                $likePattern = implode('%', $escapedTokens).'%';
+            }
+        }
 
         $productsQuery = Product::query()
             ->select('products.*')
@@ -92,8 +119,8 @@ class ProductsIndex extends Component
                     ->where('categories_for_counts.is_serialized', true),
             ])
             ->with(['category', 'brand'])
-            ->when($escapedSearch, function ($query) use ($escapedSearch) {
-                $query->whereRaw("products.name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
+            ->when($likePattern, function ($query) use ($likePattern) {
+                $query->whereRaw("products.name like ? escape '\\\\'", [$likePattern]);
             })
             ->when($this->categoryId !== null, function ($query) {
                 $query->where('products.category_id', $this->categoryId);
@@ -118,7 +145,7 @@ class ProductsIndex extends Component
                 );
             })
             ->orderBy('products.name')
-            ->paginate(config('gatic.ui.pagination.per_page', 15));
+            ->simplePaginate(config('gatic.ui.pagination.per_page', 15));
 
         $categories = Category::query()
             ->whereNull('deleted_at')
@@ -134,6 +161,7 @@ class ProductsIndex extends Component
             'products' => $productsQuery,
             'categories' => $categories,
             'brands' => $brands,
+            'minChars' => self::MIN_CHARS,
         ]);
     }
 

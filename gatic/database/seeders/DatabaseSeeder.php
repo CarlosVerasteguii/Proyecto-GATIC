@@ -33,6 +33,16 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
+        // Second editor for concurrency/lock testing
+        User::query()->updateOrCreate(
+            ['email' => 'editor2@gatic.local'],
+            [
+                'name' => 'Editor 2 User',
+                'password' => bcrypt('password'),
+                'role' => UserRole::Editor,
+            ],
+        );
+
         User::query()->updateOrCreate(
             ['email' => 'lector@gatic.local'],
             [
@@ -41,5 +51,11 @@ class DatabaseSeeder extends Seeder
                 'role' => UserRole::Lector,
             ],
         );
+
+        // Demo inventory data (categories, brands, locations, products, assets, employees)
+        $this->call(DemoInventorySeeder::class);
+
+        // Demo pending task for lock testing
+        $this->call(DemoPendingTaskSeeder::class);
     }
 }

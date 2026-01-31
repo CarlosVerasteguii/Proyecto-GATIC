@@ -275,6 +275,16 @@ Se detalla en el plan (P0/P1) con dos opciones por problema (Quick Win vs Robust
 
 **Cómo validar:** medir `/livewire/update` para `"De"→"Del"→"Dell"` antes/después (p90 sumado).
 
+**Implementado (2026-01-30):**
+- Archivos:
+  - `gatic/resources/views/livewire/search/inventory-search.blade.php`
+  - `gatic/app/Livewire/Search/InventorySearch.php`
+- Cambio: input pasa a `wire:model.defer` + submit explícito (`submitSearch`) + botón “Limpiar”; se elimina `updatedSearch()` como trigger principal.
+- Impacto medido (ver `PERF_P0_BASELINE.md` / `PERF_P0_AFTER.md`):
+  - Antes (3 requests por tipeo “De→Del→Dell”, **sum 3 updates**): Total p50/p90 **2700ms / 8210ms**
+  - Después (**1 request por búsqueda** via `submitSearch`, term=`Dell`): Total p50/p90 **213ms / 1765ms**
+- Confirmación UX: ya no existe “multiplicador por tecla”; el request ocurre en Enter/botón.
+
 #### P0.3 — Search SQL + índices mínimos (hacerlo index-friendly)
 **Qué cambiaría (área):**
 - `gatic/app/Actions/Search/SearchInventory.php`: evitar `LIKE '%term%'` (usar prefix + tokenización) para `products.name`, `assets.serial`, `assets.asset_tag`.
@@ -289,6 +299,19 @@ Se detalla en el plan (P0/P1) con dos opciones por problema (Quick Win vs Robust
 **Impacto esperado:** en datasets reales, la búsqueda deja de hacer scans de tablas grandes; además reduce DB work por request Livewire.
 
 **Cómo validar:** `EXPLAIN ANALYZE` debe cambiar de `Table scan` a `Index range/lookup` para búsquedas típicas; medir p50/p90 de `/livewire/update` search.
+
+**Implementado (2026-01-30):**
+- Archivos:
+  - `gatic/app/Actions/Search/SearchInventory.php`
+  - `gatic/database/migrations/2026_01_30_000000_add_index_to_assets_serial.php`
+- Cambio SQL:
+  - `products.name`: `LIKE "%term%"` → patrón sin leading wildcard (`token1%token2%...%`)
+  - `assets.serial` / `assets.asset_tag`: `LIKE "%term%"` → `LIKE "term%"`
+- EXPLAIN (ver `PERF_P0_BASELINE.md` / `PERF_P0_AFTER.md`):
+  - `products.name LIKE '%Dell%'` → **Table scan**
+  - `products.name LIKE 'Dell%'` → **Index range scan** (`products_name_index`)
+  - `assets.serial = 'SN-DEMO-001'` antes → **Table scan**; después → **Index lookup** (`assets_serial_index`)
+  - `assets serial/tag LIKE '%Dell%'` → **Table scan**; después (prefix) → **Index range scans** (serial + `assets_asset_tag_unique`)
 
 #### P0.4 — `/inventory/products`: recortar costo de listados + gap Admin/Lector
 **Qué cambiaría (área):**
@@ -305,6 +328,19 @@ Se detalla en el plan (P0/P1) con dos opciones por problema (Quick Win vs Robust
 
 **Cómo validar:** medir p50/p90 en `/inventory/products` Admin vs Lector (TTFB + size) y LCP (browser) antes/después.
 
+**Implementado (2026-01-30):**
+- Archivos:
+  - `gatic/app/Livewire/Inventory/Products/ProductsIndex.php`
+  - `gatic/resources/views/livewire/inventory/products/products-index.blade.php`
+- Cambios:
+  - Search input: `wire:model.live.debounce` → `wire:model.defer` + submit (`applySearch`) para evitar requests por tecla.
+  - Query: `paginate()` → `simplePaginate()` (elimina COUNT extra) + search `LIKE` sin leading wildcard.
+  - Blade: `$canManageInventory` precomputado; `@can` removido del loop; “Acciones” en dropdown (menos DOM por fila).
+- Impacto medido (ver `PERF_P0_BASELINE.md` / `PERF_P0_AFTER.md`):
+  - `/inventory/products` Admin Total p50/p90: **2889ms / 3242ms** → **316ms / 1931ms**
+  - `/inventory/products` Lector Total p50/p90: **2802ms / 3732ms** → **299ms / 2005ms**
+  - Query log: COUNT de `paginate()` desaparece (solo SELECT con `limit 16`).
+
 #### P0.5 — Locks “Procesar”: feedback inmediato + carga diferida
 **Qué cambiaría (área):**
 - `gatic/app/Livewire/PendingTasks/PendingTaskShow.php` + `gatic/resources/views/livewire/pending-tasks/pending-task-show.blade.php`: entrar a modo proceso rápido y cargar partes pesadas con `wire:init`/lazy.
@@ -317,6 +353,19 @@ Se detalla en el plan (P0/P1) con dos opciones por problema (Quick Win vs Robust
 **Impacto esperado:** bajar p90 de click “Procesar” (hoy ~3–5s) y mejorar UX de locks (cumple NFR2).
 
 **Cómo validar:** medir p50/p90 de `PendingTaskShow::enterProcessMode` vía `/livewire/update` y validar que la UI muestra progreso/cancel.
+
+**Implementado (2026-01-30):**
+- Archivos:
+  - `gatic/app/Livewire/PendingTasks/PendingTaskShow.php`
+  - `gatic/resources/views/livewire/pending-tasks/pending-task-show.blade.php`
+- Cambios:
+  - Feedback inmediato: spinner/disable en botón “Procesar” con `wire:loading` (target `enterProcessMode`).
+  - NFR2: overlay `<x-ui.long-request>` aplica a `enterProcessMode` e `initProcessModeUi` (con cancelar).
+  - Carga diferida: al entrar a modo proceso se muestra shell + skeleton; la tabla pesada se renderiza en un segundo request (`wire:init="initProcessModeUi"`).
+  - `enterProcessMode`: se evita `loadTask()` en path exitoso; se sincroniza lock en el modelo en memoria.
+- Impacto medido (ver `PERF_P0_BASELINE.md` / `PERF_P0_AFTER.md`):
+  - `enterProcessMode` Total p50/p90: **752ms / 2816ms** → **309ms / 1756ms**
+  - Interacción completa “Procesar” = `enterProcessMode` + `initProcessModeUi`: Total p50/p90 **573ms / 2396ms**
 
 ---
 
@@ -371,9 +420,11 @@ Ver `docs-prod/PERF_PROD_REMINDERS.md`.
 
 ## 6) Riesgos y mitigación
 
-- **Cambiar semantics de búsqueda** (prefix vs contains): Mitigar con tokenización (OR por tokens) o FULLTEXT.
+- **Cambiar semantics de búsqueda** (prefix vs contains): Mitigar con tokenización index-friendly + hint de UI (“comenzar desde el inicio”) y plan P1.2 (FULLTEXT) para recuperar búsqueda robusta.
 - **FULLTEXT**: stopwords/min token size; validar idioma/cadenas (ver docs MySQL FULLTEXT).
 - **Índices nuevos**: en tablas grandes, crear en ventana de mantenimiento y medir impacto en writes.
+- **simplePaginate()**: cambia UX de paginación (sin total / sin último). Mitigar: revertir a `paginate()` si se necesita total, o implementar conteos/UX alternativos.
+- **Procesar (2 requests)**: `enterProcessMode` + request diferido (`wire:init`) implica 2 roundtrips; si el segundo se cancela/falla, el usuario queda con skeleton. Mitigar: botón “Reintentar” + overlay NFR2 con cancelar.
 - **Mover a WSL2**: ajustar workflow (paths, IDE, git); documentar setup para el equipo.
 
 ---

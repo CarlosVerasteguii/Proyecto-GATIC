@@ -9,7 +9,7 @@
                 </div>
 
                 <div class="card-body">
-                    <div class="row g-3 align-items-end mb-3">
+                    <form wire:submit.prevent="submitSearch" class="row g-3 align-items-end mb-3">
                         <div class="col-12 col-md-8 col-lg-6">
                             <label for="inventory-search" class="form-label">
                                 Buscar por nombre de producto, serial o asset tag
@@ -19,11 +19,46 @@
                                 type="text"
                                 class="form-control"
                                 placeholder="Ej: Laptop Dell, SN12345, GATIC-001..."
-                                wire:model.live.debounce.300ms="search"
+                                wire:model.defer="search"
+                                wire:loading.attr="disabled"
+                                wire:target="submitSearch"
                                 autofocus
                             />
+                            <div class="form-text">
+                                Presiona Enter o clic en "Buscar". Para nombres, intenta comenzar desde el inicio (ej: "Laptop Dell").
+                            </div>
                         </div>
-                    </div>
+                        <div class="col-12 col-md-auto">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary"
+                                    wire:loading.attr="disabled"
+                                    wire:target="submitSearch"
+                                >
+                                    <span wire:loading.remove wire:target="submitSearch">
+                                        <i class="bi bi-search me-1" aria-hidden="true"></i>Buscar
+                                    </span>
+                                    <span wire:loading.inline wire:target="submitSearch">
+                                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                        Buscando...
+                                    </span>
+                                </button>
+
+                                @if ($this->search !== '')
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-secondary"
+                                        wire:click="clearSearch"
+                                        wire:loading.attr="disabled"
+                                        wire:target="submitSearch,clearSearch"
+                                    >
+                                        Limpiar
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    </form>
 
                     @if ($this->showMinCharsMessage)
                         <div class="alert alert-info mb-3" role="alert">

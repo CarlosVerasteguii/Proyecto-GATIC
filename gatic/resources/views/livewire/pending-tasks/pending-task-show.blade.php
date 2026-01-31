@@ -1,5 +1,5 @@
 <div class="container position-relative">
-    <x-ui.long-request target="finalizeTask" />
+    <x-ui.long-request target="finalizeTask,enterProcessMode,initProcessModeUi" />
 
     @if ($task)
     <div class="row justify-content-center">
@@ -237,16 +237,22 @@
                                 type="button"
                                 class="btn btn-sm btn-primary"
                                 wire:click="enterProcessMode"
+                                wire:loading.attr="disabled"
+                                wire:target="enterProcessMode"
                                 @if (!$canStartProcess) disabled title="Bloqueada por otro usuario" @endif
                             >
-                                Procesar
+                                <span wire:loading.remove wire:target="enterProcessMode">Procesar</span>
+                                <span wire:loading.inline wire:target="enterProcessMode">
+                                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                    Procesando...
+                                </span>
                             </button>
                         @elseif ($isProcessMode)
                             <button
                                 type="button"
                                 class="btn btn-sm btn-success"
                                 wire:click="showFinalizeConfirm"
-                                @if ($lockLost || !$hasLock) disabled title="No tienes el lock" @endif
+                                @if ($lockLost || !$hasLock || !$processModeReady) disabled title="{{ !$processModeReady ? 'Cargando...' : 'No tienes el lock' }}" @endif
                             >
                                 Finalizar
                             </button>
@@ -255,79 +261,102 @@
                 </div>
                 <div class="card-body">
                     @if ($task->lines->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-sm table-striped align-middle mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        @if ($isProcessMode)
-                                            <th>Estado</th>
-                                        @endif
-                                        <th>Tipo</th>
-                                        <th>Producto</th>
-                                        <th>Identificador</th>
-                                        <th>Empleado</th>
-                                        <th>Nota</th>
-                                        @if ($task->isDraft() || $isProcessMode)
-                                            <th class="text-end">Acciones</th>
-                                        @endif
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($task->lines as $line)
-                                        <tr @class([
-                                            'table-warning' => $this->isDuplicate($line->id) && !$isProcessMode,
-                                            'table-success' => $isProcessMode && $line->line_status->value === 'applied',
-                                            'table-danger' => $isProcessMode && $line->line_status->value === 'error',
-                                        ])>
-                                            <td>{{ $line->order }}</td>
-
+                        @if ($isProcessMode && !$processModeReady)
+                            <div
+                                class="border rounded p-3 bg-light"
+                                wire:init="initProcessModeUi"
+                            >
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+                                        <span class="fw-semibold">Cargando modo Procesar…</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        wire:click="initProcessModeUi"
+                                        wire:loading.attr="disabled"
+                                        wire:target="initProcessModeUi"
+                                    >
+                                        Reintentar
+                                    </button>
+                                </div>
+                                <x-ui.skeleton variant="lines" :lines="6" />
+                            </div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
                                             @if ($isProcessMode)
-                                                <td>
-                                                    <span class="badge {{ $line->line_status->badgeClass() }}">
-                                                        {{ $line->line_status->label() }}
-                                                    </span>
-                                                </td>
+                                                <th>Estado</th>
                                             @endif
+                                            <th>Tipo</th>
+                                            <th>Producto</th>
+                                            <th>Identificador</th>
+                                            <th>Empleado</th>
+                                            <th>Nota</th>
+                                            @if ($task->isDraft() || $isProcessMode)
+                                                <th class="text-end">Acciones</th>
+                                            @endif
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($task->lines as $line)
+                                            <tr @class([
+                                                'table-warning' => $this->isDuplicate($line->id) && !$isProcessMode,
+                                                'table-success' => $isProcessMode && $line->line_status->value === 'applied',
+                                                'table-danger' => $isProcessMode && $line->line_status->value === 'error',
+                                            ])>
+                                                <td>{{ $line->order }}</td>
 
-                                            <td>{{ $line->line_type->label() }}</td>
-                                            <td>{{ $line->product->name ?? '-' }}</td>
-                                            <td>
-                                                {{ $line->identifier_display }}
-                                                @if ($this->isDuplicate($line->id))
-                                                    <span
-                                                        class="badge bg-warning text-dark"
-                                                        title="Este identificador esta duplicado en la tarea"
-                                                    >
-                                                        Duplicado
-                                                    </span>
+                                                @if ($isProcessMode)
+                                                    <td>
+                                                        <span class="badge {{ $line->line_status->badgeClass() }}">
+                                                            {{ $line->line_status->label() }}
+                                                        </span>
+                                                    </td>
                                                 @endif
-                                            </td>
-                                            <td>{{ $line->employee->full_name ?? '-' }}</td>
-                                            <td class="text-truncate" style="max-width: 150px;" title="{{ $line->note }}">
-                                                {{ $line->note }}
-                                            </td>
 
-                                            @if ($task->isDraft())
-                                                <td class="text-end">
-                                                    <button
-                                                        type="button"
-                                                        class="btn btn-sm btn-outline-primary"
-                                                        wire:click="openEditLineModal({{ $line->id }})"
-                                                    >
-                                                        Editar
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        class="btn btn-sm btn-outline-danger"
-                                                        wire:click="removeLine({{ $line->id }})"
-                                                        wire:confirm="Eliminar este renglón?"
-                                                    >
-                                                        Eliminar
-                                                    </button>
+                                                <td>{{ $line->line_type->label() }}</td>
+                                                <td>{{ $line->product->name ?? '-' }}</td>
+                                                <td>
+                                                    {{ $line->identifier_display }}
+                                                    @if ($this->isDuplicate($line->id))
+                                                        <span
+                                                            class="badge bg-warning text-dark"
+                                                            title="Este identificador esta duplicado en la tarea"
+                                                        >
+                                                            Duplicado
+                                                        </span>
+                                                    @endif
                                                 </td>
-                                            @elseif ($isProcessMode)
-                                                <td class="text-end">
+                                                <td>{{ $line->employee->full_name ?? '-' }}</td>
+                                                <td class="text-truncate" style="max-width: 150px;" title="{{ $line->note }}">
+                                                    {{ $line->note }}
+                                                </td>
+
+                                                @if ($task->isDraft())
+                                                    <td class="text-end">
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-sm btn-outline-primary"
+                                                            wire:click="openEditLineModal({{ $line->id }})"
+                                                        >
+                                                            Editar
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            wire:click="removeLine({{ $line->id }})"
+                                                            wire:confirm="Eliminar este renglón?"
+                                                        >
+                                                            Eliminar
+                                                        </button>
+                                                    </td>
+                                                @elseif ($isProcessMode)
+                                                    <td class="text-end">
                                                     @if ($line->line_status->value === 'applied')
                                                         <span class="text-success small">
                                                             <i class="bi bi-check-circle"></i> Aplicado
@@ -383,6 +412,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        @endif
                     @else
                         <p class="text-muted mb-0">
                             @if ($task->isDraft())

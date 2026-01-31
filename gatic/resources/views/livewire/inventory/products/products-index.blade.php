@@ -5,27 +5,53 @@
             request()->only(['q', 'category', 'brand', 'availability', 'page']),
             static fn ($value): bool => $value !== null && $value !== ''
         );
+        $canManageInventory = auth()->user()->can('inventory.manage');
     @endphp
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             <x-ui.toolbar title="Productos" filterId="products-filters">
                 <x-slot:actions>
-                    @can('inventory.manage')
+                    @if ($canManageInventory)
                         <a class="btn btn-sm btn-primary" href="{{ route('inventory.products.create') }}">
                             <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nuevo producto
                         </a>
-                    @endcan
+                    @endif
                 </x-slot:actions>
 
                 <x-slot:search>
-                    <label for="products-search" class="form-label">Buscar</label>
-                    <input
-                        id="products-search"
-                        type="text"
-                        class="form-control"
-                        placeholder="Buscar por nombre."
-                        wire:model.live.debounce.300ms="search"
-                    />
+                    <form wire:submit.prevent="applySearch">
+                        <label for="products-search" class="form-label">Buscar</label>
+                        <div class="input-group">
+                            <input
+                                id="products-search"
+                                type="text"
+                                class="form-control"
+                                placeholder="Ej: Laptop Dell"
+                                wire:model.defer="search"
+                                wire:loading.attr="disabled"
+                                wire:target="applySearch"
+                            />
+                            <button
+                                type="submit"
+                                class="btn btn-outline-primary"
+                                wire:loading.attr="disabled"
+                                wire:target="applySearch"
+                            >
+                                <span wire:loading.remove wire:target="applySearch">
+                                    <i class="bi bi-search" aria-hidden="true"></i>
+                                </span>
+                                <span wire:loading.inline wire:target="applySearch">
+                                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                </span>
+                                <span class="visually-hidden">Buscar</span>
+                            </button>
+                        </div>
+                        @if ($this->showMinCharsMessage)
+                            <div class="form-text text-warning">
+                                Ingresa al menos {{ $minChars }} caracteres para buscar.
+                            </div>
+                        @endif
+                    </form>
                 </x-slot:search>
 
                 <x-slot:filters>
@@ -133,25 +159,47 @@
                                             {{ $unavailable }}
                                         </td>
                                         <td class="text-end">
-                                            <a
-                                                class="btn btn-sm btn-outline-secondary"
-                                                href="{{ route('inventory.products.show', ['product' => $product->id] + $returnQuery) }}"
-                                            >
-                                                Ver
-                                            </a>
-                                            @if ($product->category?->is_serialized)
-                                                <a
-                                                    class="btn btn-sm btn-outline-secondary"
-                                                    href="{{ route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery) }}"
+                                            <div class="dropdown">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                                    data-bs-toggle="dropdown"
+                                                    aria-expanded="false"
                                                 >
-                                                    Activos
-                                                </a>
-                                            @endif
-                                            @can('inventory.manage')
-                                                <a class="btn btn-sm btn-outline-primary" href="{{ route('inventory.products.edit', ['product' => $product->id]) }}">
-                                                    Editar
-                                                </a>
-                                            @endcan
+                                                    Acciones
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        <a
+                                                            class="dropdown-item"
+                                                            href="{{ route('inventory.products.show', ['product' => $product->id] + $returnQuery) }}"
+                                                        >
+                                                            Ver detalle
+                                                        </a>
+                                                    </li>
+                                                    @if ($product->category?->is_serialized)
+                                                        <li>
+                                                            <a
+                                                                class="dropdown-item"
+                                                                href="{{ route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery) }}"
+                                                            >
+                                                                Ver activos
+                                                            </a>
+                                                        </li>
+                                                    @endif
+                                                    @if ($canManageInventory)
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a
+                                                                class="dropdown-item"
+                                                                href="{{ route('inventory.products.edit', ['product' => $product->id]) }}"
+                                                            >
+                                                                Editar
+                                                            </a>
+                                                        </li>
+                                                    @endif
+                                                </ul>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
@@ -166,14 +214,14 @@
                                                 <x-ui.empty-state
                                                     icon="bi-box-seam"
                                                     title="No hay productos"
-                                                    description="Crea tu primer producto para comenzar a gestionar el inventario."
+                                                description="Crea tu primer producto para comenzar a gestionar el inventario."
                                                     compact
                                                 >
-                                                    @can('inventory.manage')
+                                                    @if ($canManageInventory)
                                                         <a href="{{ route('inventory.products.create') }}" class="btn btn-sm btn-primary">
                                                             <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Crear producto
                                                         </a>
-                                                    @endcan
+                                                    @endif
                                                 </x-ui.empty-state>
                                             @endif
                                         </td>

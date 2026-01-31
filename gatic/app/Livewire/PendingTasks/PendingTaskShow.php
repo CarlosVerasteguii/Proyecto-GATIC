@@ -89,6 +89,12 @@ class PendingTaskShow extends Component
     // Process mode state
     public bool $isProcessMode = false;
 
+    /**
+     * When entering process mode we render a lightweight shell first and
+     * lazy-render the heavy table on a follow-up request (wire:init).
+     */
+    public bool $processModeReady = true;
+
     public bool $showFinalizeConfirmModal = false;
 
     /** @var array{applied_count: int, error_count: int, skipped_count: int}|null */
@@ -140,6 +146,7 @@ class PendingTaskShow extends Component
         }
 
         $this->isProcessMode = true;
+        $this->processModeReady = true;
         $this->lockLost = false;
         $this->finalizeResult = null;
 
@@ -506,6 +513,7 @@ class PendingTaskShow extends Component
             $this->hasLock = true;
             $this->lockLost = false;
             $this->isProcessMode = true;
+            $this->processModeReady = false;
             $this->finalizeResult = null;
 
             // Update task status to processing if it was ready
@@ -514,7 +522,17 @@ class PendingTaskShow extends Component
                 $this->task->save();
             }
 
-            $this->loadTask();
+            // Keep local task lock fields in sync without forcing an eager reload.
+            if ($this->task) {
+                $now = now();
+                $leaseTtlSeconds = (int) config('gatic.pending_tasks.locks.lease_ttl_s', 180);
+
+                $this->task->locked_by_user_id = $userId;
+                $this->task->locked_at = $now;
+                $this->task->heartbeat_at = $now;
+                $this->task->expires_at = $now->copy()->addSeconds($leaseTtlSeconds);
+                $this->task->setRelation('lockedBy', Auth::user());
+            }
         } catch (ValidationException $e) {
             session()->flash('toast', [
                 'type' => 'error',
@@ -549,11 +567,23 @@ class PendingTaskShow extends Component
         }
 
         $this->isProcessMode = false;
+        $this->processModeReady = true;
         $this->hasLock = false;
         $this->lockLost = false;
         $this->finalizeResult = null;
         $this->closeProcessLineModal();
         $this->loadTask();
+    }
+
+    public function initProcessModeUi(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        if (! $this->isProcessMode) {
+            return;
+        }
+
+        $this->processModeReady = true;
     }
 
     /**

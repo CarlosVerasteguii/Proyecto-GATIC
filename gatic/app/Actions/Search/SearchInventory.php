@@ -117,11 +117,20 @@ class SearchInventory
             return collect();
         }
 
-        $escapedSearch = $this->escapeLike($normalizedName);
+        // Index-friendly pattern:
+        // - no leading wildcard (allows B-Tree range scan on products.name)
+        // - allow multi-token matching in-order: "Laptop Dell" => "Laptop%Dell%"
+        $tokens = preg_split('/\\s+/u', $normalizedName, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if ($tokens === []) {
+            return collect();
+        }
+
+        $escapedTokens = array_map(fn (string $token): string => $this->escapeLike($token), $tokens);
+        $likePattern = implode('%', $escapedTokens).'%';
 
         return Product::query()
             ->with(['category', 'brand'])
-            ->whereRaw("name like ? escape '\\\\'", ["%{$escapedSearch}%"])
+            ->whereRaw("name like ? escape '\\\\'", [$likePattern])
             ->orderBy('name')
             ->limit(20)
             ->get();
@@ -140,11 +149,14 @@ class SearchInventory
             return collect();
         }
 
+        // Prefix match to keep it index-friendly (assets.serial + assets.asset_tag).
+        $likePattern = "{$escapedSearch}%";
+
         return Asset::query()
             ->with(['product', 'location'])
-            ->where(function ($q) use ($escapedSearch) {
-                $q->whereRaw("serial like ? escape '\\\\'", ["%{$escapedSearch}%"])
-                    ->orWhereRaw("asset_tag like ? escape '\\\\'", ["%{$escapedSearch}%"]);
+            ->where(function ($q) use ($likePattern) {
+                $q->whereRaw("serial like ? escape '\\\\'", [$likePattern])
+                    ->orWhereRaw("asset_tag like ? escape '\\\\'", [$likePattern]);
             })
             ->orderBy('serial')
             ->limit(20)

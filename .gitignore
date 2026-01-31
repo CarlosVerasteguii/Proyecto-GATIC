@@ -25,6 +25,7 @@ _bmad-output/implementation-artifacts/validation-report-*.md
 
 # Local helper output
 git-status.txt
+.perf_*
 
 # --- Laravel / PHP (root-level, legacy) ---
 .env
@@ -81,5 +82,6 @@ Context Chats
 .agents/
 .codex/
 .gemini/
+.gemini-clipboard/
 .qoder/
 .github/skills/

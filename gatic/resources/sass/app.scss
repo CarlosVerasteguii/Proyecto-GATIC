@@ -25,7 +25,10 @@ a:focus-visible,
 .nav-link:focus-visible,
 .navbar-toggler:focus-visible,
 .btn-close:focus-visible,
-.dropdown-item:focus-visible {
+.dropdown-item:focus-visible,
+.app-sidebar-toggle:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible {
     outline: 0;
     box-shadow: 0 0 0 0.25rem rgba($cfe-green-dark, 0.25);
     border-radius: 0.25rem;

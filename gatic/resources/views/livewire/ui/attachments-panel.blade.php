@@ -102,19 +102,21 @@
                                         href="{{ route('attachments.download', $attachment->id) }}"
                                         class="btn btn-sm btn-outline-secondary"
                                         title="Descargar"
+                                        aria-label="Descargar {{ $attachment->original_name }}"
                                     >
-                                        <i class="bi bi-download"></i>
+                                        <i class="bi bi-download" aria-hidden="true"></i>
                                     </a>
                                     @if ($this->canManage)
                                         <button
                                             type="button"
                                             class="btn btn-sm btn-outline-danger"
                                             title="Eliminar"
+                                            aria-label="Eliminar {{ $attachment->original_name }}"
                                             wire:click="deleteAttachment({{ $attachment->id }})"
                                             wire:confirm="¿Estás seguro de eliminar este adjunto? Esta acción no se puede deshacer."
                                             wire:loading.attr="disabled"
                                         >
-                                            <i class="bi bi-trash"></i>
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
                                         </button>
                                     @endif
                                 </td>

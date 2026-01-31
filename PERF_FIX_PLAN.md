@@ -375,28 +375,54 @@ Se detalla en el plan (P0/P1) con dos opciones por problema (Quick Win vs Robust
 Ver `docs-prod/PERF_PROD_REMINDERS.md`.
 
 #### P1.2 — Rediseño de búsqueda “correcto” (calidad + performance)
-**Opción A (robusta sin servicios externos): MySQL FULLTEXT**
-- **Qué cambiaría:** FULLTEXT index en `products.name` (y campos relevantes) + query `MATCH() AGAINST()` (Boolean Mode con `*` para prefijos).
-- **Por qué funciona:** FULLTEXT está diseñado para búsqueda textual y evita scans por `LIKE '%term%'`.
-- **Fuentes:**  
-  - https://dev.mysql.com/doc/refman/8.0/en/fulltext-search.html  
-  - https://dev.mysql.com/doc/refman/8.0/en/fulltext-boolean.html
+**Decisión tomada:** Opción A (robusta sin servicios externos): **MySQL FULLTEXT**.
 
-**Opción B (robusta con servicio): Laravel Scout + Meilisearch**
-- **Qué cambiaría:** usar Scout con driver Meilisearch y indexar `products`/`assets` con settings (searchable/synonyms).
-- **Por qué funciona:** motor de búsqueda dedicado (relevancia, tolerancia, ranking) y latencia estable.
-- **Fuentes:**  
-  - https://laravel.com/docs/master/scout  
+**Implementado (2026-01-31):**
+- Archivos:
+  - `gatic/app/Actions/Search/SearchInventory.php`
+  - `gatic/database/migrations/2026_01_31_000000_add_fulltext_index_to_products_name.php`
+- Cambios:
+  - `products.name` ahora se busca con `MATCH() AGAINST()` (Boolean Mode + `*`) usando FULLTEXT index.
+  - Se mantiene **serial exacto rápido** con `assets_serial_index` (P0) y búsquedas por serial/tag con prefix (`LIKE 'term%'`) index-friendly.
+  - Fallback: tokens cortos (<4 chars) usan prefijo (B-Tree) para evitar depender de `ft_min_word_len`/stopwords.
+- Confirmación (EXPLAIN ANALYZE):
+  - Búsqueda por nombre: `Full-text index search on products using products_name_fulltext` (ver `PERF_P1_AFTER.md`).
+  - Serial exacto: `Index lookup on assets using assets_serial_index` (ver `PERF_P1_AFTER.md`).
+
+**Fuentes (FULLTEXT):**
+- https://dev.mysql.com/doc/refman/8.0/en/fulltext-search.html
+- https://dev.mysql.com/doc/refman/8.0/en/fulltext-boolean.html
+
+**Opción B (no implementada): Laravel Scout + Meilisearch**
+- Queda como alternativa si se requiere ranking/tolerancia/sinónimos a escala con latencia más estable.
+- Fuentes:
+  - https://laravel.com/docs/master/scout
   - https://www.meilisearch.com/docs/guides/laravel_scout
 
 **Impacto esperado:** búsqueda por nombre estable en p90 (sin multiplicador de scans), mejor relevancia.
 
-**Cómo validar:** test A/B con dataset real: p50/p90 de búsqueda + precisión (top-5 contiene el resultado esperado).
+**Impacto medido (ver `PERF_P1_BASELINE.md` / `PERF_P1_AFTER.md`):**
+- `/inventory/search?q=Dell` (Admin) Total p50/p90: **386ms / 2070ms** → **460ms / 2078ms**
+- Livewire `InventorySearch::submitSearch` (Dell) Total p50/p90: **309ms / 2218ms** → **380ms / 2079ms**
+
+**Cómo validar en datasets reales:**
+- Verificar precisión: búsquedas tipo “Latitude”, “Dell Latitude”, “5540” deben aparecer en top-5.
+- Verificar planes: `EXPLAIN ANALYZE` debe mostrar **FULLTEXT** (no scans por `LIKE '%term%'`).
 
 #### P1.3 — Rework de `/inventory/products` para escala
 **Qué cambiaría (área):**
 - Reemplazar subqueries correlacionadas por agregados (joinSub / GROUP BY) o materializar conteos (denormalización).
 - Añadir índices que soporten filtros/conteos (`assets(product_id, status, deleted_at)`).
+
+**Implementado (2026-01-31):**
+- Archivos:
+  - `gatic/app/Livewire/Inventory/Products/ProductsIndex.php`
+  - `gatic/database/migrations/2026_01_31_000001_add_index_to_assets_product_status_deleted_at.php`
+- Cambios:
+  - `assets_total` / `assets_unavailable` pasan de subqueries correlacionadas a agregados (`leftJoinSub` con `GROUP BY assets.product_id`).
+  - Índice de soporte: `assets(product_id, status, deleted_at)` para que el agregado pueda leer como covering index scan.
+- Confirmación (EXPLAIN ANALYZE):
+  - Ya no hay `Select #... (subquery in projection; dependent)`; aparece `Materialize` + `Group aggregate` (ver `PERF_P1_AFTER.md`).
 
 **Por qué funciona (y fuentes):**
 - Evitas O(N) subqueries por producto y reduces reads; y puedes verificar con `EXPLAIN`/`EXPLAIN ANALYZE`.  
@@ -405,23 +431,43 @@ Ver `docs-prod/PERF_PROD_REMINDERS.md`.
 
 **Impacto esperado:** en inventarios reales (muchos productos y assets), la lista pasa de “crece con N” a “costo estable por página”.
 
-**Cómo validar:** `EXPLAIN ANALYZE` antes/después + medir p50/p90 `/inventory/products` con dataset grande; comparar costo de COUNT (si se mantiene paginate).
+**Impacto medido (ver `PERF_P1_BASELINE.md` / `PERF_P1_AFTER.md`):**
+- `/inventory/products` Admin Total p50/p90: **443ms / 2231ms** → **378ms / 446ms**
+- `/inventory/products` Lector Total p50/p90: **351ms / 2585ms** → **380ms / 2074ms**
+
+**Cómo validar en datasets reales:**
+- `EXPLAIN ANALYZE` debe mantener agregados materializados (sin subqueries dependientes).
+- Medir p50/p90 `/inventory/products` con dataset grande (miles de productos + assets) y revisar `query_total_ms` con telemetría (P1.4).
 
 #### P1.4 — Telemetría de performance “first-class”
-**Qué cambiaría (área):**
-- Instrumentar por request: boot, middleware, DB connect, tiempo total de queries, render (Blade/Livewire) y tamaño de respuesta.
-- Registrar slow queries y planes (cuando excedan umbral), asociado a request-id.
+**Implementado (2026-01-31):**
+- Archivos:
+  - `gatic/app/Http/Middleware/PerfRequestTelemetry.php`
+  - `gatic/bootstrap/app.php`
+  - `gatic/config/gatic.php`
+  - `gatic/config/logging.php`
+- Qué registra por request (cuando está activo):
+  - Tiempo total (`duration_ms`)
+  - Query count + total queries time (`query_count`, `query_total_ms`)
+  - Query más lenta (`slowest_query_ms`, `slowest_query_sql`)
+  - Tamaño de respuesta (`response_bytes`)
+  - Header de correlación: `X-Perf-Id`
+- Activación/desactivación (sin ensuciar el repo):
+  - setear `PERF_LOG=1` en `gatic/.env` (ignorado) y reiniciar el contenedor `laravel.test`.
+  - Logs: `gatic/storage/logs/perf.log`
 
 **Por qué funciona:** convierte “se siente lento” en datos accionables y evita optimización a ciegas (Measure → Analyze → Optimize).
 
-**Cómo validar:** dashboard mínimo de p50/p90 por ruta + top queries por tiempo; regresión detectable por PR (staging).
+**Cómo validar:**
+- Hacer requests (incluyendo `/livewire/update`) y revisar `gatic/storage/logs/perf.log` buscando `query_total_ms`/`slowest_query_ms`.
+- Comparar rutas antes/después con p50/p90 + top queries.
 
 ---
 
 ## 6) Riesgos y mitigación
 
 - **Cambiar semantics de búsqueda** (prefix vs contains): Mitigar con tokenización index-friendly + hint de UI (“comenzar desde el inicio”) y plan P1.2 (FULLTEXT) para recuperar búsqueda robusta.
-- **FULLTEXT**: stopwords/min token size; validar idioma/cadenas (ver docs MySQL FULLTEXT).
+- **FULLTEXT**: stopwords + `ft_min_word_len` (default 4) pueden dejar fuera tokens cortos; en P1 se implementó fallback a prefijo para tokens <4. Validar con datasets reales y términos típicos del negocio (modelos, marcas, números, etc.).
 - **Índices nuevos**: en tablas grandes, crear en ventana de mantenimiento y medir impacto en writes.
 - **simplePaginate()**: cambia UX de paginación (sin total / sin último). Mitigar: revertir a `paginate()` si se necesita total, o implementar conteos/UX alternativos.
 - **Procesar (2 requests)**: `enterProcessMode` + request diferido (`wire:init`) implica 2 roundtrips; si el segundo se cancela/falla, el usuario queda con skeleton. Mitigar: botón “Reintentar” + overlay NFR2 con cancelar.
@@ -437,8 +483,8 @@ Ver `docs-prod/PERF_PROD_REMINDERS.md`.
   - `/inventory/products` (Admin/Lector intercalado 10x)
   - `/pending-tasks`
 - Livewire:
-  - `/livewire/update` `InventorySearch` updates `"De"→"Del"→"Dell"` (p50/p90 de secuencia)
-  - `/livewire/update` `PendingTaskShow::enterProcessMode` (p50/p90)
+  - `/livewire/update` `InventorySearch::submitSearch` (term=`Dell`) (p50/p90)
+  - `/livewire/update` `PendingTaskShow` “Procesar” = `enterProcessMode` + `initProcessModeUi` (p50/p90 por request y suma)
 - DB:
   - `EXPLAIN ANALYZE` para queries críticas (búsqueda y products index) verificando `key`/scan.
 

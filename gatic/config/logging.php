@@ -58,6 +58,13 @@ return [
             'ignore_exceptions' => false,
         ],
 
+        'perf' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/perf.log'),
+            'level' => env('PERF_LOG_LEVEL', 'info'),
+            'replace_placeholders' => true,
+        ],
+
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),

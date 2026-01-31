@@ -35,4 +35,7 @@ return [
             // Heartbeat interval configured in ui.polling.locks_heartbeat_interval_s
         ],
     ],
+    'perf' => [
+        'log_enabled' => (bool) env('PERF_LOG', false),
+    ],
 ];

@@ -2,7 +2,16 @@
     <div class="row justify-content-center">
         <div class="col-12">
             <x-ui.toolbar title="Usuarios" :filtersCollapsible="false">
+                <x-slot:breadcrumbs>
+                    <x-ui.breadcrumbs :items="[
+                        ['label' => 'Inicio', 'url' => route('dashboard')],
+                        ['label' => 'Administración', 'url' => route('admin.users.index')],
+                        ['label' => 'Usuarios', 'url' => null],
+                    ]" />
+                </x-slot:breadcrumbs>
+
                 <x-slot:actions>
+                    <x-ui.column-manager table="admin-users" />
                     <a class="btn btn-sm btn-primary" href="{{ route('admin.users.create') }}">
                         <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Crear usuario
                     </a>
@@ -20,15 +29,15 @@
                     </div>
                 @endif
 
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped align-middle mb-0">
+                <div class="table-responsive-xl">
+                    <table class="table table-sm table-striped align-middle mb-0" data-column-table="admin-users">
                         <thead>
                             <tr>
-                                <th>Nombre</th>
-                                <th>Email</th>
-                                <th>Rol</th>
-                                <th>Estado</th>
-                                <th class="text-end">Acciones</th>
+                                <th data-column-key="name" data-column-required="true">Nombre</th>
+                                <th data-column-key="email">Email</th>
+                                <th data-column-key="role">Rol</th>
+                                <th data-column-key="status">Estado</th>
+                                <th data-column-key="actions" data-column-required="true" class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>

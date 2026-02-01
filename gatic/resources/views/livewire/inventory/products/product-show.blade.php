@@ -9,11 +9,13 @@
         <div class="col-12 col-lg-10">
             {{-- Detail Header --}}
             <x-ui.detail-header :title="$product?->name ?? 'Producto'">
-                <x-slot:breadcrumb>
-                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.index', $returnQuery) }}">
-                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
-                    </a>
-                </x-slot:breadcrumb>
+                <x-slot:breadcrumbs>
+                    <x-ui.breadcrumbs :items="[
+                        ['label' => 'Inicio', 'url' => route('dashboard')],
+                        ['label' => 'Productos', 'url' => route('inventory.products.index', $returnQuery)],
+                        ['label' => $product?->name ?? 'Producto', 'url' => null],
+                    ]" />
+                </x-slot:breadcrumbs>
 
                 <x-slot:kpis>
                     <x-ui.detail-header-kpi label="Total" :value="$total" />
@@ -91,7 +93,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($statusBreakdown as $row)
-                                        <tr @class(['table-light' => $row['status'] === \App\Models\Asset::STATUS_RETIRED])>
+                                        <tr @class(['gatic-table-row-retired' => $row['status'] === \App\Models\Asset::STATUS_RETIRED])>
                                             <td><x-ui.status-badge :status="$row['status']" /></td>
                                             <td class="text-end">{{ $row['count'] }}</td>
                                         </tr>

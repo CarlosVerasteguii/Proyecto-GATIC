@@ -38,10 +38,10 @@
 
 <div {{ $attributes->merge(['class' => 'detail-header mb-4']) }}>
     {{-- Breadcrumb / Navigation row --}}
-    @if(isset($breadcrumb))
+    @if(isset($breadcrumbs) || isset($breadcrumb))
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="d-flex gap-2">
-                {{ $breadcrumb }}
+                {{ $breadcrumbs ?? $breadcrumb }}
             </div>
             @if(isset($actions))
                 <div class="d-flex gap-2 flex-wrap justify-content-end">
@@ -83,7 +83,7 @@
     </div>
 
     {{-- Actions row (alternative placement if no breadcrumb) --}}
-    @if(isset($actions) && !isset($breadcrumb))
+    @if(isset($actions) && !isset($breadcrumbs) && !isset($breadcrumb))
         <div class="d-flex gap-2 justify-content-end mt-3 flex-wrap">
             {{ $actions }}
         </div>

@@ -7,7 +7,14 @@
             {{-- Task Header --}}
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Tarea #{{ $task->id }}</span>
+                    <div class="d-flex flex-column">
+                        <x-ui.breadcrumbs :items="[
+                            ['label' => 'Inicio', 'url' => route('dashboard')],
+                            ['label' => 'Tareas pendientes', 'url' => route('pending-tasks.index')],
+                            ['label' => 'Tarea #'.$task->id, 'url' => null],
+                        ]" />
+                        <span class="fw-medium">Tarea #{{ $task->id }}</span>
+                    </div>
                     <div class="d-flex gap-2 align-items-center">
                         <span class="badge {{ $task->status->badgeClass() }}">
                             {{ $task->status->label() }}
@@ -20,10 +27,6 @@
                             >
                                 Salir de Procesar
                             </button>
-                        @else
-                            <a href="{{ route('pending-tasks.index') }}" class="btn btn-sm btn-outline-secondary">
-                                Volver
-                            </a>
                         @endif
                     </div>
                 </div>

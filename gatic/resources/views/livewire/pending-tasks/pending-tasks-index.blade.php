@@ -4,8 +4,17 @@
         <div class="col-12 col-lg-10">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Tareas Pendientes</span>
-                    <a class="btn btn-sm btn-primary" href="{{ route('pending-tasks.create') }}">Nueva tarea</a>
+                    <div class="d-flex flex-column">
+                        <x-ui.breadcrumbs :items="[
+                            ['label' => 'Inicio', 'url' => route('dashboard')],
+                            ['label' => 'Tareas pendientes', 'url' => null],
+                        ]" />
+                        <span class="fw-medium">Tareas pendientes</span>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        <x-ui.column-manager table="pending-tasks" />
+                        <a class="btn btn-sm btn-primary" href="{{ route('pending-tasks.create') }}">Nueva tarea</a>
+                    </div>
                 </div>
 
                 <div class="card-body">
@@ -52,17 +61,17 @@
                         </div>
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="table table-sm table-striped align-middle mb-0">
+                    <div class="table-responsive-xl">
+                        <table class="table table-sm table-striped align-middle mb-0" data-column-table="pending-tasks">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Tipo</th>
-                                    <th>Estado</th>
-                                    <th>Renglones</th>
-                                    <th>Creador</th>
-                                    <th>Fecha</th>
-                                    <th class="text-end">Acciones</th>
+                                    <th data-column-key="id" data-column-required="true">ID</th>
+                                    <th data-column-key="type">Tipo</th>
+                                    <th data-column-key="status">Estado</th>
+                                    <th data-column-key="lines">Renglones</th>
+                                    <th data-column-key="creator">Creador</th>
+                                    <th data-column-key="created_at">Fecha</th>
+                                    <th data-column-key="actions" data-column-required="true" class="text-end">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>

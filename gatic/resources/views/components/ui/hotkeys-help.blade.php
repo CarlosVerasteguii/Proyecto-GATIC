@@ -35,7 +35,7 @@
                             <dd class="col-8">Enfocar búsqueda</dd>
 
                             <dt class="col-4"><kbd>Ctrl</kbd> + <kbd>K</kbd></dt>
-                            <dd class="col-8">Búsqueda rápida</dd>
+                            <dd class="col-8">Abrir paleta de comandos</dd>
 
                             <dt class="col-4"><kbd>j</kbd> / <kbd>↓</kbd></dt>
                             <dd class="col-8">Siguiente fila</dd>

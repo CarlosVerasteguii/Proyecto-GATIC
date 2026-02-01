@@ -4,8 +4,15 @@
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             <div class="card">
-                <div class="card-header">
-                    Empleados
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex flex-column">
+                        <x-ui.breadcrumbs :items="[
+                            ['label' => 'Inicio', 'url' => route('dashboard')],
+                            ['label' => 'Empleados', 'url' => null],
+                        ]" />
+                        <span class="fw-medium">Empleados</span>
+                    </div>
+                    <x-ui.column-manager table="employees" />
                 </div>
 
                 <div class="card-body">
@@ -22,7 +29,7 @@
                         </div>
                     </div>
 
-                    <div class="card bg-light mb-3">
+                    <div class="card bg-body-tertiary mb-3">
                         <div class="card-body">
                             <h6 class="card-title">{{ $isEditing ? 'Editar empleado' : 'Nuevo empleado' }}</h6>
 
@@ -110,15 +117,15 @@
                         </div>
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="table table-sm table-striped align-middle mb-0">
+                    <div class="table-responsive-xl">
+                        <table class="table table-sm table-striped align-middle mb-0" data-column-table="employees">
                             <thead>
                                 <tr>
-                                    <th>RPE</th>
-                                    <th>Nombre</th>
-                                    <th>Departamento</th>
-                                    <th>Puesto</th>
-                                    <th class="text-end">Acciones</th>
+                                    <th data-column-key="rpe" data-column-required="true">RPE</th>
+                                    <th data-column-key="name">Nombre</th>
+                                    <th data-column-key="department">Departamento</th>
+                                    <th data-column-key="job_title">Puesto</th>
+                                    <th data-column-key="actions" data-column-required="true" class="text-end">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>

@@ -9,6 +9,21 @@
 
     <title>{{ config('app.name', 'GATIC') }}</title>
 
+    {{-- Theme bootstrapper (prevents flash before Vite loads) --}}
+    <script>
+        (() => {
+            try {
+                const STORAGE_KEY = 'gatic:theme';
+                const stored = localStorage.getItem(STORAGE_KEY);
+                const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches === true;
+                const theme = stored === 'dark' || stored === 'light' ? stored : (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            } catch {
+                // ignore (no localStorage access)
+            }
+        })();
+    </script>
+
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
@@ -34,6 +49,7 @@
 
     <x-ui.toast-container />
     <x-ui.hotkeys-help />
+    <livewire:ui.command-palette />
 
     @livewireScripts
     @stack('scripts')

@@ -4,8 +4,13 @@
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             <div class="card">
-                <div class="card-header">
-                    <span>Buscar en Inventario</span>
+                <div class="card-header d-flex flex-column gap-1">
+                    <x-ui.breadcrumbs :items="[
+                        ['label' => 'Inicio', 'url' => route('dashboard')],
+                        ['label' => 'Inventario', 'url' => route('inventory.products.index')],
+                        ['label' => 'Búsqueda', 'url' => null],
+                    ]" />
+                    <span class="fw-medium">Buscar en inventario</span>
                 </div>
 
                 <div class="card-body">

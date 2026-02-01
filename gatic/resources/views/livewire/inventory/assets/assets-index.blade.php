@@ -3,10 +3,30 @@
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             <x-ui.toolbar title="Activos" :subtitle="$product?->name ?? ''" filterId="assets-filters">
+                <x-slot:breadcrumbs>
+                    @php
+                        $breadcrumbItems = [
+                            ['label' => 'Inicio', 'url' => route('dashboard')],
+                            ['label' => 'Productos', 'url' => route('inventory.products.index')],
+                        ];
+
+                        if ($product) {
+                            $breadcrumbItems[] = [
+                                'label' => $product->name,
+                                'url' => route('inventory.products.show', ['product' => $product->id]),
+                            ];
+                        }
+
+                        $breadcrumbItems[] = ['label' => 'Activos', 'url' => null];
+                    @endphp
+
+                    <x-ui.breadcrumbs :items="$breadcrumbItems" />
+                </x-slot:breadcrumbs>
+
                 <x-slot:actions>
-                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.index') }}">
-                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
-                    </a>
+                    @if ($productIsSerialized)
+                        <x-ui.column-manager table="inventory-assets" />
+                    @endif
                     @can('inventory.manage')
                         @if ($productIsSerialized)
                             <a class="btn btn-sm btn-primary" href="{{ route('inventory.products.assets.create', ['product' => $product->id]) }}">
@@ -79,15 +99,15 @@
                         No hay activos para productos por cantidad.
                     </div>
                 @else
-                    <div class="table-responsive">
-                        <table class="table table-sm table-striped align-middle mb-0">
+                    <div class="table-responsive-xl">
+                        <table class="table table-sm table-striped align-middle mb-0" data-column-table="inventory-assets">
                             <thead>
                                 <tr>
-                                    <th>Serial</th>
-                                    <th>Asset tag</th>
-                                    <th>Estado</th>
-                                    <th>Ubicación</th>
-                                    <th class="text-end">Acciones</th>
+                                    <th data-column-key="serial" data-column-required="true">Serial</th>
+                                    <th data-column-key="asset_tag">Asset tag</th>
+                                    <th data-column-key="status">Estado</th>
+                                    <th data-column-key="location">Ubicación</th>
+                                    <th data-column-key="actions" data-column-required="true" class="text-end">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>

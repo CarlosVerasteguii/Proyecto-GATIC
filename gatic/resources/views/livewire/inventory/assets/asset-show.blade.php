@@ -9,14 +9,15 @@
         <div class="col-12 col-lg-10">
             {{-- Detail Header --}}
             <x-ui.detail-header :title="$asset->serial" :subtitle="$product->name">
-                <x-slot:breadcrumb>
-                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery) }}">
-                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
-                    </a>
-                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.products.show', ['product' => $product->id]) }}">
-                        <i class="bi bi-box me-1" aria-hidden="true"></i>Producto
-                    </a>
-                </x-slot:breadcrumb>
+                <x-slot:breadcrumbs>
+                    <x-ui.breadcrumbs :items="[
+                        ['label' => 'Inicio', 'url' => route('dashboard')],
+                        ['label' => 'Productos', 'url' => route('inventory.products.index', $returnQuery)],
+                        ['label' => $product->name, 'url' => route('inventory.products.show', ['product' => $product->id] + $returnQuery)],
+                        ['label' => 'Activos', 'url' => route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery)],
+                        ['label' => $asset->serial, 'url' => null],
+                    ]" />
+                </x-slot:breadcrumbs>
 
                 <x-slot:status>
                     <x-ui.status-badge :status="$asset->status" solid />

@@ -154,7 +154,7 @@ class SearchInventory
     }
 
     /**
-     * @param list<string> $tokens
+     * @param  list<string>  $tokens
      */
     private function buildFullTextBooleanQuery(array $tokens): string
     {

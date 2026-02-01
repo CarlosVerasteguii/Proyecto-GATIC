@@ -101,7 +101,9 @@
 .login-card {
   width: 100%;
   max-width: 440px;
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(var(--bs-body-bg-rgb), 0.96);
+  color: var(--bs-body-color);
+  border: 1px solid var(--bs-border-color-translucent);
   border-radius: var(--radius-lg);
   box-shadow:
     0 0 1px rgba(0, 0, 0, 0.05),
@@ -165,7 +167,7 @@
 
     .form-control {
       border-radius: var(--radius-md);
-      border: 1px solid #dee2e6;
+      border: 1px solid var(--bs-border-color);
       padding-left: 2.75rem;
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 
@@ -193,7 +195,7 @@
 
     label {
       padding-left: 2.75rem;
-      color: #0f172a; // slate-900 para máximo contraste
+      color: var(--bs-secondary-color);
     }
 
     .invalid-feedback {
@@ -209,13 +211,13 @@
     margin-bottom: var(--space-5);
 
     .form-check-label {
-      color: #1e293b; // slate-800
+      color: var(--bs-body-color);
       cursor: pointer;
 
       small {
         display: block;
         font-size: 0.75rem;
-        color: #64748b; // slate-500
+        color: var(--bs-secondary-color);
         margin-top: 0.25rem;
       }
     }
@@ -235,7 +237,7 @@
     left: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    color: #475569; // slate-600 para mejor contraste
+    color: var(--bs-secondary-color);
     z-index: 4;
     pointer-events: none;
   }

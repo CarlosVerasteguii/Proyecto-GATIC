@@ -10,7 +10,15 @@
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             <x-ui.toolbar title="Productos" filterId="products-filters">
+                <x-slot:breadcrumbs>
+                    <x-ui.breadcrumbs :items="[
+                        ['label' => 'Inicio', 'url' => route('dashboard')],
+                        ['label' => 'Productos', 'url' => null],
+                    ]" />
+                </x-slot:breadcrumbs>
+
                 <x-slot:actions>
+                    <x-ui.column-manager table="inventory-products" />
                     @if ($canManageInventory)
                         <a class="btn btn-sm btn-primary" href="{{ route('inventory.products.create') }}">
                             <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nuevo producto
@@ -111,18 +119,18 @@
                     @endif
                 </x-slot:clearFilters>
 
-                <div class="table-responsive">
-                        <table class="table table-sm table-striped align-middle mb-0">
+                <div class="table-responsive-xl">
+                        <table class="table table-sm table-striped align-middle mb-0" data-column-table="inventory-products">
                             <thead>
                                 <tr>
-                                    <th>Nombre</th>
-                                    <th>Categoría</th>
-                                    <th>Marca</th>
-                                    <th>Tipo</th>
-                                    <th class="text-end">Total</th>
-                                    <th class="text-end">Disponibles</th>
-                                    <th class="text-end">No disponibles</th>
-                                    <th class="text-end">Acciones</th>
+                                    <th data-column-key="name" data-column-required="true">Nombre</th>
+                                    <th data-column-key="category">Categoría</th>
+                                    <th data-column-key="brand">Marca</th>
+                                    <th data-column-key="type">Tipo</th>
+                                    <th data-column-key="total" class="text-end">Total</th>
+                                    <th data-column-key="available" class="text-end">Disponibles</th>
+                                    <th data-column-key="unavailable" class="text-end">No disponibles</th>
+                                    <th data-column-key="actions" data-column-required="true" class="text-end">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>

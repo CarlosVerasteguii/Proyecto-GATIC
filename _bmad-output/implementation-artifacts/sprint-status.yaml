@@ -139,11 +139,11 @@ development_status:
   11-8-modo-compacto-densidad-visual: done
   epic-11-retrospective: optional
 
-  epic-12: backlog
-  12-1-dark-mode-tema-claro-oscuro: backlog
-  12-2-command-palette-con-comandos-y-navegacion: backlog
-  12-3-column-manager-por-tabla-y-persistencia: backlog
-  12-4-breadcrumbs-globales-y-consistentes: backlog
+  epic-12: done
+  12-1-dark-mode-tema-claro-oscuro: done
+  12-2-command-palette-con-comandos-y-navegacion: done
+  12-3-column-manager-por-tabla-y-persistencia: done
+  12-4-breadcrumbs-globales-y-consistentes: done
   epic-12-retrospective: optional
 
   epic-13: backlog

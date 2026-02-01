@@ -40,6 +40,11 @@
     {{-- Header with title and primary actions --}}
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="d-flex flex-column">
+            @if(isset($breadcrumbs))
+                <div class="mb-1">
+                    {{ $breadcrumbs }}
+                </div>
+            @endif
             <span class="fw-medium">{{ $title }}</span>
             @if($subtitle)
                 <small class="text-muted">{{ $subtitle }}</small>

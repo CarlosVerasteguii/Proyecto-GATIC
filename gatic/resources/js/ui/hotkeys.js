@@ -71,6 +71,17 @@ function focusGlobalSearch() {
 }
 
 /**
+ * Open the command palette (if present)
+ */
+function openCommandPalette() {
+    const paletteEl = document.querySelector('[data-command-palette="true"]');
+    if (!paletteEl) return false;
+
+    window.dispatchEvent(new CustomEvent('gatic:open-command-palette'));
+    return true;
+}
+
+/**
  * Navigate table rows with j/k keys
  */
 function navigateTableRows(direction) {
@@ -209,7 +220,9 @@ function handleKeydown(event) {
     // Ctrl/Cmd+K - Focus search / command palette
     if (modKey && key.toLowerCase() === 'k') {
         event.preventDefault();
-        focusGlobalSearch();
+        if (!openCommandPalette()) {
+            focusGlobalSearch();
+        }
         return;
     }
 

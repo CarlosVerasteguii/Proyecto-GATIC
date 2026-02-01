@@ -11,9 +11,14 @@
     $catalogsTrashActive = request()->routeIs('catalogs.trash.*');
     $inventorySearchActive = request()->routeIs('inventory.search');
     $inventoryProductsActive = request()->routeIs('inventory.products.*');
+    $showAdminSection = auth()->user()->can('users.manage')
+        || auth()->user()->can('admin-only');
 @endphp
 
-<ul class="nav nav-pills flex-column gap-1">
+<ul class="nav nav-pills flex-column gap-0">
+    <li class="sidebar-section px-2">
+        <div class="text-uppercase small text-secondary-emphasis">Navegación principal</div>
+    </li>
     <li class="nav-item">
         <a
             class="nav-link @if ($dashboardActive) active @endif"
@@ -26,45 +31,6 @@
         </a>
     </li>
 
-    @can('users.manage')
-        <li class="nav-item">
-            <a
-                class="nav-link @if ($adminUsersActive) active @endif"
-                href="{{ route('admin.users.index') }}"
-                data-tooltip="Usuarios"
-                @if ($adminUsersActive) aria-current="page" @endif
-            >
-                <i class="bi bi-people nav-icon" aria-hidden="true"></i>
-                <span class="nav-text">Usuarios</span>
-            </a>
-        </li>
-    @endcan
-
-    @can('admin-only')
-        <li class="nav-item">
-            <a
-                class="nav-link @if ($adminTrashActive) active @endif"
-                href="{{ route('admin.trash.index') }}"
-                data-tooltip="Papelera"
-                @if ($adminTrashActive) aria-current="page" @endif
-            >
-                <i class="bi bi-trash nav-icon" aria-hidden="true"></i>
-                <span class="nav-text">Papelera</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a
-                class="nav-link @if ($adminErrorReportsActive) active @endif"
-                href="{{ route('admin.error-reports.lookup') }}"
-                data-tooltip="Errores"
-                @if ($adminErrorReportsActive) aria-current="page" @endif
-            >
-                <i class="bi bi-exclamation-triangle nav-icon" aria-hidden="true"></i>
-                <span class="nav-text">Errores (soporte)</span>
-            </a>
-        </li>
-    @endcan
-
     @can('inventory.view')
         <li class="nav-item">
             <a
@@ -76,6 +42,14 @@
                 <i class="bi bi-search nav-icon" aria-hidden="true"></i>
                 <span class="nav-text">Búsqueda</span>
             </a>
+        </li>
+
+        <li class="sidebar-divider px-2">
+            <hr class="my-1 border-secondary opacity-25" />
+        </li>
+
+        <li class="sidebar-section px-2">
+            <div class="text-uppercase small text-secondary-emphasis">Inventario</div>
         </li>
 
         <li class="nav-item">
@@ -92,6 +66,14 @@
     @endcan
 
     @can('inventory.manage')
+        <li class="sidebar-divider px-2">
+            <hr class="my-1 border-secondary opacity-25" />
+        </li>
+
+        <li class="sidebar-section px-2">
+            <div class="text-uppercase small text-secondary-emphasis">Operaciones</div>
+        </li>
+
         <li class="nav-item">
             <a
                 class="nav-link @if ($pendingTasksActive) active @endif"
@@ -118,6 +100,14 @@
     @endcan
 
     @can('catalogs.manage')
+        <li class="sidebar-divider px-2">
+            <hr class="my-1 border-secondary opacity-25" />
+        </li>
+
+        <li class="sidebar-section px-2">
+            <div class="text-uppercase small text-secondary-emphasis">Catálogos</div>
+        </li>
+
         <li class="nav-item">
             <a
                 class="nav-link @if ($catalogsCategoriesActive) active @endif"
@@ -151,7 +141,54 @@
                 <span class="nav-text">Ubicaciones</span>
             </a>
         </li>
+    @endcan
+
+    @if ($showAdminSection)
+        <li class="sidebar-divider px-2">
+            <hr class="my-1 border-secondary opacity-25" />
+        </li>
+
+        <li class="sidebar-section px-2">
+            <div class="text-uppercase small text-secondary-emphasis">Administración</div>
+        </li>
+
+        @can('users.manage')
+            <li class="nav-item">
+                <a
+                    class="nav-link @if ($adminUsersActive) active @endif"
+                    href="{{ route('admin.users.index') }}"
+                    data-tooltip="Usuarios"
+                    @if ($adminUsersActive) aria-current="page" @endif
+                >
+                    <i class="bi bi-people nav-icon" aria-hidden="true"></i>
+                    <span class="nav-text">Usuarios</span>
+                </a>
+            </li>
+        @endcan
+
         @can('admin-only')
+            <li class="nav-item">
+                <a
+                    class="nav-link @if ($adminTrashActive) active @endif"
+                    href="{{ route('admin.trash.index') }}"
+                    data-tooltip="Papelera"
+                    @if ($adminTrashActive) aria-current="page" @endif
+                >
+                    <i class="bi bi-trash nav-icon" aria-hidden="true"></i>
+                    <span class="nav-text">Papelera</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a
+                    class="nav-link @if ($adminErrorReportsActive) active @endif"
+                    href="{{ route('admin.error-reports.lookup') }}"
+                    data-tooltip="Errores"
+                    @if ($adminErrorReportsActive) aria-current="page" @endif
+                >
+                    <i class="bi bi-exclamation-triangle nav-icon" aria-hidden="true"></i>
+                    <span class="nav-text">Errores (soporte)</span>
+                </a>
+            </li>
             <li class="nav-item">
                 <a
                     class="nav-link @if ($catalogsTrashActive) active @endif"
@@ -164,5 +201,5 @@
                 </a>
             </li>
         @endcan
-    @endcan
+    @endif
 </ul>

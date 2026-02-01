@@ -24,7 +24,7 @@
                 data-testid="global-search-form"
             >
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white">
+                    <span class="input-group-text bg-body">
                         <i class="bi bi-search" aria-hidden="true"></i>
                     </span>
                     <input
@@ -52,6 +52,18 @@
             >
                 <i class="bi bi-arrows-angle-expand" aria-hidden="true"></i>
                 <span class="density-text ms-1 d-none d-lg-inline">Compacto</span>
+            </button>
+
+            {{-- Theme toggle --}}
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-light d-none d-md-inline-flex align-items-center"
+                data-theme-toggle
+                aria-pressed="false"
+                title="Cambiar tema"
+            >
+                <i class="bi bi-moon-stars" aria-hidden="true"></i>
+                <span class="theme-text ms-1 d-none d-lg-inline">Tema</span>
             </button>
 
             @can('inventory.view')

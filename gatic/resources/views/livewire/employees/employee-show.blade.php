@@ -3,12 +3,16 @@
         <div class="col-12 col-lg-10">
             {{-- Header --}}
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="mb-0">
-                    Empleado: {{ $employee->rpe }} — {{ $employee->name }}
-                </h4>
-                <a href="{{ route('employees.index') }}" class="btn btn-outline-secondary">
-                    Volver
-                </a>
+                <div class="d-flex flex-column">
+                    <x-ui.breadcrumbs :items="[
+                        ['label' => 'Inicio', 'url' => route('dashboard')],
+                        ['label' => 'Empleados', 'url' => route('employees.index')],
+                        ['label' => $employee->rpe, 'url' => null],
+                    ]" />
+                    <h4 class="mb-0">
+                        Empleado: {{ $employee->rpe }} — {{ $employee->name }}
+                    </h4>
+                </div>
             </div>
 
             {{-- Datos del empleado --}}

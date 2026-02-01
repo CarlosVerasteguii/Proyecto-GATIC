@@ -1050,3 +1050,264 @@ So that pueda operar más rápido con menos scroll.
 **Then** las tablas adoptan estilo compacto donde aplique (`table-sm`)
 **And** los headers incluyen toolbar consistente (título + acciones + filtros)
 **And** los empty states son claros y accionables.
+
+## Epic 12: UX avanzada (tema, command palette, columnas, breadcrumbs)
+
+Agregar features de productividad y personalización (power-user) sin romper las reglas del bible (RBAC server-side, sin WebSockets, UX desktop-first).
+
+### Story 12.1: Dark Mode (tema claro/oscuro) + persistencia
+
+As a usuario interno,
+I want alternar entre tema claro y oscuro,
+So that reduzca fatiga visual y pueda trabajar cómodo por periodos largos.
+
+**Acceptance Criteria:**
+
+**Given** el usuario está autenticado en cualquier pantalla
+**When** cambia el tema (toggle)
+**Then** la UI aplica tema claro/oscuro de forma consistente (layout, cards, tablas, modals, badges, toasts)
+**And** la preferencia persiste entre recargas (mínimo: `localStorage`; opcional: preferencia por usuario)
+
+**Given** un usuario nuevo (sin preferencia guardada)
+**When** entra por primera vez
+**Then** el sistema usa un default seguro (ej. `prefers-color-scheme` o `light`)
+**And** el contraste cumple accesibilidad básica (texto legible en badges/alerts/inputs).
+
+### Story 12.2: Command Palette (Ctrl/Cmd+K) con comandos y navegación
+
+As a usuario avanzado,
+I want abrir una command palette y ejecutar acciones sin mouse,
+So that reduzca fricción y navegue/actúe más rápido.
+
+**Acceptance Criteria:**
+
+**Given** el usuario está en cualquier pantalla
+**When** presiona `Ctrl/Cmd+K`
+**Then** se abre un overlay (palette) con un input de búsqueda enfocado
+**And** `Esc` cierra la palette sin perder estado de la pantalla actual
+
+**Given** la palette está abierta
+**When** usa teclado (↑/↓, Enter)
+**Then** puede navegar resultados y ejecutar un comando
+**And** los comandos visibles respetan permisos (RBAC) del usuario
+
+**Given** el usuario escribe un identificador exacto (ej. `serial`, `asset_tag`, `RPE`)
+**When** hay match exacto
+**Then** la palette ofrece un “jump” directo a la entidad correspondiente
+**And** mantiene separación lógica (ej. inventario vs tareas) para no mezclar resultados “por accidente”.
+
+### Story 12.3: Column Manager por tabla + persistencia
+
+As a usuario interno,
+I want poder mostrar/ocultar columnas en tablas principales,
+So that adapte la densidad de información a mi forma de trabajo.
+
+**Acceptance Criteria:**
+
+**Given** una pantalla con tabla (listados principales)
+**When** el usuario abre “Columnas”
+**Then** puede habilitar/deshabilitar columnas soportadas sin recargar la página
+**And** la selección persiste por tabla (mínimo: `localStorage`; opcional: preferencia por usuario)
+
+**Given** una tabla con columnas críticas (ej. “Acciones”, identificador principal)
+**When** el usuario intenta ocultarlas
+**Then** el sistema lo impide o aplica un fallback seguro (siempre visible).
+
+### Story 12.4: Breadcrumbs globales y consistentes
+
+As a usuario interno,
+I want breadcrumbs consistentes en pantallas de listado/detalle,
+So that tenga orientación y vuelva rápido al contexto anterior.
+
+**Acceptance Criteria:**
+
+**Given** una pantalla navegable (módulos principales)
+**When** se renderiza el header de la vista
+**Then** muestra breadcrumbs consistentes con links (excepto el ítem actual)
+**And** los labels son claros (UI en español) y el componente es accesible (aria-label).
+
+## Epic 13: Alertas operativas (préstamos vencidos/por vencer, inventario bajo)
+
+Agregar señales operativas accionables (alertas) para operación diaria: vencimientos de préstamos y stock bajo, con vistas y dashboard.
+
+### Story 13.1: Fecha de vencimiento en préstamos de activos (modelo + UI)
+
+As a Admin/Editor,
+I want capturar una fecha de vencimiento al prestar un activo,
+So that el sistema pueda alertar préstamos vencidos o por vencer.
+
+**Acceptance Criteria:**
+
+**Given** un usuario autorizado presta un activo
+**When** captura una fecha de vencimiento
+**Then** el sistema valida el dato (fecha válida; no en el pasado)
+**And** persiste la fecha en BD en un campo canónico (para el préstamo vigente)
+
+**Given** un activo prestado
+**When** se consulta el detalle del activo o del empleado
+**Then** se muestra la fecha de vencimiento (si existe) de forma clara.
+
+### Story 13.2: Alertas de préstamos vencidos / por vencer (listas + dashboard)
+
+As a Admin/Editor,
+I want ver préstamos vencidos y por vencer en un solo lugar,
+So that priorice devoluciones y reduzca incidencias.
+
+**Acceptance Criteria:**
+
+**Given** existen activos prestados con fecha de vencimiento
+**When** el usuario entra al dashboard
+**Then** ve contadores de “Vencidos” y “Por vencer” (ventana configurable, ej. 7/14/30 días)
+**And** puede navegar a un listado filtrado desde cada contador
+
+**Given** el usuario está en el listado de alertas
+**When** revisa un préstamo
+**Then** ve activo, empleado, fecha de vencimiento, días vencidos/restantes
+**And** tiene acciones rápidas (ver detalle / devolver si aplica y tiene permisos).
+
+### Story 13.3: Inventario bajo (umbrales por producto) + alertas
+
+As a Admin/Editor,
+I want configurar umbrales de “stock bajo” por producto y ver alertas,
+So that reponga consumibles a tiempo y evite quedarme sin inventario.
+
+**Acceptance Criteria:**
+
+**Given** un producto por cantidad
+**When** el stock (`qty_total`) cae a `<= low_stock_threshold`
+**Then** el sistema lo considera “stock bajo”
+**And** aparece en un listado de alertas y en el dashboard
+
+**Given** un usuario autorizado edita un producto
+**When** define/cambia el umbral
+**Then** el sistema valida que sea un entero `>= 0`
+**And** el umbral se usa en cálculos/indicadores de disponibilidad donde aplique.
+
+## Epic 14: Datos de negocio (garantías, costos, proveedores, configuración, timeline, dashboard avanzado)
+
+Extender el modelo para capturar datos “enterprise” (garantías/costos/vida útil) y habilitar dashboard/consultas avanzadas sin perder simplicidad operativa.
+
+### Story 14.1: Proveedores (catálogo) + relación con Productos
+
+As a Admin/Editor,
+I want gestionar proveedores y asociarlos a productos,
+So that capture origen de compra y facilite auditorías/gestión.
+
+**Acceptance Criteria:**
+
+**Given** un usuario autorizado
+**When** crea/edita un proveedor
+**Then** puede mantener campos mínimos (nombre) y campos opcionales (contacto/notas)
+**And** el proveedor puede asociarse a un Producto (ej. `products.supplier_id`)
+
+**Given** un proveedor en uso
+**When** se intenta eliminar
+**Then** el sistema bloquea borrado físico (o aplica soft-delete según política) y evita inconsistencias.
+
+### Story 14.2: Contratos (compra/arrendamiento) + relación con Activos
+
+As a Admin/Editor,
+I want registrar contratos y asociarlos a activos,
+So that tenga trazabilidad contractual (compra/arrendamiento/garantías extendidas).
+
+**Acceptance Criteria:**
+
+**Given** un usuario autorizado
+**When** crea/edita un contrato
+**Then** puede capturar identificador, proveedor, vigencia y notas
+**And** puede vincular uno o más Activos a un contrato (relación opcional)
+
+**Given** un activo con contrato
+**When** se consulta su detalle
+**Then** se muestra el vínculo al contrato y su vigencia de forma clara.
+
+### Story 14.3: Garantías en activos (fechas + alertas)
+
+As a Admin/Editor,
+I want registrar fechas de garantía por activo,
+So that el sistema muestre garantías vencidas o por vencer.
+
+**Acceptance Criteria:**
+
+**Given** un activo serializado
+**When** el usuario captura garantía (inicio/fin/proveedor/notas)
+**Then** los campos se guardan y se muestran en el detalle del activo
+**And** existen consultas para “garantía vencida” y “por vencer” (ventana configurable)
+
+### Story 14.4: Costos y valor del inventario
+
+As a Admin/Editor,
+I want registrar costos de adquisición y valor estimado de activos,
+So that el dashboard pueda mostrar valor total y distribución por categorías/marcas.
+
+**Acceptance Criteria:**
+
+**Given** un activo
+**When** el usuario captura `acquisition_cost` (y moneda)
+**Then** el sistema valida formato/moneda y guarda el dato
+**And** el valor total de inventario excluye `Retirado` por defecto (salvo filtros explícitos)
+
+### Story 14.5: Vida útil y renovación (planning)
+
+As a Admin/Editor,
+I want definir vida útil y fecha estimada de reemplazo,
+So that planifique renovaciones y presupuesto.
+
+**Acceptance Criteria:**
+
+**Given** un activo o una categoría con vida útil default
+**When** el sistema tiene fecha de compra/alta y meses de vida útil
+**Then** calcula (o permite capturar) `expected_replacement_date`
+**And** habilita un reporte/listado de activos “por renovar” en un periodo.
+
+### Story 14.6: Configuración del sistema (settings) para umbrales y ventanas de alerta
+
+As a Admin,
+I want configurar valores globales (días de alerta, defaults),
+So that no dependa de cambios de código para ajustes operativos.
+
+**Acceptance Criteria:**
+
+**Given** un Admin autenticado
+**When** ajusta settings (ej. días “por vencer”, moneda default, etc.)
+**Then** el sistema aplica los cambios en cálculos y UI
+**And** los settings tienen defaults seguros si no existen.
+
+### Story 14.7: Perfil de usuario interno (campos extra) + preferencias UI
+
+As a Admin,
+I want capturar campos extra de usuarios (departamento/puesto) y preferencias UI,
+So that el sistema sea más útil para operación y personalización.
+
+**Acceptance Criteria:**
+
+**Given** un usuario del sistema
+**When** Admin edita su perfil (admin-only)
+**Then** puede mantener campos extra (ej. `department`, `position`)
+**And** las preferencias UI (tema/densidad/sidebar/columnas) pueden persistirse por usuario (opcional).
+
+### Story 14.8: Timeline / changelog por entidad (audit + notas + movimientos + adjuntos)
+
+As a usuario interno,
+I want ver una línea de tiempo unificada por entidad,
+So that tenga contexto completo en un solo lugar.
+
+**Acceptance Criteria:**
+
+**Given** una entidad (Activo/Producto/Empleado/Tarea)
+**When** el usuario abre su detalle
+**Then** ve un timeline cronológico combinando auditoría, notas y movimientos
+**And** respeta RBAC (Lector sin adjuntos; acciones destructivas ocultas y bloqueadas en server).
+
+### Story 14.9: Dashboard avanzado (métricas de negocio + actividad reciente)
+
+As a usuario interno,
+I want un dashboard más completo (alertas + métricas + actividad),
+So that tenga visibilidad operativa y de negocio del sistema.
+
+**Acceptance Criteria:**
+
+**Given** existen datos de garantías/costos/actividad
+**When** el usuario consulta el dashboard
+**Then** ve cards/métricas como: garantías vencidas/por vencer, valor inventario, top categorías/marcas, actividad reciente
+**And** las cards son navegables a vistas filtradas y se actualizan por polling (sin WebSockets).

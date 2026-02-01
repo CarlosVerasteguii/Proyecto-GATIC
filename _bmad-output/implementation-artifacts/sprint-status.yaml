@@ -139,3 +139,27 @@ development_status:
   11-8-modo-compacto-densidad-visual: done
   epic-11-retrospective: optional
 
+  epic-12: backlog
+  12-1-dark-mode-tema-claro-oscuro: backlog
+  12-2-command-palette-con-comandos-y-navegacion: backlog
+  12-3-column-manager-por-tabla-y-persistencia: backlog
+  12-4-breadcrumbs-globales-y-consistentes: backlog
+  epic-12-retrospective: optional
+
+  epic-13: backlog
+  13-1-fecha-vencimiento-en-prestamos-de-activos: backlog
+  13-2-alertas-prestamos-vencidos-y-por-vencer: backlog
+  13-3-inventario-bajo-umbrales-por-producto: backlog
+  epic-13-retrospective: optional
+
+  epic-14: backlog
+  14-1-proveedores-catalogo-y-relacion-con-productos: backlog
+  14-2-contratos-compra-arrendamiento-y-relacion-con-activos: backlog
+  14-3-garantias-en-activos-fechas-y-alertas: backlog
+  14-4-costos-y-valor-del-inventario: backlog
+  14-5-vida-util-y-renovacion: backlog
+  14-6-configuracion-del-sistema-settings: backlog
+  14-7-perfil-usuario-y-preferencias-ui: backlog
+  14-8-timeline-y-changelog-por-entidad: backlog
+  14-9-dashboard-avanzado-metricas-y-actividad-reciente: backlog
+  epic-14-retrospective: optional

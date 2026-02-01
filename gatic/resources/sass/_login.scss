@@ -1,0 +1,402 @@
+// =============================================================================
+// Login Page Styles
+// =============================================================================
+// Fullscreen background with CFE imagery and centered card
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+
+  // Background slideshow container
+  .login-bg-slideshow {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .login-bg-slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #1a3d2d;
+    filter: brightness(0.9) contrast(1.05);
+    opacity: 0;
+    transform: scale(1);
+    transition: opacity 1.5s ease-in-out, transform 7s ease-out;
+
+    &.active {
+      opacity: 1;
+      z-index: 1;
+      transform: scale(1.08) translateX(-3%); // Ken Burns effect
+    }
+
+    &:nth-child(1) {
+      background-image: url('/images/cfe/trabajadores-campo.jpg');
+    }
+
+    &:nth-child(2) {
+      background-image: url('/images/cfe/planta-tula-nocturna.jpg');
+    }
+
+    &:nth-child(3) {
+      background-image: url('/images/cfe/trabajadores-otis.jpg');
+    }
+
+    &:nth-child(4) {
+      background-image: url('/images/cfe/trabajadores-poste-equipo.jpg');
+    }
+
+    &:nth-child(5) {
+      background-image: url('/images/cfe/trabajadores-altura.jpg');
+    }
+
+    &:nth-child(6) {
+      background-image: url('/images/cfe/trabajador-casco.jpg');
+    }
+
+    &:nth-child(7) {
+      background-image: url('/images/cfe/camion-cfe.jpg');
+    }
+
+    // Alternar dirección del pan
+    &:nth-child(even).active {
+      transform: scale(1.08) translateX(3%); // Pan derecha
+    }
+  }
+
+  // Dark overlay with radial gradient
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at top,
+      rgba(0, 77, 51, 0.75) 0%,
+      rgba(0, 0, 0, 0.85) 100%
+    );
+    z-index: 1;
+  }
+}
+
+.login-container {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; // Alinear a la derecha
+  padding: var(--space-4) var(--space-8) var(--space-4) var(--space-4);
+
+  @media (max-width: 991.98px) {
+    justify-content: center; // Centrar en tablets y móviles
+    padding: var(--space-4);
+  }
+}
+
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 0 1px rgba(0, 0, 0, 0.05),
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 20px 40px -10px rgba(0, 0, 0, 0.15),
+    0 0 100px rgba(0, 142, 90, 0.08); // Glow sutil CFE
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  padding-bottom: var(--space-2);
+}
+
+.login-header {
+  background: linear-gradient(
+    135deg,
+    #008e5a 0%,
+    #006b47 50%,
+    #004d33 100%
+  );
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  text-align: center;
+  color: #fff;
+  position: relative;
+
+  // Brillo sutil en la parte superior
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+  }
+}
+
+.login-logo {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-1);
+}
+
+.login-subtitle {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+.login-body {
+  padding: var(--space-8) var(--space-6);
+}
+
+.login-form {
+  .form-floating {
+    margin-bottom: var(--space-5);
+
+    .form-control {
+      border-radius: var(--radius-md);
+      border: 1px solid #dee2e6;
+      padding-left: 2.75rem;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+      &:hover:not(:focus) {
+        border-color: #cbd5e1; // Feedback sutil en hover
+      }
+
+      &:focus {
+        border-color: var(--cfe-green);
+        box-shadow: 0 0 0 3px rgba(0, 142, 90, 0.15); // Ring más grueso
+        outline: 2px solid transparent; // Para high-contrast mode
+        outline-offset: 2px;
+      }
+
+      &.is-invalid {
+        border-color: #dc3545;
+        padding-right: 3rem;
+
+        &:focus {
+          border-color: #dc3545;
+          box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+        }
+      }
+    }
+
+    label {
+      padding-left: 2.75rem;
+      color: #0f172a; // slate-900 para máximo contraste
+    }
+
+    .invalid-feedback {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: #dc3545;
+      padding-left: 2.75rem;
+    }
+  }
+
+  .form-check {
+    margin-bottom: var(--space-5);
+
+    .form-check-label {
+      color: #1e293b; // slate-800
+      cursor: pointer;
+
+      small {
+        display: block;
+        font-size: 0.75rem;
+        color: #64748b; // slate-500
+        margin-top: 0.25rem;
+      }
+    }
+
+    .form-check-input {
+      cursor: pointer;
+
+      &:focus {
+        border-color: var(--cfe-green);
+        box-shadow: 0 0 0 3px rgba(0, 142, 90, 0.15);
+      }
+    }
+  }
+
+  .input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #475569; // slate-600 para mejor contraste
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  .form-check {
+    margin-bottom: var(--space-4);
+  }
+}
+
+.login-btn {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--cfe-green) 0%, var(--cfe-green-dark) 100%);
+  border: none;
+  color: #fff;
+  transition: all var(--transition-fast);
+  position: relative;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--cfe-green-dark) 0%, #004d33 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 107, 71, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 142, 90, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .btn-content,
+  .btn-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-spinner {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--cfe-green) 0%, var(--cfe-green-dark) 100%);
+    border-radius: var(--radius-md);
+  }
+}
+
+// Footer with CC attribution
+.login-footer {
+  position: relative;
+  z-index: 2;
+  padding: var(--space-3) var(--space-4);
+  text-align: center;
+}
+
+.login-attribution {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+
+  a {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .cc-icons {
+    display: inline-flex;
+    gap: 2px;
+
+    img {
+      height: 16px;
+      width: auto;
+      opacity: 0.8;
+    }
+  }
+}
+
+// Alert styling inside login
+.login-alert {
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+// Responsive adjustments
+@media (max-width: 575.98px) {
+  .login-page {
+    &::before {
+      background-position: 30% center;
+      filter: brightness(0.7) blur(2px); // Simplificar en móvil
+    }
+
+    &::after {
+      background: rgba(0, 0, 0, 0.8); // Más oscuro en móvil
+    }
+  }
+
+  .login-card {
+    margin: var(--space-2);
+    max-width: none;
+  }
+
+  .login-header {
+    padding: var(--space-5) var(--space-4) var(--space-4);
+  }
+
+  .login-body {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .login-logo {
+    font-size: 1.75rem;
+  }
+}
+
+// Animations
+@keyframes loginFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Ken Burns effect ahora se maneja con transitions en .login-bg-slide.active
+
+.login-card {
+  animation: loginFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+// Respetar prefers-reduced-motion
+@media (prefers-reduced-motion: reduce) {
+  .login-card {
+    animation: none;
+  }
+
+  .form-control,
+  .login-btn,
+  .input-icon {
+    transition: none !important;
+  }
+}

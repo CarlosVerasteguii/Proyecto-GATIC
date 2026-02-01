@@ -17,7 +17,7 @@ use Illuminate\Validation\Rule;
 class LoanAssetToEmployee
 {
     /**
-     * @param  array{asset_id: int, employee_id: int, note: string, actor_user_id: int}  $data
+     * @param  array{asset_id: int, employee_id: int, note: string, actor_user_id: int, loan_due_date?: string|null}  $data
      *
      * @throws \Illuminate\Validation\ValidationException
      */
@@ -28,6 +28,7 @@ class LoanAssetToEmployee
             'employee_id' => ['required', 'integer', Rule::exists('employees', 'id')],
             'note' => ['required', 'string', 'min:5', 'max:1000'],
             'actor_user_id' => ['required', 'integer', Rule::exists('users', 'id')],
+            'loan_due_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:today'],
         ], [
             'asset_id.required' => 'El activo es obligatorio.',
             'asset_id.exists' => 'El activo seleccionado no existe.',
@@ -36,6 +37,8 @@ class LoanAssetToEmployee
             'note.required' => 'La nota es obligatoria.',
             'note.min' => 'La nota debe tener al menos :min caracteres.',
             'note.max' => 'La nota no puede exceder :max caracteres.',
+            'loan_due_date.date_format' => 'La fecha de vencimiento debe tener el formato YYYY-MM-DD.',
+            'loan_due_date.after_or_equal' => 'La fecha de vencimiento no puede ser en el pasado.',
         ])->validate();
 
         return DB::transaction(function () use ($data): AssetMovement {
@@ -52,6 +55,7 @@ class LoanAssetToEmployee
 
             $asset->status = Asset::STATUS_LOANED;
             $asset->current_employee_id = $data['employee_id'];
+            $asset->loan_due_date = $data['loan_due_date'] ?? null;
             $asset->save();
 
             $movement = AssetMovement::create([
@@ -62,7 +66,7 @@ class LoanAssetToEmployee
                 'note' => $data['note'],
             ]);
 
-            // Best-effort audit (AC1, AC2, AC5)
+            // Auditoría best-effort
             AuditRecorder::record(
                 action: AuditLog::ACTION_ASSET_LOAN,
                 subjectType: AssetMovement::class,
@@ -71,6 +75,7 @@ class LoanAssetToEmployee
                 context: [
                     'asset_id' => $asset->id,
                     'employee_id' => $data['employee_id'],
+                    'loan_due_date' => $data['loan_due_date'] ?? null,
                 ]
             );
 

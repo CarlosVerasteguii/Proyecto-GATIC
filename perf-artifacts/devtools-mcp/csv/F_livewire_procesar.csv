@@ -1,0 +1,11 @@
+run,name,ttfb_ms,total_ms,transfer_bytes
+1,http://127.0.0.2:8080/livewire/update,2848,2862,18316
+2,http://127.0.0.2:8080/livewire/update,3112,3128,18316
+3,http://127.0.0.2:8080/livewire/update,2926,2937,18316
+4,http://127.0.0.2:8080/livewire/update,3058,3069,18316
+5,http://127.0.0.2:8080/livewire/update,2848,2860,18316
+6,http://127.0.0.2:8080/livewire/update,443,446,18315
+7,http://127.0.0.2:8080/livewire/update,3353,3368,18316
+8,http://127.0.0.2:8080/livewire/update,2101,2117,18316
+9,http://127.0.0.2:8080/livewire/update,299,302,18315
+10,http://127.0.0.2:8080/livewire/update,3269,3283,18316

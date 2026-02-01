@@ -1,0 +1,13 @@
+HTTP/1.1 200 OK
+Host: localhost:8080
+Connection: close
+X-Powered-By: PHP/8.4.17
+Cache-Control: max-age=0, must-revalidate, no-cache, no-store, private
+Date: Sat, 31 Jan 2026 19:41:14 GMT
+Content-Type: text/html; charset=utf-8
+Pragma: no-cache
+Expires: Fri, 01 Jan 1990 00:00:00 GMT
+X-Perf-Id: 6b1aa362-3d35-4b85-bb85-2c5fff30fffa
+Set-Cookie: XSRF-TOKEN=eyJpdiI6ImNxSE81Q2x3bXR2OVozMnROdE8wQWc9PSIsInZhbHVlIjoiMkhUVlZNMW9OM0FDYmJ2TFQ0bmNMUHU0bTVTanhBRVlNN0x2SlRyMUFmYXM0enBOQzd5NXBjdVFQNGJOS1U0NFlBVHJOSktzNEEzQ2FvbnRVR3l5R2lMNllSeDU3YkhjZ2VwZmNkdThIeHNiVnRZNnRQcmhMazYwSFc1V012NnYiLCJtYWMiOiIyN2IzMzgxNWNjODBhNTg0NzA4ODY4NGRmMDRkZTNmZGFlODM3NDAwY2M1NWM4MzA1YmNjMzZkMDYwMzQxMmM0IiwidGFnIjoiIn0%3D; expires=Sat, 31 Jan 2026 21:41:14 GMT; Max-Age=7199; path=/; samesite=lax
+Set-Cookie: gatic_session=eyJpdiI6IkhEdzZYeUNueHVuRURtbHo0WHpCZ0E9PSIsInZhbHVlIjoidU9RbEJzM2c3NEFhSDVzNXFOWXc4VHVhQk1hcTF4UzBzckI1Ti9BZWhWeUMwQWR0QjNLUUptZTFZeDRyR2RvRHFmREJ3a0wrUjVzek1QYXR1Z3JnUklhaDdkWVJwdzBSb1NtYXpaVzh0S2JWN2xIZ3RpLzV6U2dVZjVkSFZqcE4iLCJtYWMiOiI0ODljMjJhYzQ2OGNkZjcxNmZhNTgxY2QzZmNiM2M2YzRmY2FiNGYzYTk4MmYyZjQ4NTg3NmVkZGNkNmMxMWQ0IiwidGFnIjoiIn0%3D; expires=Sat, 31 Jan 2026 21:41:14 GMT; Max-Age=7199; path=/; httponly; samesite=lax
+

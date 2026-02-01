@@ -1,0 +1,11 @@
+run,url,ttfb_ms,total_ms,domcontentloaded_ms,transfer_bytes
+1,http://127.0.0.1:8080/inventory/products,5044,6651,6650,30639
+2,http://127.0.0.1:8080/inventory/products,1989,2324,2321,30639
+3,http://127.0.0.1:8080/inventory/products,2398,2726,2723,30639
+4,http://127.0.0.1:8080/inventory/products,2285,2592,2589,30639
+5,http://127.0.0.1:8080/inventory/products,2265,2627,2624,30639
+6,http://127.0.0.1:8080/inventory/products,4494,5986,5981,30639
+7,http://127.0.0.1:8080/inventory/products,1827,2107,2104,30639
+8,http://127.0.0.1:8080/inventory/products,1819,2145,2142,30639
+9,http://127.0.0.1:8080/inventory/products,1981,2261,2259,30639
+10,http://127.0.0.1:8080/inventory/products,2334,4039,4036,30639

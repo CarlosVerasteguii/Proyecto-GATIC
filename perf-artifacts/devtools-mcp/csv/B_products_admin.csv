@@ -1,0 +1,11 @@
+run,url,ttfb_ms,total_ms,domcontentloaded_ms,transfer_bytes
+1,http://localhost:8080/inventory/products,1953,2293,2290,38573
+2,http://localhost:8080/inventory/products,2152,2450,2448,38573
+3,http://localhost:8080/inventory/products,4557,6304,6301,38573
+4,http://localhost:8080/inventory/products,2308,2631,2629,38573
+5,http://localhost:8080/inventory/products,2082,2409,2405,38573
+6,http://localhost:8080/inventory/products,2411,2734,2732,38573
+7,http://localhost:8080/inventory/products,4883,6856,6850,38573
+8,http://localhost:8080/inventory/products,2068,2366,2363,38573
+9,http://localhost:8080/inventory/products,2275,2607,2604,38573
+10,http://localhost:8080/inventory/products,2479,4730,4727,38573

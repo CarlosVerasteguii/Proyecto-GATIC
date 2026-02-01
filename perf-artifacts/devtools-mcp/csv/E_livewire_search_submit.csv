@@ -1,0 +1,11 @@
+run,name,ttfb_ms,total_ms,transfer_bytes
+1,http://localhost:8080/livewire/update,5840,5859,10000
+2,http://localhost:8080/livewire/update,1853,1861,10000
+3,http://localhost:8080/livewire/update,1978,1988,10000
+4,http://localhost:8080/livewire/update,4694,4711,10000
+5,http://localhost:8080/livewire/update,2478,2488,10000
+6,http://localhost:8080/livewire/update,4487,4503,10000
+7,http://localhost:8080/livewire/update,1850,1860,10000
+8,http://localhost:8080/livewire/update,1911,1920,10000
+9,http://localhost:8080/livewire/update,1541,1552,10000
+10,http://localhost:8080/livewire/update,6265,6285,10000

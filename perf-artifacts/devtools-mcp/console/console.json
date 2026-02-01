@@ -1,0 +1,18 @@
+{
+  "generated_at_utc": "2026-02-01T01:31:53.8602505Z",
+  "tool": "mcp__chrome-devtools__list_console_messages",
+  "pages": [
+    {
+      "pageId": 1,
+      "url": "http://127.0.0.2:8080/pending-tasks/1",
+      "messages": [],
+      "note": "<no console messages found>"
+    },
+    {
+      "pageId": 2,
+      "url": "http://127.0.0.3:8080/pending-tasks/1",
+      "messages": [],
+      "note": "<no console messages found>"
+    }
+  ]
+}

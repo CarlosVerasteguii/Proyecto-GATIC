@@ -1,0 +1,11 @@
+run,url,ttfb_ms,total_ms,domcontentloaded_ms,transfer_bytes
+1,http://localhost:8080/login,1934,2352,2351,6799
+2,http://localhost:8080/login,5540,7945,7927,6799
+3,http://localhost:8080/login,2252,2635,2634,6799
+4,http://localhost:8080/login,2337,2727,2726,6799
+5,http://localhost:8080/login,2230,2747,2746,6799
+6,http://localhost:8080/login,2231,2631,2630,6799
+7,http://localhost:8080/login,2108,2473,2473,6799
+8,http://localhost:8080/login,5319,7347,7325,6799
+9,http://localhost:8080/login,2238,2722,2721,6799
+10,http://localhost:8080/login,2215,2605,2604,6799

@@ -1,0 +1,11 @@
+run,url,ttfb_ms,total_ms,domcontentloaded_ms,transfer_bytes
+1,http://localhost:8080/inventory/search?q=Laptop,2355,4128,4122,30551
+2,http://localhost:8080/inventory/search?q=Laptop,1840,2160,2157,30551
+3,http://localhost:8080/inventory/search?q=Laptop,2053,2358,2355,30551
+4,http://localhost:8080/inventory/search?q=Laptop,1769,2060,2057,30551
+5,http://localhost:8080/inventory/search?q=Laptop,4647,6353,6351,30551
+6,http://localhost:8080/inventory/search?q=Laptop,2429,4065,4063,30551
+7,http://localhost:8080/inventory/search?q=Laptop,1876,3328,3326,30551
+8,http://localhost:8080/inventory/search?q=Laptop,1671,1966,1963,30551
+9,http://localhost:8080/inventory/search?q=Laptop,1871,2144,2139,30551
+10,http://localhost:8080/inventory/search?q=Laptop,5560,7472,7470,30551

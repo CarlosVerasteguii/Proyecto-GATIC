@@ -1,0 +1,30 @@
+Request: GET http://127.0.0.3:8080/pending-tasks/1
+Status: 200
+
+Request Headers (cookie redacted)
+- upgrade-insecure-requests: 1
+- user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36
+- sec-ch-ua: "Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"
+- sec-ch-ua-mobile: ?0
+- sec-ch-ua-platform: "Windows"
+- accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+- accept-encoding: gzip, deflate, br, zstd
+- accept-language: es-ES,es;q=0.9
+- connection: keep-alive
+- cookie: <redacted>
+- host: 127.0.0.3:8080
+- sec-fetch-dest: document
+- sec-fetch-mode: navigate
+- sec-fetch-site: none
+- sec-fetch-user: ?1
+
+Response Headers (set-cookie redacted)
+- cache-control: max-age=0, must-revalidate, no-cache, no-store, private
+- connection: close
+- content-type: text/html; charset=utf-8
+- date: Sun, 01 Feb 2026 01:27:20 GMT
+- expires: Fri, 01 Jan 1990 00:00:00 GMT
+- host: 127.0.0.3:8080
+- pragma: no-cache
+- set-cookie: <redacted>
+- x-powered-by: PHP/8.4.17

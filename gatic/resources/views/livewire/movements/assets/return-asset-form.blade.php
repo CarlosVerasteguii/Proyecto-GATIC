@@ -5,7 +5,7 @@
         <div class="col-12 col-lg-8">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0">Devolver Activo</h4>
-                <a href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
+                <a href="{{ $returnTo ?: route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
                     Cancelar
                 </a>
             </div>
@@ -32,7 +32,7 @@
                             <span class="badge bg-info text-dark">{{ $asset->status }}</span>
                         </dd>
 
-                        <dt class="col-sm-3">Ubicacion</dt>
+                        <dt class="col-sm-3">Ubicación</dt>
                         <dd class="col-sm-9">{{ $asset->location?->name ?? '-' }}</dd>
                     </dl>
                 </div>
@@ -40,7 +40,7 @@
 
             <div class="card">
                 <div class="card-header">
-                    Datos de la devolucion
+                    Datos de la devolución
                 </div>
                 <div class="card-body">
                     <form wire:submit="returnAsset">
@@ -78,7 +78,7 @@
                                 wire:model="note"
                                 class="form-control @error('note') is-invalid @enderror"
                                 rows="3"
-                                placeholder="Motivo de la devolucion (minimo 5 caracteres)"
+                                placeholder="Motivo de la devolución (mínimo 5 caracteres)"
                                 maxlength="1000"
                             ></textarea>
                             @error('note')
@@ -90,7 +90,7 @@
                         </div>
 
                         <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
+                            <a href="{{ $returnTo ?: route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
                                 Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">

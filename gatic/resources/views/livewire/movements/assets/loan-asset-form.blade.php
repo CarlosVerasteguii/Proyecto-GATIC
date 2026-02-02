@@ -32,7 +32,7 @@
                             <span class="badge bg-success">{{ $asset->status }}</span>
                         </dd>
 
-                        <dt class="col-sm-3">Ubicacion</dt>
+                        <dt class="col-sm-3">Ubicación</dt>
                         <dd class="col-sm-9">{{ $asset->location?->name ?? '-' }}</dd>
                     </dl>
                 </div>
@@ -40,7 +40,7 @@
 
             <div class="card">
                 <div class="card-header">
-                    Datos del prestamo
+                    Datos del préstamo
                 </div>
                 <div class="card-body">
                     <form wire:submit="loan">
@@ -55,6 +55,25 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="loanDueDate" class="form-label">
+                                Fecha de vencimiento
+                            </label>
+                            <input
+                                type="date"
+                                id="loanDueDate"
+                                wire:model="loanDueDate"
+                                class="form-control @error('loanDueDate') is-invalid @enderror"
+                                min="{{ now()->format('Y-m-d') }}"
+                            />
+                            @error('loanDueDate')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <div class="form-text">
+                                Opcional. Indica cuando debe devolverse el activo.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="note" class="form-label">
                                 Nota <span class="text-danger">*</span>
                             </label>
@@ -63,7 +82,7 @@
                                 wire:model="note"
                                 class="form-control @error('note') is-invalid @enderror"
                                 rows="3"
-                                placeholder="Motivo del prestamo (minimo 5 caracteres)"
+                                placeholder="Motivo del préstamo (mínimo 5 caracteres)"
                                 maxlength="1000"
                             ></textarea>
                             @error('note')

@@ -68,6 +68,79 @@ class DashboardMetricsTest extends TestCase
         $response->assertSee('Activos Asignados');
         $response->assertSee('Activos No Disponibles');
         $response->assertSee('Movimientos Hoy');
+        $response->assertSee('Vencidos');
+        $response->assertSee('Por vencer');
+    }
+
+    public function test_dashboard_shows_overdue_and_due_soon_counts(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 1, 17, 12, 0, 0));
+
+        config([
+            'gatic.alerts.loans.due_soon_window_days_default' => 7,
+            'gatic.alerts.loans.due_soon_window_days_options' => [7, 14, 30],
+        ]);
+
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        Asset::factory()->count(2)->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_LOANED,
+            'loan_due_date' => Carbon::today()->subDay(),
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_LOANED,
+            'loan_due_date' => Carbon::today(),
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_LOANED,
+            'loan_due_date' => Carbon::today()->addDays(3),
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_LOANED,
+            'loan_due_date' => Carbon::today()->addDays(8),
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_LOANED,
+            'loan_due_date' => null,
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_ASSIGNED,
+            'loan_due_date' => Carbon::today()->subDay(),
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+
+        $content = $response->getContent();
+        $this->assertMatchesRegularExpression('/data-testid="dashboard-metric-loans-overdue"[^>]*>\\s*2\\s*</', $content);
+        $this->assertMatchesRegularExpression('/data-testid="dashboard-metric-loans-due-soon"[^>]*>\\s*2\\s*</', $content);
     }
 
     public function test_dashboard_shows_correct_asset_counts(): void

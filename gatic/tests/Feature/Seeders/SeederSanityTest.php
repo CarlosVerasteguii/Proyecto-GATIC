@@ -14,6 +14,7 @@ use App\Models\Product;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 /**
@@ -21,9 +22,8 @@ use Tests\TestCase;
  *
  * This test runs migrate:fresh --seed equivalent and asserts
  * the data required for QA velocity is present.
- *
- * @group seeder
  */
+#[Group('seeder')]
 class SeederSanityTest extends TestCase
 {
     use RefreshDatabase;

@@ -35,6 +35,14 @@ return [
             // Heartbeat interval configured in ui.polling.locks_heartbeat_interval_s
         ],
     ],
+    'alerts' => [
+        'loans' => [
+            // Default "por vencer" window shown in dashboard and alert list (days).
+            'due_soon_window_days_default' => 7,
+            // Allowed window options (days) exposed via query string + UI.
+            'due_soon_window_days_options' => [7, 14, 30],
+        ],
+    ],
     'perf' => [
         'log_enabled' => (bool) env('PERF_LOG', false),
     ],

@@ -30,6 +30,8 @@ class LoanAssetForm extends Component
 
     public string $note = '';
 
+    public ?string $loanDueDate = null;
+
     public ?string $errorId = null;
 
     public function mount(string $product, string $asset): void
@@ -75,6 +77,7 @@ class LoanAssetForm extends Component
         return [
             'employeeId' => ['required', 'integer', 'exists:employees,id'],
             'note' => ['required', 'string', 'min:5', 'max:1000'],
+            'loanDueDate' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:today'],
         ];
     }
 
@@ -86,6 +89,7 @@ class LoanAssetForm extends Component
         return [
             'employeeId' => 'empleado',
             'note' => 'nota',
+            'loanDueDate' => 'fecha de vencimiento',
         ];
     }
 
@@ -98,6 +102,8 @@ class LoanAssetForm extends Component
             'employeeId.required' => 'Debes seleccionar un empleado.',
             'note.required' => 'La nota es obligatoria.',
             'note.min' => 'La nota debe tener al menos :min caracteres.',
+            'loanDueDate.date_format' => 'La fecha de vencimiento debe tener el formato YYYY-MM-DD.',
+            'loanDueDate.after_or_equal' => 'La fecha de vencimiento no puede ser en el pasado.',
         ];
     }
 
@@ -118,13 +124,14 @@ class LoanAssetForm extends Component
                 'asset_id' => $this->assetId,
                 'employee_id' => $this->employeeId,
                 'note' => $this->note,
+                'loan_due_date' => $this->loanDueDate,
                 'actor_user_id' => (int) $actorUserId,
             ]);
 
             $this->dispatch(
                 'ui:toast',
                 type: 'success',
-                title: 'Prestamo exitoso',
+                title: 'Préstamo exitoso',
                 message: 'El activo ha sido prestado correctamente.',
             );
 
@@ -157,7 +164,7 @@ class LoanAssetForm extends Component
                 'ui:toast',
                 type: 'error',
                 title: 'Error inesperado',
-                message: 'Ocurrio un error al prestar el activo.',
+                message: 'Ocurrió un error al prestar el activo.',
                 errorId: $this->errorId,
             );
         }

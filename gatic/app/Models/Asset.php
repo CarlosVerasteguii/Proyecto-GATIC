@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $serial
  * @property string|null $asset_tag
  * @property string $status
+ * @property \Illuminate\Support\Carbon|null $loan_due_date
  */
 class Asset extends Model
 {
@@ -64,7 +65,18 @@ class Asset extends Model
         'serial',
         'asset_tag',
         'status',
+        'loan_due_date',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'loan_due_date' => 'immutable_date',
+        ];
+    }
 
     public static function normalizeSerial(?string $value): ?string
     {

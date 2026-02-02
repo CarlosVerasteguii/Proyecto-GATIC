@@ -188,4 +188,193 @@ class AssetLoanTest extends TestCase
             ->assertOk()
             ->assertDontSee('bi-box-arrow-up-right');
     }
+
+    public function test_loan_with_valid_due_date_persists_correctly(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        ['product' => $product, 'asset' => $asset] = $this->createSerializedProductWithAsset();
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Perez',
+            'department' => 'IT',
+        ]);
+
+        $dueDate = today()->addDays(7)->format('Y-m-d');
+
+        Livewire::actingAs($admin)
+            ->test(LoanAssetForm::class, ['product' => (string) $product->id, 'asset' => (string) $asset->id])
+            ->set('employeeId', $employee->id)
+            ->set('note', 'Prestamo con vencimiento')
+            ->set('loanDueDate', $dueDate)
+            ->call('loan')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]));
+
+        $this->assertDatabaseHas('assets', [
+            'id' => $asset->id,
+            'status' => Asset::STATUS_LOANED,
+            'current_employee_id' => $employee->id,
+            'loan_due_date' => $dueDate,
+        ]);
+    }
+
+    public function test_loan_with_past_due_date_fails_validation(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        ['asset' => $asset] = $this->createSerializedProductWithAsset();
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Perez',
+        ]);
+
+        $action = new LoanAssetToEmployee;
+
+        $this->expectException(ValidationException::class);
+
+        try {
+            $action->execute([
+                'asset_id' => $asset->id,
+                'employee_id' => $employee->id,
+                'note' => 'Intento con fecha en el pasado',
+                'loan_due_date' => today()->subDay()->format('Y-m-d'),
+                'actor_user_id' => $admin->id,
+            ]);
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('loan_due_date', $e->errors());
+            $this->assertDatabaseHas('assets', [
+                'id' => $asset->id,
+                'status' => Asset::STATUS_AVAILABLE,
+            ]);
+            throw $e;
+        }
+    }
+
+    public function test_return_clears_loan_due_date(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        ['asset' => $asset] = $this->createSerializedProductWithAsset();
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Perez',
+        ]);
+
+        // Loan with due date
+        $loanAction = new LoanAssetToEmployee;
+        $dueDate = today()->addDays(7)->format('Y-m-d');
+        $loanAction->execute([
+            'asset_id' => $asset->id,
+            'employee_id' => $employee->id,
+            'note' => 'Prestamo con vencimiento',
+            'loan_due_date' => $dueDate,
+            'actor_user_id' => $admin->id,
+        ]);
+
+        $this->assertDatabaseHas('assets', [
+            'id' => $asset->id,
+            'loan_due_date' => $dueDate,
+        ]);
+
+        // Return
+        $returnAction = new \App\Actions\Movements\Assets\ReturnLoanedAsset;
+        $returnAction->execute([
+            'asset_id' => $asset->id,
+            'employee_id' => $employee->id,
+            'note' => 'Devolucion',
+            'actor_user_id' => $admin->id,
+        ]);
+
+        $this->assertDatabaseHas('assets', [
+            'id' => $asset->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'loan_due_date' => null,
+        ]);
+    }
+
+    public function test_asset_show_displays_due_date_when_loaned_and_due_date_set(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        ['product' => $product, 'asset' => $asset] = $this->createSerializedProductWithAsset();
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Perez',
+        ]);
+
+        $dueDate = today()->addDays(7);
+        $dueDateValue = $dueDate->format('Y-m-d');
+        $dueDateDisplay = $dueDate->format('d/m/Y');
+
+        (new LoanAssetToEmployee)->execute([
+            'asset_id' => $asset->id,
+            'employee_id' => $employee->id,
+            'note' => 'Prestamo con vencimiento',
+            'loan_due_date' => $dueDateValue,
+            'actor_user_id' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertOk()
+            ->assertSee('Vence:')
+            ->assertSee($dueDateDisplay);
+    }
+
+    public function test_asset_show_displays_due_date_even_if_current_employee_is_missing(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        ['product' => $product, 'asset' => $asset] = $this->createSerializedProductWithAsset();
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Perez',
+        ]);
+
+        $dueDate = today()->addDays(7);
+        $dueDateValue = $dueDate->format('Y-m-d');
+        $dueDateDisplay = $dueDate->format('d/m/Y');
+
+        (new LoanAssetToEmployee)->execute([
+            'asset_id' => $asset->id,
+            'employee_id' => $employee->id,
+            'note' => 'Prestamo con vencimiento',
+            'loan_due_date' => $dueDateValue,
+            'actor_user_id' => $admin->id,
+        ]);
+
+        $employee->delete();
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertOk()
+            ->assertSee('Sin tenencia registrada')
+            ->assertSee('Vence:')
+            ->assertSee($dueDateDisplay);
+    }
+
+    public function test_employee_show_displays_due_date_for_loaned_assets(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        ['product' => $product, 'asset' => $asset] = $this->createSerializedProductWithAsset();
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Perez',
+        ]);
+
+        $dueDate = today()->addDays(7);
+        $dueDateValue = $dueDate->format('Y-m-d');
+        $dueDateDisplay = $dueDate->format('d/m/Y');
+
+        (new LoanAssetToEmployee)->execute([
+            'asset_id' => $asset->id,
+            'employee_id' => $employee->id,
+            'note' => 'Prestamo con vencimiento',
+            'loan_due_date' => $dueDateValue,
+            'actor_user_id' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/employees/{$employee->id}")
+            ->assertOk()
+            ->assertSee('Vencimiento')
+            ->assertSee($dueDateDisplay)
+            ->assertSee('Ver');
+    }
 }

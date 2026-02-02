@@ -61,12 +61,13 @@ class ReturnLoanedAsset
 
             if ($employeeId === null) {
                 throw ValidationException::withMessages([
-                    'employee_id' => 'Debes seleccionar un empleado para registrar la devolucion.',
+                    'employee_id' => 'Debes seleccionar un empleado para registrar la devolución.',
                 ]);
             }
 
             $asset->status = Asset::STATUS_AVAILABLE;
             $asset->current_employee_id = null;
+            $asset->loan_due_date = null;
             $asset->save();
 
             $movement = AssetMovement::create([
@@ -77,7 +78,7 @@ class ReturnLoanedAsset
                 'note' => $data['note'],
             ]);
 
-            // Best-effort audit (AC1, AC2, AC5)
+            // Auditoría best-effort
             AuditRecorder::record(
                 action: AuditLog::ACTION_ASSET_RETURN,
                 subjectType: AssetMovement::class,

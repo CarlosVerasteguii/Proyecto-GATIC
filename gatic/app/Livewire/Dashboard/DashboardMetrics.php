@@ -29,6 +29,12 @@ class DashboardMetrics extends Component
 
     public int $movementsToday = 0;
 
+    public int $loansOverdueCount = 0;
+
+    public int $loansDueSoonCount = 0;
+
+    public int $loanDueSoonWindowDays = 7;
+
     public function mount(): void
     {
         $this->refreshMetrics();
@@ -51,6 +57,7 @@ class DashboardMetrics extends Component
         try {
             $this->loadAssetStatusCounts();
             $this->loadMovementsToday();
+            $this->loadLoanDueDateAlertCounts();
             $this->lastUpdatedAtIso = now()->toIso8601String();
         } catch (Throwable $e) {
             if (app()->environment(['local', 'testing'])) {
@@ -99,6 +106,37 @@ class DashboardMetrics extends Component
             ->count();
 
         $this->movementsToday = $assetMovementsCount + $quantityMovementsCount;
+    }
+
+    private function loadLoanDueDateAlertCounts(): void
+    {
+        $today = Carbon::today();
+
+        $allowedOptions = config('gatic.alerts.loans.due_soon_window_days_options', [7, 14, 30]);
+        if (! is_array($allowedOptions) || $allowedOptions === []) {
+            $allowedOptions = [7, 14, 30];
+        }
+
+        $defaultWindowDays = (int) config('gatic.alerts.loans.due_soon_window_days_default', $allowedOptions[0] ?? 7);
+        if (! in_array($defaultWindowDays, $allowedOptions, true)) {
+            $defaultWindowDays = (int) ($allowedOptions[0] ?? 7);
+        }
+
+        $this->loanDueSoonWindowDays = $defaultWindowDays;
+
+        $baseQuery = Asset::query()
+            ->where('status', Asset::STATUS_LOANED)
+            ->whereNotNull('loan_due_date');
+
+        $this->loansOverdueCount = (clone $baseQuery)
+            ->where('loan_due_date', '<', $today->toDateString())
+            ->count();
+
+        $windowEnd = $today->copy()->addDays($defaultWindowDays);
+
+        $this->loansDueSoonCount = (clone $baseQuery)
+            ->whereBetween('loan_due_date', [$today->toDateString(), $windowEnd->toDateString()])
+            ->count();
     }
 
     public function render(): View

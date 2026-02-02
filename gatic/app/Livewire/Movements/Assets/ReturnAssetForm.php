@@ -26,6 +26,8 @@ class ReturnAssetForm extends Component
 
     public ?Asset $assetModel = null;
 
+    public ?string $returnTo = null;
+
     public ?int $employeeId = null;
 
     public bool $employeeLocked = false;
@@ -44,6 +46,7 @@ class ReturnAssetForm extends Component
 
         $this->productId = (int) $product;
         $this->assetId = (int) $asset;
+        $this->returnTo = $this->sanitizeReturnTo(request()->query('returnTo'));
 
         $this->productModel = Product::query()
             ->with('category')
@@ -139,9 +142,16 @@ class ReturnAssetForm extends Component
             $this->dispatch(
                 'ui:toast',
                 type: 'success',
-                title: 'Devolucion exitosa',
+                title: 'Devolución exitosa',
                 message: 'El activo ha sido devuelto correctamente.',
             );
+
+            $returnTo = $this->sanitizeReturnTo($this->returnTo);
+            if ($returnTo !== null) {
+                $this->redirect($returnTo, navigate: true);
+
+                return;
+            }
 
             $this->redirectRoute('inventory.products.assets.show', [
                 'product' => $this->productId,
@@ -178,7 +188,7 @@ class ReturnAssetForm extends Component
                 'ui:toast',
                 type: 'error',
                 title: 'Error inesperado',
-                message: 'Ocurrio un error al devolver el activo.',
+                message: 'Ocurrió un error al devolver el activo.',
                 errorId: $this->errorId,
             );
         }
@@ -192,5 +202,24 @@ class ReturnAssetForm extends Component
             'product' => $this->productModel,
             'asset' => $this->assetModel,
         ]);
+    }
+
+    private function sanitizeReturnTo(?string $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        if ($value === '' || ! str_starts_with($value, '/') || str_starts_with($value, '//')) {
+            return null;
+        }
+
+        if (str_contains($value, "\n") || str_contains($value, "\r") || strlen($value) > 2000) {
+            return null;
+        }
+
+        return $value;
     }
 }

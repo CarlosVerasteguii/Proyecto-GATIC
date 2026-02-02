@@ -86,18 +86,29 @@
 
                     @if (! $hasHolder)
                         <p class="mb-0 text-muted">N/A — El activo está disponible</p>
-                    @elseif ($asset->currentEmployee)
-                        <div class="d-flex align-items-center gap-2">
-                            <x-ui.status-badge :status="$asset->status" />
-                            <a href="{{ route('employees.show', ['employee' => $asset->currentEmployee->id]) }}" class="text-decoration-none">
-                                <strong>{{ $asset->currentEmployee->rpe }}</strong> — {{ $asset->currentEmployee->name }}
-                            </a>
-                        </div>
                     @else
-                        <div class="d-flex align-items-center gap-2 text-warning">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <span>Sin tenencia registrada (estado legacy o ajuste manual)</span>
-                        </div>
+                        @if ($asset->currentEmployee)
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <x-ui.status-badge :status="$asset->status" />
+                                <a href="{{ route('employees.show', ['employee' => $asset->currentEmployee->id]) }}" class="text-decoration-none">
+                                    <strong>{{ $asset->currentEmployee->rpe }}</strong> — {{ $asset->currentEmployee->name }}
+                                </a>
+                            </div>
+                        @else
+                            <div class="d-flex align-items-center gap-2 text-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span>Sin tenencia registrada (estado legacy o ajuste manual)</span>
+                            </div>
+                        @endif
+
+                        @if ($asset->status === \App\Models\Asset::STATUS_LOANED && $asset->loan_due_date)
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    <strong>Vence:</strong> {{ $asset->loan_due_date->format('d/m/Y') }}
+                                </small>
+                            </div>
+                        @endif
                     @endif
                 </div>
             </div>

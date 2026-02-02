@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Attachments\DownloadAttachmentController;
+use App\Livewire\Alerts\Loans\LoanAlertsIndex;
 use App\Livewire\Admin\Audit\AuditLogsIndex;
 use App\Livewire\Admin\ErrorReports\ErrorReportsLookup;
 use App\Livewire\Admin\Users\UserForm;
@@ -169,6 +170,13 @@ Route::middleware(['auth', 'active', 'can:inventory.manage'])
         Route::get('/{employee}', EmployeeShow::class)
             ->whereNumber('employee')
             ->name('show');
+    });
+
+Route::middleware(['auth', 'active', 'can:inventory.manage'])
+    ->prefix('alerts')
+    ->name('alerts.')
+    ->group(function () {
+        Route::get('/loans', LoanAlertsIndex::class)->name('loans.index');
     });
 
 // Attachments download (requires attachments.view gate + entity visibility)

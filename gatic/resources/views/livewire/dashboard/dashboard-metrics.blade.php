@@ -45,6 +45,58 @@
                 </div>
             </div>
 
+            {{-- Préstamos Vencidos --}}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-danger">
+                    <div class="card-body text-center">
+                        <h2 class="display-4 fw-bold text-danger" data-testid="dashboard-metric-loans-overdue">{{ $loansOverdueCount }}</h2>
+                        <h6 class="card-title text-muted mb-2">Vencidos</h6>
+                        <small class="text-muted">
+                            Activos prestados con vencimiento en el pasado
+                        </small>
+
+                        @can('inventory.manage')
+                            @if (\Illuminate\Support\Facades\Route::has('alerts.loans.index'))
+                                <div class="mt-2">
+                                    <a
+                                        href="{{ route('alerts.loans.index', ['type' => 'overdue']) }}"
+                                        class="btn btn-sm btn-outline-danger"
+                                    >
+                                        Ver lista
+                                    </a>
+                                </div>
+                            @endif
+                        @endcan
+                    </div>
+                </div>
+            </div>
+
+            {{-- Préstamos Por vencer --}}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-warning">
+                    <div class="card-body text-center">
+                        <h2 class="display-4 fw-bold text-warning" data-testid="dashboard-metric-loans-due-soon">{{ $loansDueSoonCount }}</h2>
+                        <h6 class="card-title text-muted mb-2">Por vencer</h6>
+                        <small class="text-muted">
+                            Vencen hoy o en los próximos {{ $loanDueSoonWindowDays }} días
+                        </small>
+
+                        @can('inventory.manage')
+                            @if (\Illuminate\Support\Facades\Route::has('alerts.loans.index'))
+                                <div class="mt-2">
+                                    <a
+                                        href="{{ route('alerts.loans.index', ['type' => 'due-soon', 'windowDays' => $loanDueSoonWindowDays]) }}"
+                                        class="btn btn-sm btn-outline-warning"
+                                    >
+                                        Ver lista
+                                    </a>
+                                </div>
+                            @endif
+                        @endcan
+                    </div>
+                </div>
+            </div>
+
             {{-- Activos Pendientes de Retiro --}}
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-danger">

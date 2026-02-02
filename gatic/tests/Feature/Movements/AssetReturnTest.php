@@ -118,6 +118,26 @@ class AssetReturnTest extends TestCase
         ]);
     }
 
+    public function test_return_redirects_to_return_to_when_provided(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        ['product' => $product, 'asset' => $asset] = $this->createSerializedProductWithAsset(Asset::STATUS_LOANED);
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Perez',
+        ]);
+
+        $asset->update(['current_employee_id' => $employee->id]);
+
+        Livewire::actingAs($admin)
+            ->test(ReturnAssetForm::class, ['product' => (string) $product->id, 'asset' => (string) $asset->id])
+            ->set('returnTo', '/alerts/loans?type=overdue')
+            ->set('note', 'Devolución por prueba')
+            ->call('returnAsset')
+            ->assertHasNoErrors()
+            ->assertRedirect('/alerts/loans?type=overdue');
+    }
+
     public function test_note_is_required_for_return(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);

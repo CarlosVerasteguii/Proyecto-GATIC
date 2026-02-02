@@ -97,6 +97,7 @@
                                         <th>Producto</th>
                                         <th>Serial</th>
                                         <th>Asset tag</th>
+                                        <th>Vencimiento</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -106,6 +107,16 @@
                                             <td>{{ $asset->product?->name ?? '-' }}</td>
                                             <td>{{ $asset->serial }}</td>
                                             <td>{{ $asset->asset_tag ?? '-' }}</td>
+                                            <td>
+                                                @if ($asset->loan_due_date)
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-calendar-event me-1"></i>
+                                                        {{ $asset->loan_due_date->format('d/m/Y') }}
+                                                    </small>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
                                             <td class="text-end">
                                                 <a href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id]) }}" class="btn btn-sm btn-outline-secondary">
                                                     Ver

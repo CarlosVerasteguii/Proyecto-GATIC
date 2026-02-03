@@ -70,6 +70,7 @@ class DashboardMetricsTest extends TestCase
         $response->assertSee('Movimientos Hoy');
         $response->assertSee('Vencidos');
         $response->assertSee('Por vencer');
+        $response->assertSee('Stock Bajo');
     }
 
     public function test_dashboard_shows_overdue_and_due_soon_counts(): void
@@ -252,5 +253,95 @@ class DashboardMetricsTest extends TestCase
         $this
             ->get('/dashboard')
             ->assertRedirect('/login');
+    }
+
+    public function test_dashboard_shows_low_stock_products_count(): void
+    {
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $categoryQuantity = Category::factory()->create(['is_serialized' => false]);
+        $categorySerialized = Category::factory()->create(['is_serialized' => true]);
+        $brand = Brand::factory()->create();
+
+        // Product with low stock (qty_total <= low_stock_threshold)
+        Product::factory()->create([
+            'category_id' => $categoryQuantity->id,
+            'brand_id' => $brand->id,
+            'qty_total' => 5,
+            'low_stock_threshold' => 10,
+        ]);
+
+        // Product at threshold (should count)
+        Product::factory()->create([
+            'category_id' => $categoryQuantity->id,
+            'brand_id' => $brand->id,
+            'qty_total' => 10,
+            'low_stock_threshold' => 10,
+        ]);
+
+        // Product above threshold (should NOT count)
+        Product::factory()->create([
+            'category_id' => $categoryQuantity->id,
+            'brand_id' => $brand->id,
+            'qty_total' => 15,
+            'low_stock_threshold' => 10,
+        ]);
+
+        // Product with no threshold configured (should NOT count)
+        Product::factory()->create([
+            'category_id' => $categoryQuantity->id,
+            'brand_id' => $brand->id,
+            'qty_total' => 3,
+            'low_stock_threshold' => null,
+        ]);
+
+        // Serialized product (should NOT count)
+        Product::factory()->create([
+            'category_id' => $categorySerialized->id,
+            'brand_id' => $brand->id,
+            'qty_total' => null,
+            'low_stock_threshold' => null,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+
+        $content = $response->getContent();
+        $this->assertMatchesRegularExpression('/data-testid="dashboard-metric-products-low-stock"[^>]*>\\s*2\\s*</', $content);
+    }
+
+    public function test_dashboard_low_stock_count_excludes_soft_deleted_products(): void
+    {
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $categoryQuantity = Category::factory()->create(['is_serialized' => false]);
+        $brand = Brand::factory()->create();
+
+        // Active low stock product (should count)
+        Product::factory()->create([
+            'category_id' => $categoryQuantity->id,
+            'brand_id' => $brand->id,
+            'qty_total' => 5,
+            'low_stock_threshold' => 10,
+        ]);
+
+        // Soft-deleted low stock product (should NOT count)
+        $deletedProduct = Product::factory()->create([
+            'category_id' => $categoryQuantity->id,
+            'brand_id' => $brand->id,
+            'qty_total' => 3,
+            'low_stock_threshold' => 10,
+        ]);
+        $deletedProduct->delete();
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+
+        $content = $response->getContent();
+        $this->assertMatchesRegularExpression('/data-testid="dashboard-metric-products-low-stock"[^>]*>\\s*1\\s*</', $content);
     }
 }

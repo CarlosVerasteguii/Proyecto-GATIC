@@ -82,6 +82,25 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <div class="mb-3">
+                            <label for="product-low-stock-threshold" class="form-label">Umbral de stock bajo (opcional)</label>
+                            <input
+                                id="product-low-stock-threshold"
+                                type="number"
+                                inputmode="numeric"
+                                min="0"
+                                class="form-control @error('low_stock_threshold') is-invalid @enderror"
+                                wire:model.defer="low_stock_threshold"
+                                placeholder="Ej: 10"
+                            />
+                            <div class="form-text">
+                                Si el stock total cae a este valor o menos, el producto aparece en alertas de stock bajo.
+                            </div>
+                            @error('low_stock_threshold')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                     @endif
 
                     <div class="d-flex gap-2">

@@ -137,9 +137,14 @@
                                 @forelse ($products as $product)
                                     @php
                                         $isSerialized = (bool) $product->category?->is_serialized;
-                                        $total = $isSerialized ? (int) ($product->assets_total ?? 0) : (int) ($product->qty_total ?? 0);
+                                        $qtyTotal = $product->qty_total;
+                                        $total = $isSerialized ? (int) ($product->assets_total ?? 0) : (int) ($qtyTotal ?? 0);
                                         $unavailable = $isSerialized ? (int) ($product->assets_unavailable ?? 0) : 0;
                                         $available = max($total - $unavailable, 0);
+                                        $isLowStock = ! $isSerialized
+                                            && $qtyTotal !== null
+                                            && $product->low_stock_threshold !== null
+                                            && $total <= $product->low_stock_threshold;
                                     @endphp
 
                                     <tr @class(['table-warning' => $available === 0])>
@@ -161,6 +166,8 @@
                                             <span class="fw-semibold">{{ $available }}</span>
                                             @if ($available === 0)
                                                 <span class="badge text-bg-danger ms-2" role="status">Sin disponibles</span>
+                                            @elseif ($isLowStock)
+                                                <span class="badge text-bg-warning ms-2" role="status">Stock bajo</span>
                                             @endif
                                         </td>
                                         <td class="text-end">

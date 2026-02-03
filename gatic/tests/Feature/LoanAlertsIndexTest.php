@@ -129,4 +129,3 @@ class LoanAlertsIndexTest extends TestCase
         $response->assertDontSee($outside->serial);
     }
 }
-

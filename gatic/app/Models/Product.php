@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $category_id
  * @property int|null $brand_id
  * @property int|null $qty_total
+ * @property int|null $low_stock_threshold
  * @property int|null $assets_total
  * @property int|null $assets_unavailable
  */
@@ -32,6 +34,7 @@ class Product extends Model
         'category_id',
         'brand_id',
         'qty_total',
+        'low_stock_threshold',
     ];
 
     /**
@@ -39,7 +42,21 @@ class Product extends Model
      */
     protected $casts = [
         'qty_total' => 'int',
+        'low_stock_threshold' => 'int',
     ];
+
+    /**
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public function scopeLowStockQuantity(Builder $query): Builder
+    {
+        return $query
+            ->whereHas('category', fn ($q) => $q->where('is_serialized', false))
+            ->whereNotNull('qty_total')
+            ->whereNotNull('low_stock_threshold')
+            ->whereColumn('qty_total', '<=', 'low_stock_threshold');
+    }
 
     public static function normalizeName(?string $value): ?string
     {

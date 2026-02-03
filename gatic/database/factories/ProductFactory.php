@@ -21,9 +21,23 @@ class ProductFactory extends Factory
     {
         return [
             'name' => fake()->unique()->word().' '.fake()->word(),
-            'category_id' => Category::factory(),
+            'category_id' => Category::factory()->state([
+                'is_serialized' => false,
+                'requires_asset_tag' => false,
+            ]),
             'brand_id' => Brand::factory(),
             'qty_total' => fake()->numberBetween(0, 100),
+            'low_stock_threshold' => null,
         ];
+    }
+
+    /**
+     * Configure the product with a low stock threshold.
+     */
+    public function withLowStockThreshold(int $threshold = 10): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'low_stock_threshold' => $threshold,
+        ]);
     }
 }

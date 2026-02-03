@@ -4,6 +4,7 @@ namespace App\Livewire\Dashboard;
 
 use App\Models\Asset;
 use App\Models\AssetMovement;
+use App\Models\Product;
 use App\Models\ProductQuantityMovement;
 use App\Support\Errors\ErrorReporter;
 use Illuminate\Contracts\View\View;
@@ -35,6 +36,8 @@ class DashboardMetrics extends Component
 
     public int $loanDueSoonWindowDays = 7;
 
+    public int $lowStockProductsCount = 0;
+
     public function mount(): void
     {
         $this->refreshMetrics();
@@ -58,6 +61,7 @@ class DashboardMetrics extends Component
             $this->loadAssetStatusCounts();
             $this->loadMovementsToday();
             $this->loadLoanDueDateAlertCounts();
+            $this->loadLowStockProductsCount();
             $this->lastUpdatedAtIso = now()->toIso8601String();
         } catch (Throwable $e) {
             if (app()->environment(['local', 'testing'])) {
@@ -137,6 +141,11 @@ class DashboardMetrics extends Component
         $this->loansDueSoonCount = (clone $baseQuery)
             ->whereBetween('loan_due_date', [$today->toDateString(), $windowEnd->toDateString()])
             ->count();
+    }
+
+    private function loadLowStockProductsCount(): void
+    {
+        $this->lowStockProductsCount = Product::query()->lowStockQuantity()->count();
     }
 
     public function render(): View

@@ -753,4 +753,227 @@ class ProductsTest extends TestCase
             ->set('categoryId', $category->id)
             ->assertSet('paginators.page', 1);
     }
+
+    public function test_low_stock_threshold_validation_accepts_valid_values(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductForm::class)
+            ->set('name', 'Test Product')
+            ->set('category_id', $category->id)
+            ->set('qty_total', 50)
+            ->set('low_stock_threshold', 10)
+            ->call('save')
+            ->assertHasNoErrors(['low_stock_threshold']);
+
+        $this->assertDatabaseHas('products', [
+            'name' => 'Test Product',
+            'low_stock_threshold' => 10,
+        ]);
+    }
+
+    public function test_low_stock_threshold_validation_accepts_null(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductForm::class)
+            ->set('name', 'Test Product Null')
+            ->set('category_id', $category->id)
+            ->set('qty_total', 50)
+            ->set('low_stock_threshold', null)
+            ->call('save')
+            ->assertHasNoErrors(['low_stock_threshold']);
+
+        $this->assertDatabaseHas('products', [
+            'name' => 'Test Product Null',
+            'low_stock_threshold' => null,
+        ]);
+    }
+
+    public function test_low_stock_threshold_validation_accepts_zero(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductForm::class)
+            ->set('name', 'Test Product Zero')
+            ->set('category_id', $category->id)
+            ->set('qty_total', 50)
+            ->set('low_stock_threshold', 0)
+            ->call('save')
+            ->assertHasNoErrors(['low_stock_threshold']);
+
+        $this->assertDatabaseHas('products', [
+            'name' => 'Test Product Zero',
+            'low_stock_threshold' => 0,
+        ]);
+    }
+
+    public function test_low_stock_threshold_validation_rejects_negative_values(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductForm::class)
+            ->set('name', 'Test Product Negative')
+            ->set('category_id', $category->id)
+            ->set('qty_total', 50)
+            ->set('low_stock_threshold', -5)
+            ->call('save')
+            ->assertHasErrors(['low_stock_threshold']);
+    }
+
+    public function test_low_stock_threshold_is_forced_to_null_for_serialized_products(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductForm::class)
+            ->set('name', 'Serialized Product')
+            ->set('category_id', $category->id)
+            ->set('qty_total', 5)
+            ->set('low_stock_threshold', 10)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('products', [
+            'name' => 'Serialized Product',
+            'low_stock_threshold' => null,
+        ]);
+    }
+
+    public function test_products_index_shows_low_stock_badge(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        // Low stock product
+        Product::query()->create([
+            'name' => 'Low Stock Product',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => 5,
+            'low_stock_threshold' => 10,
+        ]);
+
+        // Normal stock product
+        Product::query()->create([
+            'name' => 'Normal Stock Product',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => 15,
+            'low_stock_threshold' => 10,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get('/inventory/products')
+            ->assertOk();
+
+        $response->assertSee('Stock bajo');
+    }
+
+    public function test_product_show_displays_low_stock_alert_for_qty_product(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        $product = Product::query()->create([
+            'name' => 'Low Stock Test Product',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => 5,
+            'low_stock_threshold' => 10,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}")
+            ->assertOk();
+
+        $response->assertSee('Stock bajo:');
+        $response->assertSee('Umbral de stock bajo');
+    }
+
+    public function test_product_show_does_not_display_low_stock_alert_when_above_threshold(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        $product = Product::query()->create([
+            'name' => 'Normal Stock Test Product',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => 15,
+            'low_stock_threshold' => 10,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}")
+            ->assertOk();
+
+        $response->assertDontSee('Stock bajo:');
+        $response->assertSee('Umbral de stock bajo');
+    }
+
+    public function test_product_show_does_not_display_threshold_for_serialized_products(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+
+        $product = Product::query()->create([
+            'name' => 'Serialized Test Product',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+            'low_stock_threshold' => null,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}")
+            ->assertOk();
+
+        $response->assertDontSee('Umbral de stock bajo');
+    }
 }

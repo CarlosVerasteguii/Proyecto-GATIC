@@ -24,6 +24,8 @@ class ProductForm extends Component
 
     public mixed $qty_total = null;
 
+    public mixed $low_stock_threshold = null;
+
     public bool $categoryIsSerialized = false;
 
     /**
@@ -82,6 +84,7 @@ class ProductForm extends Component
         $this->originalCategoryId = $model->category_id;
         $this->brand_id = $model->brand_id;
         $this->qty_total = $model->qty_total;
+        $this->low_stock_threshold = $model->low_stock_threshold;
         $this->categoryIsSerialized = (bool) $model->category?->is_serialized;
     }
 
@@ -100,7 +103,9 @@ class ProductForm extends Component
 
         if ($this->categoryIsSerialized) {
             $this->qty_total = null;
+            $this->low_stock_threshold = null;
             $this->resetValidation('qty_total');
+            $this->resetValidation('low_stock_threshold');
         }
     }
 
@@ -120,10 +125,16 @@ class ProductForm extends Component
         }
 
         $qtyRules = ['nullable'];
+        $lowStockThresholdRules = ['nullable'];
 
         if (! $this->categoryIsSerialized) {
             $qtyRules = [
                 'required',
+                'integer',
+                'min:0',
+            ];
+            $lowStockThresholdRules = [
+                'nullable',
                 'integer',
                 'min:0',
             ];
@@ -138,6 +149,7 @@ class ProductForm extends Component
                 Rule::exists('brands', 'id')->whereNull('deleted_at'),
             ],
             'qty_total' => $qtyRules,
+            'low_stock_threshold' => $lowStockThresholdRules,
         ];
     }
 
@@ -155,6 +167,8 @@ class ProductForm extends Component
             'qty_total.required' => 'El stock total es obligatorio para productos por cantidad.',
             'qty_total.integer' => 'El stock total debe ser un número entero.',
             'qty_total.min' => 'El stock total debe ser 0 o mayor.',
+            'low_stock_threshold.integer' => 'El umbral de stock bajo debe ser un número entero.',
+            'low_stock_threshold.min' => 'El umbral de stock bajo debe ser 0 o mayor.',
         ];
     }
 
@@ -178,6 +192,7 @@ class ProductForm extends Component
 
         if ($this->categoryIsSerialized) {
             $this->qty_total = null;
+            $this->low_stock_threshold = null;
         }
 
         $validated = $this->validate();
@@ -188,6 +203,7 @@ class ProductForm extends Component
                 'category_id' => $validated['category_id'],
                 'brand_id' => $validated['brand_id'],
                 'qty_total' => $this->categoryIsSerialized ? null : $validated['qty_total'],
+                'low_stock_threshold' => $this->categoryIsSerialized ? null : $validated['low_stock_threshold'],
             ]);
 
             return redirect()
@@ -198,6 +214,7 @@ class ProductForm extends Component
         $model->name = $validated['name'];
         $model->brand_id = $validated['brand_id'];
         $model->qty_total = $this->categoryIsSerialized ? null : $validated['qty_total'];
+        $model->low_stock_threshold = $this->categoryIsSerialized ? null : $validated['low_stock_threshold'];
         $model->save();
 
         return redirect()

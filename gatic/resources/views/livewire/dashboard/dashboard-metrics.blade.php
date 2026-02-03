@@ -148,6 +148,32 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Productos con Stock Bajo --}}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-warning">
+                    <div class="card-body text-center">
+                        <h2 class="display-4 fw-bold text-warning" data-testid="dashboard-metric-products-low-stock">{{ $lowStockProductsCount }}</h2>
+                        <h6 class="card-title text-muted mb-2">Stock Bajo</h6>
+                        <small class="text-muted">
+                            Productos por cantidad bajo umbral configurado
+                        </small>
+
+                        @can('inventory.manage')
+                            @if (\Illuminate\Support\Facades\Route::has('alerts.stock.index'))
+                                <div class="mt-2">
+                                    <a
+                                        href="{{ route('alerts.stock.index') }}"
+                                        class="btn btn-sm btn-outline-warning"
+                                    >
+                                        Ver lista
+                                    </a>
+                                </div>
+                            @endif
+                        @endcan
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </x-ui.poll>

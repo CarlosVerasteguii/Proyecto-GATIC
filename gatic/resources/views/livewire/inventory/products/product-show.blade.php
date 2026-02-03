@@ -64,6 +64,22 @@
                 </p>
             @endif
 
+            @php
+                $isLowStock = ! $productIsSerialized
+                    && $product?->low_stock_threshold !== null
+                    && $product?->qty_total !== null
+                    && $total <= $product->low_stock_threshold;
+            @endphp
+
+            @if ($isLowStock)
+                <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+                    <div>
+                        <strong>Stock bajo:</strong> El stock actual ({{ $total }}) está en o por debajo del umbral configurado ({{ $product->low_stock_threshold }}).
+                    </div>
+                </div>
+            @endif
+
             <div class="card">
                 <div class="card-header">
                     Información del producto
@@ -75,6 +91,20 @@
 
                         <dt class="col-sm-3">Marca</dt>
                         <dd class="col-sm-9">{{ $product?->brand?->name ?? '-' }}</dd>
+
+                        @if (! $productIsSerialized)
+                            <dt class="col-sm-3">Umbral de stock bajo</dt>
+                            <dd class="col-sm-9">
+                                @if ($product?->low_stock_threshold !== null)
+                                    {{ $product->low_stock_threshold }}
+                                    @if ($isLowStock)
+                                        <span class="badge text-bg-warning ms-2">Stock bajo</span>
+                                    @endif
+                                @else
+                                    <span class="text-muted">No configurado</span>
+                                @endif
+                            </dd>
+                        @endif
                     </dl>
                 </div>
             </div>

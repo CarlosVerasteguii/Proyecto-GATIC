@@ -149,7 +149,7 @@ development_status:
   epic-13: in-progress
   13-1-fecha-vencimiento-en-prestamos-de-activos: done
   13-2-alertas-prestamos-vencidos-y-por-vencer: done
-  13-3-inventario-bajo-umbrales-por-producto: backlog
+  13-3-inventario-bajo-umbrales-por-producto: done
   epic-13-retrospective: optional
 
   epic-14: backlog

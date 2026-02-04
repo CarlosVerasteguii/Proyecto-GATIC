@@ -9,6 +9,7 @@ use App\Livewire\Concerns\InteractsWithToasts;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Location;
+use App\Models\Supplier;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
@@ -34,7 +35,7 @@ class CatalogsTrash extends Component
     {
         Gate::authorize('admin-only');
 
-        if (! in_array($tab, ['categories', 'brands', 'locations'], true)) {
+        if (! in_array($tab, ['categories', 'brands', 'locations', 'suppliers'], true)) {
             abort(404);
         }
 
@@ -46,7 +47,7 @@ class CatalogsTrash extends Component
     {
         Gate::authorize('admin-only');
 
-        if (! in_array($type, ['categories', 'brands', 'locations'], true)) {
+        if (! in_array($type, ['categories', 'brands', 'locations', 'suppliers'], true)) {
             abort(404);
         }
 
@@ -66,7 +67,7 @@ class CatalogsTrash extends Component
     {
         Gate::authorize('admin-only');
 
-        if (! in_array($type, ['categories', 'brands', 'locations'], true)) {
+        if (! in_array($type, ['categories', 'brands', 'locations', 'suppliers'], true)) {
             abort(404);
         }
 
@@ -106,6 +107,7 @@ class CatalogsTrash extends Component
             'categories' => Category::normalizeName($this->search),
             'brands' => Brand::normalizeName($this->search),
             'locations' => Location::normalizeName($this->search),
+            'suppliers' => Supplier::normalizeName($this->search),
             default => null,
         };
 
@@ -133,6 +135,15 @@ class CatalogsTrash extends Component
                 : null,
             'locations' => $this->tab === 'locations'
                 ? Location::query()
+                    ->onlyTrashed()
+                    ->when($escapedSearch, function ($query) use ($escapedSearch) {
+                        $query->whereRaw("name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
+                    })
+                    ->orderBy('name')
+                    ->paginate(15)
+                : null,
+            'suppliers' => $this->tab === 'suppliers'
+                ? Supplier::query()
                     ->onlyTrashed()
                     ->when($escapedSearch, function ($query) use ($escapedSearch) {
                         $query->whereRaw("name like ? escape '\\\\'", ["%{$escapedSearch}%"]);

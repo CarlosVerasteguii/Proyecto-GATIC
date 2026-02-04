@@ -10,6 +10,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
@@ -975,5 +976,130 @@ class ProductsTest extends TestCase
             ->assertOk();
 
         $response->assertDontSee('Umbral de stock bajo');
+    }
+
+    public function test_product_form_can_save_with_supplier_id(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+        $supplier = Supplier::query()->create(['name' => 'Proveedor ABC']);
+
+        Livewire::actingAs($admin)
+            ->test(ProductForm::class)
+            ->set('name', 'Producto con Proveedor')
+            ->set('category_id', $category->id)
+            ->set('qty_total', 10)
+            ->set('supplier_id', $supplier->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('products', [
+            'name' => 'Producto con Proveedor',
+            'supplier_id' => $supplier->id,
+        ]);
+    }
+
+    public function test_product_form_validates_supplier_id_exists_and_not_deleted(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+        $supplier = Supplier::query()->create(['name' => 'Proveedor Eliminado']);
+        $supplier->delete();
+
+        Livewire::actingAs($admin)
+            ->test(ProductForm::class)
+            ->set('name', 'Producto Test')
+            ->set('category_id', $category->id)
+            ->set('qty_total', 10)
+            ->set('supplier_id', $supplier->id)
+            ->call('save')
+            ->assertHasErrors(['supplier_id']);
+    }
+
+    public function test_product_form_validates_supplier_id_must_exist(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ProductForm::class)
+            ->set('name', 'Producto Test')
+            ->set('category_id', $category->id)
+            ->set('qty_total', 10)
+            ->set('supplier_id', 99999)
+            ->call('save')
+            ->assertHasErrors(['supplier_id']);
+    }
+
+    public function test_product_form_does_not_show_soft_deleted_suppliers(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $activeSupplier = Supplier::query()->create(['name' => 'Proveedor Activo']);
+        $deletedSupplier = Supplier::query()->create(['name' => 'Proveedor Eliminado']);
+        $deletedSupplier->delete();
+
+        Livewire::actingAs($admin)
+            ->test(ProductForm::class)
+            ->assertSee('Proveedor Activo')
+            ->assertDontSee('Proveedor Eliminado');
+    }
+
+    public function test_products_index_shows_supplier_column(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+        $supplier = Supplier::query()->create(['name' => 'Proveedor XYZ']);
+        Product::query()->create([
+            'name' => 'Producto con Proveedor',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'supplier_id' => $supplier->id,
+            'qty_total' => 10,
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/inventory/products')
+            ->assertOk()
+            ->assertSee('Proveedor XYZ');
+    }
+
+    public function test_product_show_displays_supplier(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+        $supplier = Supplier::query()->create(['name' => 'Proveedor Detalle']);
+        $product = Product::query()->create([
+            'name' => 'Producto Detalle',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'supplier_id' => $supplier->id,
+            'qty_total' => 10,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}")
+            ->assertOk()
+            ->assertSee('Proveedor')
+            ->assertSee('Proveedor Detalle');
     }
 }

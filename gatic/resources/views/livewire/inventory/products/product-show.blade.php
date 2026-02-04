@@ -92,6 +92,9 @@
                         <dt class="col-sm-3">Marca</dt>
                         <dd class="col-sm-9">{{ $product?->brand?->name ?? '-' }}</dd>
 
+                        <dt class="col-sm-3">Proveedor</dt>
+                        <dd class="col-sm-9">{{ $product?->supplier?->name ?? '-' }}</dd>
+
                         @if (! $productIsSerialized)
                             <dt class="col-sm-3">Umbral de stock bajo</dt>
                             <dd class="col-sm-9">

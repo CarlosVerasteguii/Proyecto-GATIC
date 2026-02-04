@@ -54,6 +54,17 @@
                                 Ubicaciones
                             </button>
                         </li>
+                        <li class="nav-item">
+                            <button
+                                type="button"
+                                class="nav-link @if ($tab === 'suppliers') active @endif"
+                                wire:click="setTab('suppliers')"
+                                wire:loading.attr="disabled"
+                                wire:target="setTab"
+                            >
+                                Proveedores
+                            </button>
+                        </li>
                     </ul>
 
                     <div class="row g-3 align-items-end mb-3">
@@ -220,6 +231,58 @@
 
                         <div class="mt-3">
                             {{ $locations->links() }}
+                        </div>
+                    @endif
+
+                    @if ($tab === 'suppliers' && $suppliers)
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Contacto</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($suppliers as $supplier)
+                                        <tr>
+                                            <td>{{ $supplier->name }}</td>
+                                            <td>{{ $supplier->contact ?? '-' }}</td>
+                                            <td class="text-end">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-success"
+                                                    wire:click="restore('suppliers', {{ $supplier->id }})"
+                                                    wire:confirm="¿Confirmas que deseas restaurar este proveedor?"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="restore"
+                                                >
+                                                    Restaurar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    wire:click="purge('suppliers', {{ $supplier->id }})"
+                                                    wire:confirm="¿Estás seguro de eliminar PERMANENTEMENTE este proveedor? Esta acción es IRREVERSIBLE."
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="purge"
+                                                >
+                                                    Purgar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="text-muted">No hay proveedores eliminados.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3">
+                            {{ $suppliers->links() }}
                         </div>
                     @endif
                 </div>

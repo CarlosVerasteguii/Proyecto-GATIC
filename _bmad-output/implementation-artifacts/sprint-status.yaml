@@ -152,8 +152,8 @@ development_status:
   13-3-inventario-bajo-umbrales-por-producto: done
   epic-13-retrospective: optional
 
-  epic-14: backlog
-  14-1-proveedores-catalogo-y-relacion-con-productos: backlog
+  epic-14: in-progress
+  14-1-proveedores-catalogo-y-relacion-con-productos: done
   14-2-contratos-compra-arrendamiento-y-relacion-con-activos: backlog
   14-3-garantias-en-activos-fechas-y-alertas: backlog
   14-4-costos-y-valor-del-inventario: backlog

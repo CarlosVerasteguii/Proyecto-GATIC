@@ -11,6 +11,7 @@ use App\Livewire\Catalogs\Brands\BrandsIndex;
 use App\Livewire\Catalogs\Categories\CategoriesIndex;
 use App\Livewire\Catalogs\Categories\CategoryForm;
 use App\Livewire\Catalogs\Locations\LocationsIndex;
+use App\Livewire\Catalogs\Suppliers\SuppliersIndex;
 use App\Livewire\Catalogs\Trash\CatalogsTrash;
 use App\Livewire\Dev\LivewireSmokeTest;
 use App\Livewire\Employees\EmployeeShow;
@@ -72,6 +73,7 @@ Route::middleware(['auth', 'active', 'can:catalogs.manage'])
         Route::get('/categories/{category}/edit', CategoryForm::class)->name('categories.edit');
         Route::get('/brands', BrandsIndex::class)->name('brands.index');
         Route::get('/locations', LocationsIndex::class)->name('locations.index');
+        Route::get('/suppliers', SuppliersIndex::class)->name('suppliers.index');
     });
 
 Route::middleware(['auth', 'active', 'can:admin-only'])

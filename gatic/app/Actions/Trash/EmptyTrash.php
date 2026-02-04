@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Support\Audit\AuditRecorder;
 use App\Support\Errors\ErrorReporter;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,7 @@ class EmptyTrash
         'categories' => Category::class,
         'brands' => Brand::class,
         'locations' => Location::class,
+        'suppliers' => Supplier::class,
     ];
 
     /**

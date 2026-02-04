@@ -126,6 +126,7 @@
                                     <th data-column-key="name" data-column-required="true">Nombre</th>
                                     <th data-column-key="category">Categoría</th>
                                     <th data-column-key="brand">Marca</th>
+                                    <th data-column-key="supplier">Proveedor</th>
                                     <th data-column-key="type">Tipo</th>
                                     <th data-column-key="total" class="text-end">Total</th>
                                     <th data-column-key="available" class="text-end">Disponibles</th>
@@ -158,6 +159,7 @@
                                         </td>
                                         <td>{{ $product->category?->name ?? '-' }}</td>
                                         <td>{{ $product->brand?->name ?? '-' }}</td>
+                                        <td>{{ $product->supplier?->name ?? '-' }}</td>
                                         <td>{{ $product->category?->is_serialized ? 'Serializado' : 'Por cantidad' }}</td>
                                         <td class="text-end">
                                             {{ $total }}
@@ -219,7 +221,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8">
+                                        <td colspan="9">
                                             @if ($this->hasActiveFilters())
                                                 <x-ui.empty-state
                                                     variant="filter"

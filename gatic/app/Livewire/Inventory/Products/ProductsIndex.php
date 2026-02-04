@@ -127,7 +127,7 @@ class ProductsIndex extends Component
             ->addSelect('categories_for_counts.is_serialized as category_is_serialized')
             ->addSelect(DB::raw('coalesce(asset_counts.assets_total, 0) as assets_total'))
             ->addSelect(DB::raw('coalesce(asset_counts.assets_unavailable, 0) as assets_unavailable'))
-            ->with(['category', 'brand'])
+            ->with(['category', 'brand', 'supplier'])
             ->when($likePattern, function ($query) use ($likePattern) {
                 $query->whereRaw("products.name like ? escape '\\\\'", [$likePattern]);
             })

@@ -8,6 +8,7 @@
     $catalogsCategoriesActive = request()->routeIs('catalogs.categories.*');
     $catalogsBrandsActive = request()->routeIs('catalogs.brands.*');
     $catalogsLocationsActive = request()->routeIs('catalogs.locations.*');
+    $catalogsSuppliersActive = request()->routeIs('catalogs.suppliers.*');
     $catalogsTrashActive = request()->routeIs('catalogs.trash.*');
     $inventorySearchActive = request()->routeIs('inventory.search');
     $inventoryProductsActive = request()->routeIs('inventory.products.*');
@@ -139,6 +140,17 @@
             >
                 <i class="bi bi-geo-alt nav-icon" aria-hidden="true"></i>
                 <span class="nav-text">Ubicaciones</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a
+                class="nav-link @if ($catalogsSuppliersActive) active @endif"
+                href="{{ route('catalogs.suppliers.index') }}"
+                data-tooltip="Proveedores"
+                @if ($catalogsSuppliersActive) aria-current="page" @endif
+            >
+                <i class="bi bi-truck nav-icon" aria-hidden="true"></i>
+                <span class="nav-text">Proveedores</span>
             </a>
         </li>
     @endcan

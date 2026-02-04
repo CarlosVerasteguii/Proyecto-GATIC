@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -38,6 +39,16 @@ class ProductFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'low_stock_threshold' => $threshold,
+        ]);
+    }
+
+    /**
+     * Configure the product with a supplier.
+     */
+    public function withSupplier(?Supplier $supplier = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'supplier_id' => $supplier ?? Supplier::factory(),
         ]);
     }
 }

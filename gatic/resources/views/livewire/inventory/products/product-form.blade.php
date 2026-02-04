@@ -67,6 +67,23 @@
                         @enderror
                     </div>
 
+                    <div class="mb-3">
+                        <label for="product-supplier" class="form-label">Proveedor (opcional)</label>
+                        <select
+                            id="product-supplier"
+                            class="form-select @error('supplier_id') is-invalid @enderror"
+                            wire:model.defer="supplier_id"
+                        >
+                            <option value="">Sin proveedor</option>
+                            @foreach ($suppliers as $supplier)
+                                <option value="{{ $supplier['id'] }}">{{ $supplier['name'] }}</option>
+                            @endforeach
+                        </select>
+                        @error('supplier_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     @if (! $categoryIsSerialized)
                         <div class="mb-3">
                             <label for="product-qty-total" class="form-label">Stock total</label>

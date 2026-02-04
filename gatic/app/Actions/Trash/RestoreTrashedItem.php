@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Support\Audit\AuditRecorder;
 use App\Support\Errors\ErrorReporter;
 use Illuminate\Database\QueryException;
@@ -32,6 +33,7 @@ class RestoreTrashedItem
         'categories' => Category::class,
         'brands' => Brand::class,
         'locations' => Location::class,
+        'suppliers' => Supplier::class,
     ];
 
     /**
@@ -45,7 +47,7 @@ class RestoreTrashedItem
 
         $modelClass = self::ENTITY_TYPES[$type];
 
-        /** @var (Product|Asset|Employee|Category|Brand|Location)|null $item */
+        /** @var (Product|Asset|Employee|Category|Brand|Location|Supplier)|null $item */
         $item = $modelClass::query()->onlyTrashed()->find($id);
 
         if ($item === null) {

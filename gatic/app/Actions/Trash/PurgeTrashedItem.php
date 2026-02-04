@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Support\Audit\AuditRecorder;
 use App\Support\Errors\ErrorReporter;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,7 @@ class PurgeTrashedItem
         'categories' => Category::class,
         'brands' => Brand::class,
         'locations' => Location::class,
+        'suppliers' => Supplier::class,
     ];
 
     /**
@@ -69,7 +71,7 @@ class PurgeTrashedItem
             if ($this->isForeignKeyConstraintError($e)) {
                 return [
                     'success' => false,
-                    'message' => 'No se puede eliminar porque tiene registros dependientes (historial, movimientos, etc.).',
+                    'message' => $this->buildForeignKeyConstraintMessage($type),
                 ];
             }
 
@@ -99,5 +101,16 @@ class PurgeTrashedItem
 
         // MySQL error 1451: Cannot delete or update a parent row: a foreign key constraint fails
         return ((int) ($errorInfo[1] ?? 0)) === 1451;
+    }
+
+    private function buildForeignKeyConstraintMessage(string $type): string
+    {
+        return match ($type) {
+            'categories' => 'No se puede eliminar porque la categoría está en uso por productos.',
+            'brands' => 'No se puede eliminar porque la marca está en uso por productos.',
+            'locations' => 'No se puede eliminar porque la ubicación está en uso por activos u otros registros.',
+            'suppliers' => 'No se puede eliminar porque el proveedor está asociado a uno o más productos.',
+            default => 'No se puede eliminar porque tiene registros dependientes.',
+        };
     }
 }

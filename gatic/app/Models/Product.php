@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property int $category_id
  * @property int|null $brand_id
+ * @property int|null $supplier_id
  * @property int|null $qty_total
  * @property int|null $low_stock_threshold
  * @property int|null $assets_total
@@ -33,6 +34,7 @@ class Product extends Model
         'name',
         'category_id',
         'brand_id',
+        'supplier_id',
         'qty_total',
         'low_stock_threshold',
     ];
@@ -90,6 +92,14 @@ class Product extends Model
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    /**
+     * @return BelongsTo<Supplier, $this>
+     */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     /**

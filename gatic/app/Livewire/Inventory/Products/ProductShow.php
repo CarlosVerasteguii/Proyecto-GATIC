@@ -40,7 +40,7 @@ class ProductShow extends Component
         $this->productId = (int) $product;
 
         $this->productModel = Product::query()
-            ->with(['category', 'brand'])
+            ->with(['category', 'brand', 'supplier'])
             ->findOrFail($this->productId);
 
         $this->productIsSerialized = (bool) $this->productModel->category?->is_serialized;

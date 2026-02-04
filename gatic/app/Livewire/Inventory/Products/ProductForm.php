@@ -5,6 +5,7 @@ namespace App\Livewire\Inventory\Products;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Supplier;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -19,6 +20,8 @@ class ProductForm extends Component
     public ?int $category_id = null;
 
     public ?int $brand_id = null;
+
+    public ?int $supplier_id = null;
 
     public string $name = '';
 
@@ -37,6 +40,11 @@ class ProductForm extends Component
      * @var array<int, array{id:int, name:string}>
      */
     public array $brands = [];
+
+    /**
+     * @var array<int, array{id:int, name:string}>
+     */
+    public array $suppliers = [];
 
     private ?int $originalCategoryId = null;
 
@@ -65,6 +73,16 @@ class ProductForm extends Component
             ])
             ->all();
 
+        $this->suppliers = Supplier::query()
+            ->whereNull('deleted_at')
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(static fn (Supplier $supplier): array => [
+                'id' => $supplier->id,
+                'name' => $supplier->name,
+            ])
+            ->all();
+
         if (! $product) {
             return;
         }
@@ -83,6 +101,7 @@ class ProductForm extends Component
         $this->category_id = $model->category_id;
         $this->originalCategoryId = $model->category_id;
         $this->brand_id = $model->brand_id;
+        $this->supplier_id = $model->supplier_id;
         $this->qty_total = $model->qty_total;
         $this->low_stock_threshold = $model->low_stock_threshold;
         $this->categoryIsSerialized = (bool) $model->category?->is_serialized;
@@ -148,6 +167,11 @@ class ProductForm extends Component
                 'integer',
                 Rule::exists('brands', 'id')->whereNull('deleted_at'),
             ],
+            'supplier_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('suppliers', 'id')->whereNull('deleted_at'),
+            ],
             'qty_total' => $qtyRules,
             'low_stock_threshold' => $lowStockThresholdRules,
         ];
@@ -164,6 +188,7 @@ class ProductForm extends Component
             'category_id.exists' => 'La categoría seleccionada no es válida.',
             'category_id.in' => 'La categoría no se puede cambiar.',
             'brand_id.exists' => 'La marca seleccionada no es válida.',
+            'supplier_id.exists' => 'El proveedor seleccionado no es válido.',
             'qty_total.required' => 'El stock total es obligatorio para productos por cantidad.',
             'qty_total.integer' => 'El stock total debe ser un número entero.',
             'qty_total.min' => 'El stock total debe ser 0 o mayor.',
@@ -202,6 +227,7 @@ class ProductForm extends Component
                 'name' => $validated['name'],
                 'category_id' => $validated['category_id'],
                 'brand_id' => $validated['brand_id'],
+                'supplier_id' => $validated['supplier_id'],
                 'qty_total' => $this->categoryIsSerialized ? null : $validated['qty_total'],
                 'low_stock_threshold' => $this->categoryIsSerialized ? null : $validated['low_stock_threshold'],
             ]);
@@ -213,6 +239,7 @@ class ProductForm extends Component
 
         $model->name = $validated['name'];
         $model->brand_id = $validated['brand_id'];
+        $model->supplier_id = $validated['supplier_id'];
         $model->qty_total = $this->categoryIsSerialized ? null : $validated['qty_total'];
         $model->low_stock_threshold = $this->categoryIsSerialized ? null : $validated['low_stock_threshold'];
         $model->save();
@@ -230,6 +257,7 @@ class ProductForm extends Component
             'isEdit' => (bool) $this->productId,
             'categories' => $this->categories,
             'brands' => $this->brands,
+            'suppliers' => $this->suppliers,
         ]);
     }
 }

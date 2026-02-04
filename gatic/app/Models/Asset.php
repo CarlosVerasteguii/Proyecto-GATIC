@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $product_id
  * @property int $location_id
  * @property int|null $current_employee_id
+ * @property int|null $contract_id
  * @property string $serial
  * @property string|null $asset_tag
  * @property string $status
@@ -62,6 +63,7 @@ class Asset extends Model
         'product_id',
         'location_id',
         'current_employee_id',
+        'contract_id',
         'serial',
         'asset_tag',
         'status',
@@ -136,6 +138,14 @@ class Asset extends Model
     public function currentEmployee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'current_employee_id');
+    }
+
+    /**
+     * @return BelongsTo<Contract, $this>
+     */
+    public function contract(): BelongsTo
+    {
+        return $this->belongsTo(Contract::class);
     }
 
     /**

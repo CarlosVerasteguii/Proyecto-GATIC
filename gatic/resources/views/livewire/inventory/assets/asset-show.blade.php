@@ -113,6 +113,44 @@
                 </div>
             </div>
 
+            {{-- Contract card --}}
+            <div class="card mt-3">
+                <div class="card-header">
+                    Contrato
+                </div>
+                <div class="card-body">
+                    @if ($asset->contract)
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Identificador</dt>
+                            <dd class="col-sm-9">
+                                <a href="{{ route('inventory.contracts.show', ['contract' => $asset->contract->id]) }}" class="text-decoration-none">
+                                    {{ $asset->contract->identifier }}
+                                </a>
+                            </dd>
+
+                            <dt class="col-sm-3">Tipo</dt>
+                            <dd class="col-sm-9">{{ $asset->contract->type_label }}</dd>
+
+                            @if ($asset->contract->supplier)
+                                <dt class="col-sm-3">Proveedor</dt>
+                                <dd class="col-sm-9">{{ $asset->contract->supplier->name }}</dd>
+                            @endif
+
+                            @if ($asset->contract->start_date || $asset->contract->end_date)
+                                <dt class="col-sm-3">Vigencia</dt>
+                                <dd class="col-sm-9">
+                                    {{ $asset->contract->start_date?->format('d/m/Y') ?? '—' }}
+                                    al
+                                    {{ $asset->contract->end_date?->format('d/m/Y') ?? '—' }}
+                                </dd>
+                            @endif
+                        </dl>
+                    @else
+                        <p class="mb-0 text-muted">N/A — Sin contrato vinculado</p>
+                    @endif
+                </div>
+            </div>
+
             {{-- Notes panel --}}
             <livewire:ui.notes-panel
                 :noteable-type="\App\Models\Asset::class"

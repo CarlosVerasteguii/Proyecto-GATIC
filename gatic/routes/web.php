@@ -22,6 +22,9 @@ use App\Livewire\Inventory\Adjustments\ProductAdjustmentForm as InventoryProduct
 use App\Livewire\Inventory\Assets\AssetForm as InventoryAssetForm;
 use App\Livewire\Inventory\Assets\AssetShow as InventoryAssetShow;
 use App\Livewire\Inventory\Assets\AssetsIndex as InventoryAssetsIndex;
+use App\Livewire\Inventory\Contracts\ContractForm as InventoryContractForm;
+use App\Livewire\Inventory\Contracts\ContractShow as InventoryContractShow;
+use App\Livewire\Inventory\Contracts\ContractsIndex as InventoryContractsIndex;
 use App\Livewire\Inventory\Products\ProductForm as InventoryProductForm;
 use App\Livewire\Inventory\Products\ProductKardex as InventoryProductKardex;
 use App\Livewire\Inventory\Products\ProductShow as InventoryProductShow;
@@ -102,6 +105,9 @@ Route::middleware(['auth', 'active', 'can:inventory.view'])
         Route::get('/products/{product}/kardex', InventoryProductKardex::class)
             ->whereNumber('product')
             ->name('products.kardex');
+        Route::get('/contracts/{contract}', InventoryContractShow::class)
+            ->whereNumber('contract')
+            ->name('contracts.show');
     });
 
 Route::middleware(['auth', 'active', 'can:inventory.manage'])
@@ -138,6 +144,11 @@ Route::middleware(['auth', 'active', 'can:inventory.manage'])
         Route::get('/products/{product}/movements/quantity', MovementsQuantityMovementForm::class)
             ->whereNumber('product')
             ->name('products.movements.quantity');
+        Route::get('/contracts', InventoryContractsIndex::class)->name('contracts.index');
+        Route::get('/contracts/create', InventoryContractForm::class)->name('contracts.create');
+        Route::get('/contracts/{contract}/edit', InventoryContractForm::class)
+            ->whereNumber('contract')
+            ->name('contracts.edit');
     });
 
 Route::middleware(['auth', 'active', 'can:admin-only'])

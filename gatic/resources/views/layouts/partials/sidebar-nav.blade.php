@@ -12,6 +12,7 @@
     $catalogsTrashActive = request()->routeIs('catalogs.trash.*');
     $inventorySearchActive = request()->routeIs('inventory.search');
     $inventoryProductsActive = request()->routeIs('inventory.products.*');
+    $inventoryContractsActive = request()->routeIs('inventory.contracts.*');
     $showAdminSection = auth()->user()->can('users.manage')
         || auth()->user()->can('admin-only');
 @endphp
@@ -64,6 +65,20 @@
                 <span class="nav-text">Productos</span>
             </a>
         </li>
+
+        @can('inventory.manage')
+            <li class="nav-item">
+                <a
+                    class="nav-link @if ($inventoryContractsActive) active @endif"
+                    href="{{ route('inventory.contracts.index') }}"
+                    data-tooltip="Contratos"
+                    @if ($inventoryContractsActive) aria-current="page" @endif
+                >
+                    <i class="bi bi-file-earmark-text nav-icon" aria-hidden="true"></i>
+                    <span class="nav-text">Contratos</span>
+                </a>
+            </li>
+        @endcan
     @endcan
 
     @can('inventory.manage')

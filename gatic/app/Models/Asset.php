@@ -16,10 +16,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $location_id
  * @property int|null $current_employee_id
  * @property int|null $contract_id
+ * @property int|null $warranty_supplier_id
  * @property string $serial
  * @property string|null $asset_tag
  * @property string $status
- * @property \Illuminate\Support\Carbon|null $loan_due_date
+ * @property \Illuminate\Support\CarbonImmutable|null $loan_due_date
+ * @property \Illuminate\Support\CarbonImmutable|null $warranty_start_date
+ * @property \Illuminate\Support\CarbonImmutable|null $warranty_end_date
+ * @property string|null $warranty_notes
  */
 class Asset extends Model
 {
@@ -68,6 +72,10 @@ class Asset extends Model
         'asset_tag',
         'status',
         'loan_due_date',
+        'warranty_start_date',
+        'warranty_end_date',
+        'warranty_supplier_id',
+        'warranty_notes',
     ];
 
     /**
@@ -77,6 +85,8 @@ class Asset extends Model
     {
         return [
             'loan_due_date' => 'immutable_date',
+            'warranty_start_date' => 'immutable_date',
+            'warranty_end_date' => 'immutable_date',
         ];
     }
 
@@ -146,6 +156,14 @@ class Asset extends Model
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);
+    }
+
+    /**
+     * @return BelongsTo<Supplier, $this>
+     */
+    public function warrantySupplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'warranty_supplier_id');
     }
 
     /**

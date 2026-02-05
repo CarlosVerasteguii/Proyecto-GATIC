@@ -151,6 +151,61 @@
                 </div>
             </div>
 
+            {{-- Warranty card --}}
+            <div class="card mt-3">
+                <div class="card-header">
+                    Garantía
+                </div>
+                <div class="card-body">
+                    @php
+                        $hasWarranty = $asset->warranty_start_date || $asset->warranty_end_date || $asset->warranty_supplier_id || $asset->warranty_notes;
+                    @endphp
+
+                    @if ($hasWarranty)
+                        <dl class="row mb-0">
+                            @if ($asset->warranty_start_date || $asset->warranty_end_date)
+                                <dt class="col-sm-3">Vigencia</dt>
+                                <dd class="col-sm-9">
+                                    {{ $asset->warranty_start_date?->format('d/m/Y') ?? '—' }}
+                                    al
+                                    {{ $asset->warranty_end_date?->format('d/m/Y') ?? '—' }}
+                                    @if ($asset->warranty_end_date)
+                                        @php
+                                            $today = \Illuminate\Support\Carbon::today();
+                                            $isExpired = $asset->warranty_end_date->lt($today);
+                                            $dueSoonDays = (int) config('gatic.alerts.warranties.due_soon_window_days_default', 30);
+                                            if ($dueSoonDays <= 0) {
+                                                $dueSoonDays = 30;
+                                            }
+                                            $isDueSoon = ! $isExpired && $asset->warranty_end_date->lte($today->copy()->addDays($dueSoonDays));
+                                        @endphp
+                                        @if ($isExpired)
+                                            <span class="badge bg-danger ms-1">Vencida</span>
+                                        @elseif ($isDueSoon)
+                                            <span class="badge bg-warning text-dark ms-1">Por vencer</span>
+                                        @else
+                                            <span class="badge bg-success ms-1">Vigente</span>
+                                        @endif
+                                    @endif
+                                </dd>
+                            @endif
+
+                            @if ($asset->warrantySupplier)
+                                <dt class="col-sm-3">Proveedor</dt>
+                                <dd class="col-sm-9">{{ $asset->warrantySupplier->name }}</dd>
+                            @endif
+
+                            @if ($asset->warranty_notes)
+                                <dt class="col-sm-3">Notas</dt>
+                                <dd class="col-sm-9">{{ $asset->warranty_notes }}</dd>
+                            @endif
+                        </dl>
+                    @else
+                        <p class="mb-0 text-muted">N/A — Sin garantía registrada</p>
+                    @endif
+                </div>
+            </div>
+
             {{-- Notes panel --}}
             <livewire:ui.notes-panel
                 :noteable-type="\App\Models\Asset::class"

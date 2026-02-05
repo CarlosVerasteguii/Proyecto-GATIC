@@ -8,6 +8,7 @@ use App\Livewire\Inventory\Assets\AssetShow;
 use App\Livewire\Inventory\Assets\AssetsIndex;
 use App\Models\Asset;
 use App\Models\Category;
+use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\User;
@@ -300,6 +301,94 @@ class AssetsTest extends TestCase
             ->set('status', Asset::STATUS_AVAILABLE)
             ->call('save')
             ->assertHasNoErrors();
+    }
+
+    public function test_asset_form_requires_employee_when_status_is_assigned_or_loaned(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->set('serial', 'SER-EMP')
+            ->set('asset_tag', null)
+            ->set('location_id', $location->id)
+            ->set('status', Asset::STATUS_ASSIGNED)
+            ->call('save')
+            ->assertHasErrors(['current_employee_id']);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->set('serial', 'SER-EMP-2')
+            ->set('asset_tag', null)
+            ->set('location_id', $location->id)
+            ->set('status', Asset::STATUS_LOANED)
+            ->call('save')
+            ->assertHasErrors(['current_employee_id']);
+    }
+
+    public function test_asset_form_persists_employee_on_edit_and_clears_it_when_status_no_longer_requires_holder(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $employee = Employee::factory()->create();
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-EDIT',
+            'asset_tag' => null,
+            'status' => Asset::STATUS_AVAILABLE,
+            'current_employee_id' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id, 'asset' => (string) $asset->id])
+            ->set('status', Asset::STATUS_ASSIGNED)
+            ->set('current_employee_id', $employee->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('assets', [
+            'id' => $asset->id,
+            'status' => Asset::STATUS_ASSIGNED,
+            'current_employee_id' => $employee->id,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id, 'asset' => (string) $asset->id])
+            ->set('status', Asset::STATUS_AVAILABLE)
+            ->set('current_employee_id', $employee->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('assets', [
+            'id' => $asset->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'current_employee_id' => null,
+        ]);
     }
 
     public function test_assets_index_livewire_component_renders_for_lector(): void

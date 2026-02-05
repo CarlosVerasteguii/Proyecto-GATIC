@@ -7,6 +7,7 @@ use App\Livewire\Admin\Users\UserForm;
 use App\Livewire\Admin\Users\UsersIndex;
 use App\Livewire\Alerts\Loans\LoanAlertsIndex;
 use App\Livewire\Alerts\Stock\LowStockAlertsIndex;
+use App\Livewire\Alerts\Warranties\WarrantyAlertsIndex;
 use App\Livewire\Catalogs\Brands\BrandsIndex;
 use App\Livewire\Catalogs\Categories\CategoriesIndex;
 use App\Livewire\Catalogs\Categories\CategoryForm;
@@ -192,6 +193,7 @@ Route::middleware(['auth', 'active', 'can:inventory.manage'])
     ->group(function () {
         Route::get('/loans', LoanAlertsIndex::class)->name('loans.index');
         Route::get('/stock', LowStockAlertsIndex::class)->name('stock.index');
+        Route::get('/warranties', WarrantyAlertsIndex::class)->name('warranties.index');
     });
 
 // Attachments download (requires attachments.view gate + entity visibility)

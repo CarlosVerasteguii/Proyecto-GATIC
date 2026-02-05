@@ -40,7 +40,7 @@ class AssetShow extends Component
         }
 
         $this->assetModel = Asset::query()
-            ->with(['location', 'currentEmployee', 'contract.supplier'])
+            ->with(['location', 'currentEmployee', 'contract.supplier', 'warrantySupplier'])
             ->where('product_id', $this->productId)
             ->findOrFail($this->assetId);
     }

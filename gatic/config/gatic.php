@@ -42,6 +42,12 @@ return [
             // Allowed window options (days) exposed via query string + UI.
             'due_soon_window_days_options' => [7, 14, 30],
         ],
+        'warranties' => [
+            // Default "por vencer" window shown in warranty alert list (days).
+            'due_soon_window_days_default' => 30,
+            // Allowed window options (days) exposed via query string + UI.
+            'due_soon_window_days_options' => [7, 14, 30],
+        ],
     ],
     'perf' => [
         'log_enabled' => (bool) env('PERF_LOG', false),

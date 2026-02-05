@@ -68,8 +68,8 @@
                             <label for="asset-status" class="form-label">Estado</label>
                             <select
                                 id="asset-status"
-                                class="form-select @error('status') is-invalid @enderror @error('current_employee_id') is-invalid @enderror"
-                                wire:model.defer="status"
+                                class="form-select @error('status') is-invalid @enderror"
+                                wire:model.live="status"
                             >
                                 @foreach ($statuses as $status)
                                     <option value="{{ $status }}">{{ $status }}</option>
@@ -78,9 +78,87 @@
                             @error('status')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                            @error('current_employee_id')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
+                        </div>
+
+                        @if ($requiresEmployeeSelection)
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    Empleado <span class="text-danger">*</span>
+                                </label>
+                                <livewire:ui.employee-combobox wire:model.live="current_employee_id" />
+                                @error('current_employee_id')
+                                    <div class="invalid-feedback d-block mt-1">
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                        @endif
+
+                        {{-- Sección Garantía --}}
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                Garantía <span class="text-muted fw-normal">(opcional)</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="asset-warranty-start" class="form-label">Fecha inicio</label>
+                                        <input
+                                            id="asset-warranty-start"
+                                            type="date"
+                                            class="form-control @error('warrantyStartDate') is-invalid @enderror"
+                                            wire:model.defer="warrantyStartDate"
+                                        />
+                                        @error('warrantyStartDate')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="asset-warranty-end" class="form-label">Fecha fin</label>
+                                        <input
+                                            id="asset-warranty-end"
+                                            type="date"
+                                            class="form-control @error('warrantyEndDate') is-invalid @enderror"
+                                            wire:model.defer="warrantyEndDate"
+                                        />
+                                        @error('warrantyEndDate')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="asset-warranty-supplier" class="form-label">Proveedor de garantía</label>
+                                    <select
+                                        id="asset-warranty-supplier"
+                                        class="form-select @error('warrantySupplierId') is-invalid @enderror"
+                                        wire:model.defer="warrantySupplierId"
+                                    >
+                                        <option value="">Sin proveedor</option>
+                                        @foreach ($suppliers as $supplier)
+                                            <option value="{{ $supplier['id'] }}">{{ $supplier['name'] }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('warrantySupplierId')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-0">
+                                    <label for="asset-warranty-notes" class="form-label">Notas de garantía</label>
+                                    <textarea
+                                        id="asset-warranty-notes"
+                                        class="form-control @error('warrantyNotes') is-invalid @enderror"
+                                        wire:model.defer="warrantyNotes"
+                                        rows="3"
+                                        placeholder="Detalles adicionales sobre la garantía..."
+                                    ></textarea>
+                                    @error('warrantyNotes')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
 
                         <div class="d-flex gap-2">

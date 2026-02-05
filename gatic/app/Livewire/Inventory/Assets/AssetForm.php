@@ -5,6 +5,7 @@ namespace App\Livewire\Inventory\Assets;
 use App\Models\Asset;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\Supplier;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -34,10 +35,23 @@ class AssetForm extends Component
 
     public ?int $current_employee_id = null;
 
+    public ?string $warrantyStartDate = null;
+
+    public ?string $warrantyEndDate = null;
+
+    public ?int $warrantySupplierId = null;
+
+    public ?string $warrantyNotes = null;
+
     /**
      * @var array<int, array{id:int, name:string}>
      */
     public array $locations = [];
+
+    /**
+     * @var array<int, array{id:int, name:string}>
+     */
+    public array $suppliers = [];
 
     /**
      * @var list<string>
@@ -71,6 +85,16 @@ class AssetForm extends Component
             ])
             ->all();
 
+        $this->suppliers = Supplier::query()
+            ->whereNull('deleted_at')
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(static fn (Supplier $supplier): array => [
+                'id' => $supplier->id,
+                'name' => $supplier->name,
+            ])
+            ->all();
+
         if (! $asset) {
             return;
         }
@@ -90,6 +114,10 @@ class AssetForm extends Component
         $this->location_id = $model->location_id;
         $this->status = $model->status;
         $this->current_employee_id = $model->current_employee_id;
+        $this->warrantyStartDate = $model->warranty_start_date?->format('Y-m-d');
+        $this->warrantyEndDate = $model->warranty_end_date?->format('Y-m-d');
+        $this->warrantySupplierId = $model->warranty_supplier_id;
+        $this->warrantyNotes = $model->warranty_notes;
     }
 
     /**
@@ -117,6 +145,8 @@ class AssetForm extends Component
             $assetTagRules[0] = 'required';
         }
 
+        $requiresEmployee = $this->requiresCurrentEmployeeSelection();
+
         return [
             'serial' => $serialRules,
             'asset_tag' => $assetTagRules,
@@ -130,11 +160,34 @@ class AssetForm extends Component
                 'string',
                 Rule::in($this->statuses),
             ],
-            'current_employee_id' => array_filter([
-                $this->status === Asset::STATUS_ASSIGNED ? 'required' : 'nullable',
-                $this->current_employee_id !== null ? 'integer' : null,
-                $this->current_employee_id !== null ? Rule::exists('employees', 'id')->whereNull('deleted_at') : null,
-            ]),
+            'current_employee_id' => [
+                $requiresEmployee ? 'required' : 'nullable',
+                'integer',
+                Rule::exists('employees', 'id')->whereNull('deleted_at'),
+            ],
+            'warrantyStartDate' => [
+                'nullable',
+                'date',
+                'date_format:Y-m-d',
+            ],
+            'warrantyEndDate' => [
+                'nullable',
+                'date',
+                'date_format:Y-m-d',
+                $this->warrantyStartDate !== null && $this->warrantyEndDate !== null
+                    ? 'after_or_equal:warrantyStartDate'
+                    : null,
+            ],
+            'warrantySupplierId' => [
+                'nullable',
+                'integer',
+                Rule::exists('suppliers', 'id')->whereNull('deleted_at'),
+            ],
+            'warrantyNotes' => [
+                'nullable',
+                'string',
+                'max:5000',
+            ],
         ];
     }
 
@@ -152,8 +205,15 @@ class AssetForm extends Component
             'location_id.exists' => 'La ubicación seleccionada no es válida.',
             'status.required' => 'El estado es obligatorio.',
             'status.in' => 'El estado seleccionado no es válido.',
-            'current_employee_id.required' => 'El empleado es obligatorio cuando el estado es Asignado.',
+            'current_employee_id.required' => 'El empleado es obligatorio cuando el estado es Asignado o Prestado.',
             'current_employee_id.exists' => 'El empleado seleccionado no es válido.',
+            'warrantyStartDate.date' => 'La fecha de inicio de garantía no es válida.',
+            'warrantyStartDate.date_format' => 'La fecha de inicio de garantía debe tener el formato AAAA-MM-DD.',
+            'warrantyEndDate.date' => 'La fecha de fin de garantía no es válida.',
+            'warrantyEndDate.date_format' => 'La fecha de fin de garantía debe tener el formato AAAA-MM-DD.',
+            'warrantyEndDate.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
+            'warrantySupplierId.exists' => 'El proveedor seleccionado no es válido.',
+            'warrantyNotes.max' => 'Las notas de garantía no deben exceder 5000 caracteres.',
         ];
     }
 
@@ -172,6 +232,9 @@ class AssetForm extends Component
 
         $validated = $this->validate();
 
+        $requiresEmployee = in_array($validated['status'], [Asset::STATUS_ASSIGNED, Asset::STATUS_LOANED], true);
+        $currentEmployeeId = $requiresEmployee ? ($validated['current_employee_id'] ?? null) : null;
+
         if ($this->assetId === null) {
             Asset::query()->create([
                 'product_id' => $this->productId,
@@ -179,7 +242,11 @@ class AssetForm extends Component
                 'asset_tag' => $validated['asset_tag'],
                 'location_id' => $validated['location_id'],
                 'status' => $validated['status'],
-                'current_employee_id' => $validated['current_employee_id'] ?? null,
+                'current_employee_id' => $currentEmployeeId,
+                'warranty_start_date' => $validated['warrantyStartDate'] ?? null,
+                'warranty_end_date' => $validated['warrantyEndDate'] ?? null,
+                'warranty_supplier_id' => $validated['warrantySupplierId'] ?? null,
+                'warranty_notes' => $validated['warrantyNotes'] ?? null,
             ]);
 
             return redirect()
@@ -195,6 +262,11 @@ class AssetForm extends Component
         $model->asset_tag = $validated['asset_tag'];
         $model->location_id = $validated['location_id'];
         $model->status = $validated['status'];
+        $model->current_employee_id = $currentEmployeeId;
+        $model->warranty_start_date = $validated['warrantyStartDate'] ?? null;
+        $model->warranty_end_date = $validated['warrantyEndDate'] ?? null;
+        $model->warranty_supplier_id = $validated['warrantySupplierId'] ?? null;
+        $model->warranty_notes = $validated['warrantyNotes'] ?? null;
         $model->save();
 
         return redirect()
@@ -213,6 +285,23 @@ class AssetForm extends Component
             'requiresAssetTag' => $this->requiresAssetTag,
             'locations' => $this->locations,
             'statuses' => $this->statuses,
+            'suppliers' => $this->suppliers,
+            'requiresEmployeeSelection' => $this->requiresCurrentEmployeeSelection(),
         ]);
+    }
+
+    private function requiresCurrentEmployeeSelection(): bool
+    {
+        return in_array($this->status, [Asset::STATUS_ASSIGNED, Asset::STATUS_LOANED], true);
+    }
+
+    public function updatedStatus(): void
+    {
+        if ($this->requiresCurrentEmployeeSelection()) {
+            return;
+        }
+
+        $this->current_employee_id = null;
+        $this->resetErrorBag('current_employee_id');
     }
 }

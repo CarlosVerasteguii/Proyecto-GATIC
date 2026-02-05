@@ -9,6 +9,8 @@ use App\Models\ProductQuantityMovement;
 use App\Support\Errors\ErrorReporter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Throwable;
@@ -38,8 +40,28 @@ class DashboardMetrics extends Component
 
     public int $lowStockProductsCount = 0;
 
+    public string $totalInventoryValue = '0.00';
+
+    public string $defaultCurrency = 'MXN';
+
+    public int $valueBreakdownTopN = 5;
+
+    /**
+     * @var array<int, array{name: string, value: string}>
+     */
+    public array $valueByCategory = [];
+
+    /**
+     * @var array<int, array{name: string, value: string}>
+     */
+    public array $valueByBrand = [];
+
     public function mount(): void
     {
+        /** @var mixed $currency */
+        $currency = config('gatic.inventory.money.default_currency', 'MXN');
+        $this->defaultCurrency = is_string($currency) ? strtoupper(trim($currency)) : 'MXN';
+
         $this->refreshMetrics();
     }
 
@@ -62,6 +84,11 @@ class DashboardMetrics extends Component
             $this->loadMovementsToday();
             $this->loadLoanDueDateAlertCounts();
             $this->loadLowStockProductsCount();
+            if (Gate::allows('inventory.manage')) {
+                $this->loadInventoryValue();
+            } else {
+                $this->resetInventoryValue();
+            }
             $this->lastUpdatedAtIso = now()->toIso8601String();
         } catch (Throwable $e) {
             if (app()->environment(['local', 'testing'])) {
@@ -146,6 +173,96 @@ class DashboardMetrics extends Component
     private function loadLowStockProductsCount(): void
     {
         $this->lowStockProductsCount = Product::query()->lowStockQuantity()->count();
+    }
+
+    private function resetInventoryValue(): void
+    {
+        $this->totalInventoryValue = '0.00';
+        $this->valueBreakdownTopN = (int) config('gatic.dashboard.value.top_n', 5);
+        if ($this->valueBreakdownTopN <= 0) {
+            $this->valueBreakdownTopN = 5;
+        }
+        $this->valueByCategory = [];
+        $this->valueByBrand = [];
+    }
+
+    private function loadInventoryValue(): void
+    {
+        $topN = (int) config('gatic.dashboard.value.top_n', 5);
+        $this->valueBreakdownTopN = $topN > 0 ? $topN : 5;
+
+        $baseValueQuery = DB::table('assets')
+            ->join('products', 'assets.product_id', '=', 'products.id')
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->where('assets.status', '!=', Asset::STATUS_RETIRED)
+            ->whereNotNull('assets.acquisition_cost')
+            ->whereNull('assets.deleted_at')
+            ->whereNull('products.deleted_at')
+            ->whereNull('categories.deleted_at');
+
+        $defaultCurrency = $this->defaultCurrency;
+        $baseDefaultCurrencyQuery = (clone $baseValueQuery)
+            ->where(static function ($query) use ($defaultCurrency): void {
+                $query->where('assets.acquisition_currency', '=', $defaultCurrency)
+                    ->orWhereNull('assets.acquisition_currency');
+            });
+
+        $totalValue = (float) (clone $baseDefaultCurrencyQuery)->sum('assets.acquisition_cost');
+        $this->totalInventoryValue = number_format($totalValue, 2, '.', '');
+
+        // Value breakdown by Category (via Product relationship)
+        /** @var list<object{category_name: string, total_value: string}> $categoryBreakdown */
+        $categoryBreakdown = (clone $baseDefaultCurrencyQuery)
+            ->selectRaw('categories.name as category_name, SUM(assets.acquisition_cost) as total_value')
+            ->groupBy('categories.id', 'categories.name')
+            ->orderByDesc('total_value')
+            ->limit($this->valueBreakdownTopN)
+            ->get()
+            ->all();
+
+        $this->valueByCategory = array_map(static fn (object $row): array => [
+            'name' => (string) $row->category_name,
+            'value' => number_format((float) $row->total_value, 2, '.', ''),
+        ], $categoryBreakdown);
+
+        $categoriesCount = (int) (clone $baseDefaultCurrencyQuery)->distinct()->count('categories.id');
+        $sumTopCategories = array_reduce($this->valueByCategory, static fn (float $carry, array $item): float => $carry + (float) $item['value'], 0.0);
+        $otherCategoriesValue = (float) $this->totalInventoryValue - $sumTopCategories;
+        if ($categoriesCount > $this->valueBreakdownTopN && $otherCategoriesValue > 0.004) {
+            $this->valueByCategory[] = [
+                'name' => 'Otros',
+                'value' => number_format($otherCategoriesValue, 2, '.', ''),
+            ];
+        }
+
+        // Value breakdown by Brand (via Product relationship)
+        /** @var list<object{brand_name: string, total_value: string}> $brandBreakdown */
+        $brandBreakdown = (clone $baseDefaultCurrencyQuery)
+            ->selectRaw('COALESCE(brands.name, \'Sin marca\') as brand_name, SUM(assets.acquisition_cost) as total_value')
+            ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
+            ->groupByRaw('COALESCE(brands.id, 0), COALESCE(brands.name, \'Sin marca\')')
+            ->orderByDesc('total_value')
+            ->limit($this->valueBreakdownTopN)
+            ->get()
+            ->all();
+
+        $this->valueByBrand = array_map(static fn (object $row): array => [
+            'name' => (string) $row->brand_name,
+            'value' => number_format((float) $row->total_value, 2, '.', ''),
+        ], $brandBreakdown);
+
+        $brandsCount = (int) (clone $baseDefaultCurrencyQuery)
+            ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
+            ->distinct()
+            ->count(DB::raw('COALESCE(brands.id, 0)'));
+        $sumTopBrands = array_reduce($this->valueByBrand, static fn (float $carry, array $item): float => $carry + (float) $item['value'], 0.0);
+        $otherBrandsValue = (float) $this->totalInventoryValue - $sumTopBrands;
+        if ($brandsCount > $this->valueBreakdownTopN && $otherBrandsValue > 0.004) {
+            $this->valueByBrand[] = [
+                'name' => 'Otros',
+                'value' => number_format($otherBrandsValue, 2, '.', ''),
+            ];
+        }
     }
 
     public function render(): View

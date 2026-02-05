@@ -344,4 +344,298 @@ class DashboardMetricsTest extends TestCase
         $content = $response->getContent();
         $this->assertMatchesRegularExpression('/data-testid="dashboard-metric-products-low-stock"[^>]*>\\s*1\\s*</', $content);
     }
+
+    public function test_dashboard_shows_total_inventory_value(): void
+    {
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '10000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_ASSIGNED,
+            'acquisition_cost' => '5000.50',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Valor del Inventario');
+        $content = $response->getContent();
+        $this->assertMatchesRegularExpression('/data-testid="dashboard-metric-total-inventory-value"[^>]*>[^<]*15,000\.50 MXN/', $content);
+    }
+
+    public function test_dashboard_total_value_excludes_retired_assets(): void
+    {
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        // Active asset (should count)
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '10000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        // Retired asset (should NOT count by default)
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_RETIRED,
+            'acquisition_cost' => '5000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+
+        $content = $response->getContent();
+        // Should be 10000.00, not 15000.00
+        $this->assertMatchesRegularExpression('/data-testid="dashboard-metric-total-inventory-value"[^>]*>[^<]*10,000\.00 MXN/', $content);
+    }
+
+    public function test_dashboard_total_value_excludes_soft_deleted_assets(): void
+    {
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        // Active asset (should count)
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '8000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        // Soft-deleted asset (should NOT count)
+        $deletedAsset = Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '7000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+        $deletedAsset->delete();
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+
+        $content = $response->getContent();
+        // Should be 8000.00, not 15000.00
+        $this->assertMatchesRegularExpression('/data-testid="dashboard-metric-total-inventory-value"[^>]*>[^<]*8,000\.00 MXN/', $content);
+    }
+
+    public function test_dashboard_shows_value_breakdown_by_category(): void
+    {
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $categoryLaptops = Category::factory()->create(['name' => 'Laptops', 'is_serialized' => true]);
+        $categoryMonitors = Category::factory()->create(['name' => 'Monitors', 'is_serialized' => true]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+
+        $productLaptop = Product::factory()->create([
+            'category_id' => $categoryLaptops->id,
+            'brand_id' => $brand->id,
+        ]);
+        $productMonitor = Product::factory()->create([
+            'category_id' => $categoryMonitors->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $productLaptop->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '20000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $productMonitor->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '5000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Valor por Categoría');
+        $response->assertSee('Laptops');
+        $response->assertSee('Monitors');
+        $response->assertSee('data-testid="dashboard-value-by-category"', false);
+    }
+
+    public function test_dashboard_shows_value_breakdown_by_brand(): void
+    {
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $brandDell = Brand::factory()->create(['name' => 'Dell']);
+        $brandHP = Brand::factory()->create(['name' => 'HP']);
+        $location = Location::factory()->create();
+
+        $productDell = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brandDell->id,
+        ]);
+        $productHP = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brandHP->id,
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $productDell->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '18000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $productHP->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '12000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Valor por Marca');
+        $response->assertSee('Dell');
+        $response->assertSee('HP');
+        $response->assertSee('data-testid="dashboard-value-by-brand"', false);
+    }
+
+    public function test_dashboard_value_breakdown_handles_null_brand(): void
+    {
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $location = Location::factory()->create();
+
+        $productNoBrand = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => null,
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $productNoBrand->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '5000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Sin marca');
+    }
+
+    public function test_dashboard_hides_inventory_value_for_lector(): void
+    {
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Lector]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertDontSee('Valor del Inventario');
+        $response->assertDontSee('dashboard-metric-total-inventory-value');
+    }
+
+    public function test_dashboard_value_breakdown_adds_otros_when_more_than_top_n(): void
+    {
+        config([
+            'gatic.inventory.money.default_currency' => 'MXN',
+            'gatic.dashboard.value.top_n' => 1,
+        ]);
+
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+        $categoryA = Category::factory()->create(['name' => 'Cat A', 'is_serialized' => true]);
+        $categoryB = Category::factory()->create(['name' => 'Cat B', 'is_serialized' => true]);
+
+        $productA = Product::factory()->create(['category_id' => $categoryA->id, 'brand_id' => $brand->id]);
+        $productB = Product::factory()->create(['category_id' => $categoryB->id, 'brand_id' => $brand->id]);
+
+        Asset::factory()->create([
+            'product_id' => $productA->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '20000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $productB->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '5000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Otros');
+        $response->assertSee('data-testid="dashboard-value-by-category"', false);
+    }
 }

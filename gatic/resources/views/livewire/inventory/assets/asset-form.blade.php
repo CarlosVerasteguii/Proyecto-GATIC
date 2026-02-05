@@ -94,6 +94,52 @@
                             </div>
                         @endif
 
+                        {{-- Sección Costo de adquisición --}}
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                Costo de adquisición <span class="text-muted fw-normal">(opcional)</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8 mb-3 mb-md-0">
+                                        <label for="asset-acquisition-cost" class="form-label">Monto</label>
+                                        <input
+                                            id="asset-acquisition-cost"
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            class="form-control @error('acquisitionCost') is-invalid @enderror"
+                                            wire:model.defer="acquisitionCost"
+                                            placeholder="0.00"
+                                        />
+                                        @error('acquisitionCost')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label for="asset-acquisition-currency" class="form-label">Moneda</label>
+                                        <select
+                                            id="asset-acquisition-currency"
+                                            class="form-select @error('acquisitionCurrency') is-invalid @enderror"
+                                            wire:model.defer="acquisitionCurrency"
+                                            disabled
+                                        >
+                                            @foreach ($allowedCurrencies as $currency)
+                                                <option value="{{ $currency }}">{{ $currency }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div class="form-text">
+                                            Moneda fija en MVP: MXN.
+                                        </div>
+                                        @error('acquisitionCurrency')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- Sección Garantía --}}
                         <div class="card mb-3">
                             <div class="card-header">

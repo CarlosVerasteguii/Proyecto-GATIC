@@ -71,6 +71,21 @@
 
                         <dt class="col-sm-3">Ubicación</dt>
                         <dd class="col-sm-9">{{ $asset->location?->name ?? '-' }}</dd>
+
+                        <dt class="col-sm-3">Costo de adquisición</dt>
+                        <dd class="col-sm-9">
+                            @if ($asset->acquisition_cost !== null)
+                                @php
+                                    $defaultCurrency = config('gatic.inventory.money.default_currency', 'MXN');
+                                    $currency = is_string($asset->acquisition_currency) && $asset->acquisition_currency !== ''
+                                        ? $asset->acquisition_currency
+                                        : (is_string($defaultCurrency) ? $defaultCurrency : 'MXN');
+                                @endphp
+                                {{ number_format((float) $asset->acquisition_cost, 2) }} {{ $currency }}
+                            @else
+                                —
+                            @endif
+                        </dd>
                     </dl>
                 </div>
             </div>

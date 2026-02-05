@@ -1,5 +1,7 @@
 <x-ui.poll method="poll" :interval-s="config('gatic.ui.polling.metrics_interval_s')">
-    <div class="container">
+    <div class="container position-relative">
+        <x-ui.long-request target="poll,refreshNow" />
+
         @if (is_string($errorId) && $errorId !== '')
             <div class="mb-3">
                 <x-ui.error-alert-with-id
@@ -174,6 +176,99 @@
                     </div>
                 </div>
             </div>
+
+            @can('inventory.manage')
+                {{-- Valor Total del Inventario (en moneda default, sin conversión) --}}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-success">
+                        <div class="card-body text-center">
+                            <h2 class="display-6 fw-bold text-success" data-testid="dashboard-metric-total-inventory-value">
+                                {{ number_format((float) $totalInventoryValue, 2) }} {{ $defaultCurrency }}
+                            </h2>
+                            <h6 class="card-title text-muted mb-2">Valor del Inventario</h6>
+                            <small class="text-muted">
+                                Pesos Mexicanos ({{ $defaultCurrency }})
+                            </small>
+                            <div class="mt-1">
+                                <small class="text-muted fst-italic">Excluye activos retirados</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endcan
         </div>
+
+        @can('inventory.manage')
+            {{-- Distribución del valor (solo moneda default) --}}
+            @if (count($valueByCategory) > 0 || count($valueByBrand) > 0)
+                <div class="row g-4 mt-2">
+                    {{-- Valor por Categoría --}}
+                    @if (count($valueByCategory) > 0)
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <i class="bi bi-pie-chart me-1"></i>
+                                        Valor por Categoría
+                                    </div>
+                                    <small class="text-muted">Top {{ (int) $valueBreakdownTopN }}</small>
+                                </div>
+                                <div class="card-body p-0">
+                                    <table class="table table-sm table-hover mb-0" data-testid="dashboard-value-by-category">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Categoría</th>
+                                                <th class="text-end">Valor ({{ $defaultCurrency }})</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($valueByCategory as $item)
+                                                <tr @class(['table-light' => $item['name'] === 'Otros'])>
+                                                    <td>{{ $item['name'] }}</td>
+                                                    <td class="text-end">{{ number_format((float) $item['value'], 2) }} {{ $defaultCurrency }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Valor por Marca --}}
+                    @if (count($valueByBrand) > 0)
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <i class="bi bi-tags me-1"></i>
+                                        Valor por Marca
+                                    </div>
+                                    <small class="text-muted">Top {{ (int) $valueBreakdownTopN }}</small>
+                                </div>
+                                <div class="card-body p-0">
+                                    <table class="table table-sm table-hover mb-0" data-testid="dashboard-value-by-brand">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Marca</th>
+                                                <th class="text-end">Valor ({{ $defaultCurrency }})</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($valueByBrand as $item)
+                                                <tr @class(['table-light' => $item['name'] === 'Otros'])>
+                                                    <td>{{ $item['name'] }}</td>
+                                                    <td class="text-end">{{ number_format((float) $item['value'], 2) }} {{ $defaultCurrency }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            @endif
+        @endcan
     </div>
 </x-ui.poll>

@@ -24,6 +24,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property \Illuminate\Support\CarbonImmutable|null $warranty_start_date
  * @property \Illuminate\Support\CarbonImmutable|null $warranty_end_date
  * @property string|null $warranty_notes
+ * @property string|null $acquisition_cost
+ * @property string|null $acquisition_currency
  */
 class Asset extends Model
 {
@@ -76,6 +78,8 @@ class Asset extends Model
         'warranty_end_date',
         'warranty_supplier_id',
         'warranty_notes',
+        'acquisition_cost',
+        'acquisition_currency',
     ];
 
     /**
@@ -87,6 +91,7 @@ class Asset extends Model
             'loan_due_date' => 'immutable_date',
             'warranty_start_date' => 'immutable_date',
             'warranty_end_date' => 'immutable_date',
+            'acquisition_cost' => 'decimal:2',
         ];
     }
 

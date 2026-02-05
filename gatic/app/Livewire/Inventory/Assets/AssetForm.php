@@ -43,6 +43,15 @@ class AssetForm extends Component
 
     public ?string $warrantyNotes = null;
 
+    public ?string $acquisitionCost = null;
+
+    public ?string $acquisitionCurrency = null;
+
+    /**
+     * @var list<string>
+     */
+    public array $allowedCurrencies = [];
+
     /**
      * @var array<int, array{id:int, name:string}>
      */
@@ -95,6 +104,30 @@ class AssetForm extends Component
             ])
             ->all();
 
+        /** @var mixed $currencies */
+        $currencies = config('gatic.inventory.money.allowed_currencies', ['MXN', 'USD']);
+        $currencyList = is_array($currencies) ? $currencies : ['MXN', 'USD'];
+
+        /** @var list<string> $normalizedCurrencies */
+        $normalizedCurrencies = array_values(array_filter(
+            array_map(
+                static fn (mixed $value): ?string => is_string($value) ? strtoupper(trim($value)) : null,
+                $currencyList,
+            ),
+            static fn (?string $value): bool => is_string($value) && (bool) preg_match('/^[A-Z]{3}$/', $value),
+        ));
+
+        $this->allowedCurrencies = $normalizedCurrencies !== [] ? $normalizedCurrencies : ['MXN', 'USD'];
+
+        /** @var mixed $defaultCurrency */
+        $defaultCurrency = config('gatic.inventory.money.default_currency', 'MXN');
+        $normalizedDefaultCurrency = is_string($defaultCurrency) ? strtoupper(trim($defaultCurrency)) : 'MXN';
+        if (! in_array($normalizedDefaultCurrency, $this->allowedCurrencies, true)) {
+            $normalizedDefaultCurrency = $this->allowedCurrencies[0] ?? 'MXN';
+        }
+
+        $this->acquisitionCurrency = $normalizedDefaultCurrency;
+
         if (! $asset) {
             return;
         }
@@ -118,6 +151,8 @@ class AssetForm extends Component
         $this->warrantyEndDate = $model->warranty_end_date?->format('Y-m-d');
         $this->warrantySupplierId = $model->warranty_supplier_id;
         $this->warrantyNotes = $model->warranty_notes;
+        $this->acquisitionCost = $model->acquisition_cost;
+        $this->acquisitionCurrency = $model->acquisition_currency ?? $this->acquisitionCurrency;
     }
 
     /**
@@ -188,6 +223,19 @@ class AssetForm extends Component
                 'string',
                 'max:5000',
             ],
+            'acquisitionCost' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'regex:/^\d+(\.\d{1,2})?$/',
+            ],
+            'acquisitionCurrency' => [
+                'nullable',
+                'required_with:acquisitionCost',
+                'string',
+                'size:3',
+                Rule::in($this->allowedCurrencies),
+            ],
         ];
     }
 
@@ -214,6 +262,11 @@ class AssetForm extends Component
             'warrantyEndDate.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
             'warrantySupplierId.exists' => 'El proveedor seleccionado no es válido.',
             'warrantyNotes.max' => 'Las notas de garantía no deben exceder 5000 caracteres.',
+            'acquisitionCost.numeric' => 'El costo de adquisición debe ser un número.',
+            'acquisitionCost.min' => 'El costo de adquisición debe ser mayor o igual a 0.',
+            'acquisitionCost.regex' => 'El costo de adquisición debe tener máximo 2 decimales.',
+            'acquisitionCurrency.size' => 'La moneda debe ser un código de 3 caracteres.',
+            'acquisitionCurrency.in' => 'La moneda seleccionada no es válida.',
         ];
     }
 
@@ -235,6 +288,20 @@ class AssetForm extends Component
         $requiresEmployee = in_array($validated['status'], [Asset::STATUS_ASSIGNED, Asset::STATUS_LOANED], true);
         $currentEmployeeId = $requiresEmployee ? ($validated['current_employee_id'] ?? null) : null;
 
+        $acquisitionCost = isset($validated['acquisitionCost']) && $validated['acquisitionCost'] !== ''
+            ? (string) $validated['acquisitionCost']
+            : null;
+        /** @var mixed $defaultCurrency */
+        $defaultCurrency = config('gatic.inventory.money.default_currency', 'MXN');
+        $normalizedDefaultCurrency = is_string($defaultCurrency) ? strtoupper(trim($defaultCurrency)) : ($this->allowedCurrencies[0] ?? 'MXN');
+        if (! in_array($normalizedDefaultCurrency, $this->allowedCurrencies, true)) {
+            $normalizedDefaultCurrency = $this->allowedCurrencies[0] ?? 'MXN';
+        }
+
+        $acquisitionCurrency = $acquisitionCost !== null
+            ? ($validated['acquisitionCurrency'] ?? $normalizedDefaultCurrency)
+            : null;
+
         if ($this->assetId === null) {
             Asset::query()->create([
                 'product_id' => $this->productId,
@@ -247,6 +314,8 @@ class AssetForm extends Component
                 'warranty_end_date' => $validated['warrantyEndDate'] ?? null,
                 'warranty_supplier_id' => $validated['warrantySupplierId'] ?? null,
                 'warranty_notes' => $validated['warrantyNotes'] ?? null,
+                'acquisition_cost' => $acquisitionCost,
+                'acquisition_currency' => $acquisitionCurrency,
             ]);
 
             return redirect()
@@ -267,6 +336,8 @@ class AssetForm extends Component
         $model->warranty_end_date = $validated['warrantyEndDate'] ?? null;
         $model->warranty_supplier_id = $validated['warrantySupplierId'] ?? null;
         $model->warranty_notes = $validated['warrantyNotes'] ?? null;
+        $model->acquisition_cost = $acquisitionCost;
+        $model->acquisition_currency = $acquisitionCurrency;
         $model->save();
 
         return redirect()
@@ -287,6 +358,7 @@ class AssetForm extends Component
             'statuses' => $this->statuses,
             'suppliers' => $this->suppliers,
             'requiresEmployeeSelection' => $this->requiresCurrentEmployeeSelection(),
+            'allowedCurrencies' => $this->allowedCurrencies,
         ]);
     }
 

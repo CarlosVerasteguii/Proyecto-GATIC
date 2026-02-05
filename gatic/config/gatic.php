@@ -52,4 +52,17 @@ return [
     'perf' => [
         'log_enabled' => (bool) env('PERF_LOG', false),
     ],
+    'inventory' => [
+        'money' => [
+            // Single-currency MVP: Pesos Mexicanos (MXN).
+            'allowed_currencies' => ['MXN'],
+            'default_currency' => 'MXN',
+        ],
+    ],
+    'dashboard' => [
+        'value' => [
+            // Number of top categories/brands to show in breakdown
+            'top_n' => 5,
+        ],
+    ],
 ];

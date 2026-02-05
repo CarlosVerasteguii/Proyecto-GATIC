@@ -748,4 +748,298 @@ class AssetsTest extends TestCase
             ->set('locationId', $location->id)
             ->assertSet('paginators.page', 1);
     }
+
+    public function test_asset_form_can_save_acquisition_cost_and_currency(): void
+    {
+        config(['gatic.inventory.money.allowed_currencies' => ['MXN']]);
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->set('serial', 'SER-COST-1')
+            ->set('location_id', $location->id)
+            ->set('status', Asset::STATUS_AVAILABLE)
+            ->set('acquisitionCost', '15000.50')
+            ->set('acquisitionCurrency', 'MXN')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('assets', [
+            'serial' => 'SER-COST-1',
+            'acquisition_cost' => '15000.50',
+            'acquisition_currency' => 'MXN',
+        ]);
+    }
+
+    public function test_asset_form_defaults_currency_to_mxn_when_cost_present(): void
+    {
+        config(['gatic.inventory.money.allowed_currencies' => ['MXN']]);
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->set('serial', 'SER-COST-DEFAULT-CUR')
+            ->set('location_id', $location->id)
+            ->set('status', Asset::STATUS_AVAILABLE)
+            ->set('acquisitionCost', '1.00')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('assets', [
+            'serial' => 'SER-COST-DEFAULT-CUR',
+            'acquisition_cost' => '1.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+    }
+
+    public function test_asset_form_validates_invalid_currency(): void
+    {
+        config(['gatic.inventory.money.allowed_currencies' => ['MXN']]);
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->set('serial', 'SER-COST-2')
+            ->set('location_id', $location->id)
+            ->set('status', Asset::STATUS_AVAILABLE)
+            ->set('acquisitionCost', '1000.00')
+            ->set('acquisitionCurrency', 'EUR')
+            ->call('save')
+            ->assertHasErrors(['acquisitionCurrency']);
+    }
+
+    public function test_asset_form_validates_negative_cost(): void
+    {
+        config(['gatic.inventory.money.allowed_currencies' => ['MXN']]);
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->set('serial', 'SER-COST-3')
+            ->set('location_id', $location->id)
+            ->set('status', Asset::STATUS_AVAILABLE)
+            ->set('acquisitionCost', '-100.00')
+            ->call('save')
+            ->assertHasErrors(['acquisitionCost']);
+    }
+
+    public function test_asset_form_validates_cost_with_more_than_two_decimals(): void
+    {
+        config(['gatic.inventory.money.allowed_currencies' => ['MXN']]);
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->set('serial', 'SER-COST-4')
+            ->set('location_id', $location->id)
+            ->set('status', Asset::STATUS_AVAILABLE)
+            ->set('acquisitionCost', '100.999')
+            ->call('save')
+            ->assertHasErrors(['acquisitionCost']);
+    }
+
+    public function test_asset_show_displays_acquisition_cost(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-SHOW-1',
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '25000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetShow::class, ['product' => (string) $product->id, 'asset' => (string) $asset->id])
+            ->assertSee('Costo de adquisición')
+            ->assertSee('25,000.00')
+            ->assertSee('MXN');
+    }
+
+    public function test_asset_show_displays_dash_when_no_cost(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-SHOW-2',
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => null,
+            'acquisition_currency' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertOk()
+            ->assertSee('Costo de adquisición')
+            ->assertSee('—');
+    }
+
+    public function test_asset_show_displays_default_currency_when_currency_is_null(): void
+    {
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-SHOW-3',
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '1234.00',
+            'acquisition_currency' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertOk()
+            ->assertSee('1,234.00')
+            ->assertSee('MXN');
+    }
+
+    public function test_asset_form_can_edit_acquisition_cost(): void
+    {
+        config(['gatic.inventory.money.allowed_currencies' => ['MXN']]);
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-EDIT-COST',
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '10000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id, 'asset' => (string) $asset->id])
+            ->assertSet('acquisitionCost', '10000.00')
+            ->assertSet('acquisitionCurrency', 'MXN')
+            ->set('acquisitionCost', '20000.00')
+            ->set('acquisitionCurrency', 'MXN')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('assets', [
+            'id' => $asset->id,
+            'acquisition_cost' => '20000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+    }
 }

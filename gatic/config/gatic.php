@@ -48,6 +48,12 @@ return [
             // Allowed window options (days) exposed via query string + UI.
             'due_soon_window_days_options' => [7, 14, 30],
         ],
+        'renewals' => [
+            // Default "por vencer" window shown in renewal alert list (days).
+            'due_soon_window_days_default' => 90,
+            // Allowed window options (days) exposed via query string + UI.
+            'due_soon_window_days_options' => [30, 60, 90, 180],
+        ],
     ],
     'perf' => [
         'log_enabled' => (bool) env('PERF_LOG', false),

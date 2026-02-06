@@ -30,6 +30,8 @@ class AssetFactory extends Factory
                 ? fake()->unique()->bothify('TAG-????-####')
                 : null,
             'status' => Asset::STATUS_AVAILABLE,
+            'useful_life_months' => null,
+            'expected_replacement_date' => null,
         ];
     }
 }

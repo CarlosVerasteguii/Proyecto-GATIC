@@ -13,12 +13,20 @@ use App\Models\Location;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Tests\TestCase;
 
 class AssetsTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
 
     public function test_admin_and_editor_can_access_assets_pages_for_serialized_products(): void
     {
@@ -1041,5 +1049,276 @@ class AssetsTest extends TestCase
             'acquisition_cost' => '20000.00',
             'acquisition_currency' => 'MXN',
         ]);
+    }
+
+    public function test_asset_form_preloads_useful_life_from_category_default(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+            'default_useful_life_months' => 60,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->assertSet('usefulLifeMonths', '60');
+    }
+
+    public function test_asset_form_calculates_expected_replacement_date_when_manual_date_is_empty(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 6, 10, 0, 0));
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+            'default_useful_life_months' => null,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->set('serial', 'SER-REPLACEMENT-1')
+            ->set('location_id', $location->id)
+            ->set('status', Asset::STATUS_AVAILABLE)
+            ->set('usefulLifeMonths', '12')
+            ->set('expectedReplacementDate', '')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('assets', [
+            'serial' => 'SER-REPLACEMENT-1',
+            'useful_life_months' => 12,
+            'expected_replacement_date' => Carbon::today()->addMonthsNoOverflow(12)->toDateString(),
+        ]);
+    }
+
+    public function test_asset_form_respects_manual_expected_replacement_date(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 6, 10, 0, 0));
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+            'default_useful_life_months' => 24,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->set('serial', 'SER-REPLACEMENT-2')
+            ->set('location_id', $location->id)
+            ->set('status', Asset::STATUS_AVAILABLE)
+            ->set('usefulLifeMonths', '36')
+            ->set('expectedReplacementDate', '2030-01-15')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('assets', [
+            'serial' => 'SER-REPLACEMENT-2',
+            'useful_life_months' => 36,
+            'expected_replacement_date' => '2030-01-15',
+        ]);
+    }
+
+    public function test_asset_form_uses_category_default_when_useful_life_is_empty(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 6, 10, 0, 0));
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+            'default_useful_life_months' => 48,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->set('serial', 'SER-REPLACEMENT-3')
+            ->set('location_id', $location->id)
+            ->set('status', Asset::STATUS_AVAILABLE)
+            ->set('usefulLifeMonths', '')
+            ->set('expectedReplacementDate', '')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('assets', [
+            'serial' => 'SER-REPLACEMENT-3',
+            'useful_life_months' => null,
+            'expected_replacement_date' => Carbon::today()->addMonthsNoOverflow(48)->toDateString(),
+        ]);
+    }
+
+    public function test_asset_form_does_not_persist_category_default_as_override_when_editing_existing_asset(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 6, 10, 0, 0));
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+            'default_useful_life_months' => 48,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-REPLACEMENT-EXISTING',
+            'status' => Asset::STATUS_AVAILABLE,
+            'useful_life_months' => null,
+            'expected_replacement_date' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id, 'asset' => (string) $asset->id])
+            ->assertSet('usefulLifeMonths', '48')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('assets', [
+            'id' => $asset->id,
+            'useful_life_months' => null,
+        ]);
+    }
+
+    public function test_asset_show_normalizes_renewal_window_default_to_allowed_options(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 6, 10, 0, 0));
+        config([
+            'gatic.alerts.renewals.due_soon_window_days_default' => 999,
+            'gatic.alerts.renewals.due_soon_window_days_options' => [30, 60],
+        ]);
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-SHOW-RENEWAL-DEFAULT-INVALID',
+            'status' => Asset::STATUS_AVAILABLE,
+            'expected_replacement_date' => Carbon::today()->addDays(40)->toDateString(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertOk()
+            ->assertSee('Fecha estimada de reemplazo')
+            ->assertSee(Carbon::today()->addDays(40)->format('d/m/Y'))
+            ->assertSee('En tiempo')
+            ->assertDontSee('Por vencer');
+    }
+
+    public function test_asset_form_validates_useful_life_range(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+            'default_useful_life_months' => null,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->set('serial', 'SER-REPLACEMENT-4')
+            ->set('location_id', $location->id)
+            ->set('status', Asset::STATUS_AVAILABLE)
+            ->set('usefulLifeMonths', '601')
+            ->call('save')
+            ->assertHasErrors(['usefulLifeMonths']);
+    }
+
+    public function test_asset_show_displays_replacement_fields_and_due_soon_badge(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 6, 10, 0, 0));
+        config(['gatic.alerts.renewals.due_soon_window_days_default' => 30]);
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+            'default_useful_life_months' => 36,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-SHOW-RENEWAL',
+            'status' => Asset::STATUS_AVAILABLE,
+            'useful_life_months' => 36,
+            'expected_replacement_date' => Carbon::today()->addDays(10)->toDateString(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertOk()
+            ->assertSee('Vida útil (meses)')
+            ->assertSee('36')
+            ->assertSee('Fecha estimada de reemplazo')
+            ->assertSee(Carbon::today()->addDays(10)->format('d/m/Y'))
+            ->assertSee('Por vencer');
     }
 }

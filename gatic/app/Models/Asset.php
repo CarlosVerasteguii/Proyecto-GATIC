@@ -26,6 +26,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $warranty_notes
  * @property string|null $acquisition_cost
  * @property string|null $acquisition_currency
+ * @property int|null $useful_life_months
+ * @property \Illuminate\Support\CarbonImmutable|null $expected_replacement_date
  */
 class Asset extends Model
 {
@@ -80,6 +82,8 @@ class Asset extends Model
         'warranty_notes',
         'acquisition_cost',
         'acquisition_currency',
+        'useful_life_months',
+        'expected_replacement_date',
     ];
 
     /**
@@ -92,6 +96,8 @@ class Asset extends Model
             'warranty_start_date' => 'immutable_date',
             'warranty_end_date' => 'immutable_date',
             'acquisition_cost' => 'decimal:2',
+            'useful_life_months' => 'integer',
+            'expected_replacement_date' => 'immutable_date',
         ];
     }
 

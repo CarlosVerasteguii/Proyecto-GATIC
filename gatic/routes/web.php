@@ -6,6 +6,7 @@ use App\Livewire\Admin\ErrorReports\ErrorReportsLookup;
 use App\Livewire\Admin\Users\UserForm;
 use App\Livewire\Admin\Users\UsersIndex;
 use App\Livewire\Alerts\Loans\LoanAlertsIndex;
+use App\Livewire\Alerts\Renewals\RenewalAlertsIndex;
 use App\Livewire\Alerts\Stock\LowStockAlertsIndex;
 use App\Livewire\Alerts\Warranties\WarrantyAlertsIndex;
 use App\Livewire\Catalogs\Brands\BrandsIndex;
@@ -192,6 +193,7 @@ Route::middleware(['auth', 'active', 'can:inventory.manage'])
     ->name('alerts.')
     ->group(function () {
         Route::get('/loans', LoanAlertsIndex::class)->name('loans.index');
+        Route::get('/renewals', RenewalAlertsIndex::class)->name('renewals.index');
         Route::get('/stock', LowStockAlertsIndex::class)->name('stock.index');
         Route::get('/warranties', WarrantyAlertsIndex::class)->name('warranties.index');
     });

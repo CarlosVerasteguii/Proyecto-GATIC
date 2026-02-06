@@ -118,6 +118,58 @@ class CategoriesTest extends TestCase
             ->assertHasErrors(['name' => 'unique']);
     }
 
+    public function test_serialized_category_can_persist_default_useful_life_months(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        Livewire::actingAs($admin)
+            ->test(CategoryForm::class)
+            ->set('name', 'Laptops')
+            ->set('is_serialized', true)
+            ->set('requires_asset_tag', false)
+            ->set('default_useful_life_months', '120')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('categories', [
+            'name' => 'Laptops',
+            'default_useful_life_months' => 120,
+        ]);
+    }
+
+    public function test_non_serialized_category_clears_default_useful_life_months(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        Livewire::actingAs($admin)
+            ->test(CategoryForm::class)
+            ->set('name', 'Consumibles')
+            ->set('is_serialized', false)
+            ->set('requires_asset_tag', false)
+            ->set('default_useful_life_months', '36')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('categories', [
+            'name' => 'Consumibles',
+            'default_useful_life_months' => null,
+        ]);
+    }
+
+    public function test_default_useful_life_months_must_be_between_1_and_600(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        Livewire::actingAs($admin)
+            ->test(CategoryForm::class)
+            ->set('name', 'Rango inválido')
+            ->set('is_serialized', true)
+            ->set('requires_asset_tag', false)
+            ->set('default_useful_life_months', '601')
+            ->call('save')
+            ->assertHasErrors(['default_useful_life_months']);
+    }
+
     public function test_delete_is_soft_delete_and_category_disappears_from_list(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);

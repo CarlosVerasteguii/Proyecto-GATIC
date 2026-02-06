@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property bool $is_serialized
  * @property bool $requires_asset_tag
+ * @property int|null $default_useful_life_months
  */
 class Category extends Model
 {
@@ -25,6 +26,7 @@ class Category extends Model
         'name',
         'is_serialized',
         'requires_asset_tag',
+        'default_useful_life_months',
     ];
 
     /**
@@ -33,6 +35,7 @@ class Category extends Model
     protected $casts = [
         'is_serialized' => 'bool',
         'requires_asset_tag' => 'bool',
+        'default_useful_life_months' => 'integer',
     ];
 
     public static function normalizeName(?string $value): ?string

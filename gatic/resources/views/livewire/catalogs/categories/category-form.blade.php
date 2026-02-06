@@ -25,7 +25,7 @@
                             id="category-is-serialized"
                             type="checkbox"
                             class="form-check-input @error('is_serialized') is-invalid @enderror"
-                            wire:model="is_serialized"
+                            wire:model.live="is_serialized"
                         />
                         <label class="form-check-label" for="category-is-serialized">Serializada</label>
                         @error('is_serialized')
@@ -50,6 +50,26 @@
                         @enderror
                     </div>
 
+                    <div class="mb-3">
+                        <label for="category-default-useful-life" class="form-label">Vida útil default (meses)</label>
+                        <input
+                            id="category-default-useful-life"
+                            type="number"
+                            min="1"
+                            max="600"
+                            class="form-control @error('default_useful_life_months') is-invalid @enderror"
+                            wire:model="default_useful_life_months"
+                            @disabled(! $is_serialized)
+                            placeholder="Ej. 60"
+                        />
+                        <div class="form-text">
+                            Opcional. Solo aplica para categorías serializadas. Si no aplica, se guarda como vacío.
+                        </div>
+                        @error('default_useful_life_months')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-primary" wire:click="save" wire:loading.attr="disabled" wire:target="save">
                             Guardar
@@ -63,4 +83,3 @@
         </div>
     </div>
 </div>
-

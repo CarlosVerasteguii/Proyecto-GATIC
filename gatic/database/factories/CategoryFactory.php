@@ -21,6 +21,7 @@ class CategoryFactory extends Factory
             'name' => fake()->unique()->word(),
             'is_serialized' => fake()->boolean(),
             'requires_asset_tag' => fake()->boolean(),
+            'default_useful_life_months' => null,
         ];
     }
 }

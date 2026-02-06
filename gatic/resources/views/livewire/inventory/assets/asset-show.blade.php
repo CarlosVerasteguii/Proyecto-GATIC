@@ -86,6 +86,50 @@
                                 —
                             @endif
                         </dd>
+
+                        <dt class="col-sm-3">Vida útil (meses)</dt>
+                        <dd class="col-sm-9">
+                            @php
+                                $effectiveUsefulLifeMonths = $asset->useful_life_months ?? $product->category?->default_useful_life_months;
+                            @endphp
+                            {{ $effectiveUsefulLifeMonths ?? '—' }}
+                        </dd>
+
+                        <dt class="col-sm-3">Fecha estimada de reemplazo</dt>
+                        <dd class="col-sm-9">
+                            @if ($asset->expected_replacement_date)
+                                {{ $asset->expected_replacement_date->format('d/m/Y') }}
+                                @php
+                                    $today = \Illuminate\Support\Carbon::today();
+                                    $allowedOptions = config('gatic.alerts.renewals.due_soon_window_days_options', [30, 60, 90, 180]);
+                                    if (! is_array($allowedOptions) || $allowedOptions === []) {
+                                        $allowedOptions = [30, 60, 90, 180];
+                                    }
+                                    $allowedOptions = array_values(array_unique(array_map('intval', $allowedOptions)));
+                                    sort($allowedOptions);
+                                    if ($allowedOptions === []) {
+                                        $allowedOptions = [30, 60, 90, 180];
+                                    }
+
+                                    $renewalWindowDays = (int) config('gatic.alerts.renewals.due_soon_window_days_default', $allowedOptions[0] ?? 90);
+                                    if (! in_array($renewalWindowDays, $allowedOptions, true)) {
+                                        $renewalWindowDays = (int) ($allowedOptions[0] ?? 90);
+                                    }
+
+                                    $isOverdue = $asset->expected_replacement_date->lt($today);
+                                    $isDueSoon = ! $isOverdue && $asset->expected_replacement_date->lte($today->copy()->addDays($renewalWindowDays));
+                                @endphp
+                                @if ($isOverdue)
+                                    <span class="badge bg-danger ms-1">Vencido</span>
+                                @elseif ($isDueSoon)
+                                    <span class="badge bg-warning text-dark ms-1">Por vencer</span>
+                                @else
+                                    <span class="badge bg-success ms-1">En tiempo</span>
+                                @endif
+                            @else
+                                —
+                            @endif
+                        </dd>
                     </dl>
                 </div>
             </div>

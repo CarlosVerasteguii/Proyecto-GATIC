@@ -6,10 +6,12 @@ use App\Models\Asset;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\Supplier;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
@@ -47,6 +49,18 @@ class AssetForm extends Component
 
     public ?string $acquisitionCurrency = null;
 
+    public ?string $usefulLifeMonths = null;
+
+    public ?string $expectedReplacementDate = null;
+
+    public ?int $defaultUsefulLifeMonths = null;
+
+    #[Locked]
+    public ?int $existingUsefulLifeMonths = null;
+
+    #[Locked]
+    public bool $usefulLifeMonthsTouched = false;
+
     /**
      * @var list<string>
      */
@@ -83,6 +97,12 @@ class AssetForm extends Component
 
         $this->productIsSerialized = (bool) $this->productModel->category?->is_serialized;
         $this->requiresAssetTag = (bool) $this->productModel->category?->requires_asset_tag;
+        $this->defaultUsefulLifeMonths = $this->productModel->category?->default_useful_life_months;
+        $this->usefulLifeMonths = $this->defaultUsefulLifeMonths !== null
+            ? (string) $this->defaultUsefulLifeMonths
+            : null;
+        $this->existingUsefulLifeMonths = null;
+        $this->usefulLifeMonthsTouched = false;
 
         $this->locations = Location::query()
             ->whereNull('deleted_at')
@@ -153,6 +173,16 @@ class AssetForm extends Component
         $this->warrantyNotes = $model->warranty_notes;
         $this->acquisitionCost = $model->acquisition_cost;
         $this->acquisitionCurrency = $model->acquisition_currency ?? $this->acquisitionCurrency;
+        $this->existingUsefulLifeMonths = $model->useful_life_months;
+        $this->usefulLifeMonths = $model->useful_life_months !== null
+            ? (string) $model->useful_life_months
+            : $this->usefulLifeMonths;
+        $this->expectedReplacementDate = $model->expected_replacement_date?->format('Y-m-d');
+    }
+
+    public function updatedUsefulLifeMonths(): void
+    {
+        $this->usefulLifeMonthsTouched = true;
     }
 
     /**
@@ -209,9 +239,9 @@ class AssetForm extends Component
                 'nullable',
                 'date',
                 'date_format:Y-m-d',
-                $this->warrantyStartDate !== null && $this->warrantyEndDate !== null
-                    ? 'after_or_equal:warrantyStartDate'
-                    : null,
+                ...($this->warrantyStartDate !== null && $this->warrantyEndDate !== null
+                    ? ['after_or_equal:warrantyStartDate']
+                    : []),
             ],
             'warrantySupplierId' => [
                 'nullable',
@@ -235,6 +265,17 @@ class AssetForm extends Component
                 'string',
                 'size:3',
                 Rule::in($this->allowedCurrencies),
+            ],
+            'usefulLifeMonths' => [
+                'nullable',
+                'integer',
+                'min:1',
+                'max:600',
+            ],
+            'expectedReplacementDate' => [
+                'nullable',
+                'date',
+                'date_format:Y-m-d',
             ],
         ];
     }
@@ -267,6 +308,11 @@ class AssetForm extends Component
             'acquisitionCost.regex' => 'El costo de adquisición debe tener máximo 2 decimales.',
             'acquisitionCurrency.size' => 'La moneda debe ser un código de 3 caracteres.',
             'acquisitionCurrency.in' => 'La moneda seleccionada no es válida.',
+            'usefulLifeMonths.integer' => 'La vida útil debe ser un número entero.',
+            'usefulLifeMonths.min' => 'La vida útil debe ser mayor o igual a 1.',
+            'usefulLifeMonths.max' => 'La vida útil no debe exceder 600 meses.',
+            'expectedReplacementDate.date' => 'La fecha estimada de reemplazo no es válida.',
+            'expectedReplacementDate.date_format' => 'La fecha estimada de reemplazo debe tener el formato AAAA-MM-DD.',
         ];
     }
 
@@ -282,11 +328,16 @@ class AssetForm extends Component
 
         $this->serial = Asset::normalizeSerial($this->serial) ?? '';
         $this->asset_tag = Asset::normalizeAssetTag($this->asset_tag);
+        $this->usefulLifeMonths = $this->normalizeNullableInput($this->usefulLifeMonths);
+        $this->expectedReplacementDate = $this->normalizeNullableInput($this->expectedReplacementDate);
 
         $validated = $this->validate();
 
         $requiresEmployee = in_array($validated['status'], [Asset::STATUS_ASSIGNED, Asset::STATUS_LOANED], true);
         $currentEmployeeId = $requiresEmployee ? ($validated['current_employee_id'] ?? null) : null;
+        $usefulLifeMonths = $this->resolveUsefulLifeMonthsOverride($validated);
+        $effectiveUsefulLifeMonths = $usefulLifeMonths ?? $this->defaultUsefulLifeMonths;
+        $manualExpectedReplacementDate = $validated['expectedReplacementDate'] ?? null;
 
         $acquisitionCost = isset($validated['acquisitionCost']) && $validated['acquisitionCost'] !== ''
             ? (string) $validated['acquisitionCost']
@@ -303,7 +354,7 @@ class AssetForm extends Component
             : null;
 
         if ($this->assetId === null) {
-            Asset::query()->create([
+            $asset = Asset::query()->create([
                 'product_id' => $this->productId,
                 'serial' => $validated['serial'],
                 'asset_tag' => $validated['asset_tag'],
@@ -316,7 +367,14 @@ class AssetForm extends Component
                 'warranty_notes' => $validated['warrantyNotes'] ?? null,
                 'acquisition_cost' => $acquisitionCost,
                 'acquisition_currency' => $acquisitionCurrency,
+                'useful_life_months' => $usefulLifeMonths,
+                'expected_replacement_date' => $manualExpectedReplacementDate,
             ]);
+
+            if ($manualExpectedReplacementDate === null && $effectiveUsefulLifeMonths !== null) {
+                $asset->expected_replacement_date = $this->calculateExpectedReplacementDate($asset->created_at, $effectiveUsefulLifeMonths);
+                $asset->save();
+            }
 
             return redirect()
                 ->route('inventory.products.assets.index', ['product' => $this->productId])
@@ -338,6 +396,12 @@ class AssetForm extends Component
         $model->warranty_notes = $validated['warrantyNotes'] ?? null;
         $model->acquisition_cost = $acquisitionCost;
         $model->acquisition_currency = $acquisitionCurrency;
+        $model->useful_life_months = $usefulLifeMonths;
+        $model->expected_replacement_date = $this->resolveExpectedReplacementDateForUpdate(
+            $model->created_at,
+            $effectiveUsefulLifeMonths,
+            $manualExpectedReplacementDate
+        );
         $model->save();
 
         return redirect()
@@ -359,7 +423,68 @@ class AssetForm extends Component
             'suppliers' => $this->suppliers,
             'requiresEmployeeSelection' => $this->requiresCurrentEmployeeSelection(),
             'allowedCurrencies' => $this->allowedCurrencies,
+            'defaultUsefulLifeMonths' => $this->defaultUsefulLifeMonths,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function resolveUsefulLifeMonthsOverride(array $validated): ?int
+    {
+        if (! $this->usefulLifeMonthsTouched) {
+            return $this->existingUsefulLifeMonths;
+        }
+
+        if (
+            ! isset($validated['usefulLifeMonths'])
+            || $validated['usefulLifeMonths'] === null
+            || $validated['usefulLifeMonths'] === ''
+        ) {
+            return null;
+        }
+
+        return (int) $validated['usefulLifeMonths'];
+    }
+
+    private function resolveExpectedReplacementDateForUpdate(
+        ?CarbonInterface $baseDate,
+        ?int $usefulLifeMonths,
+        ?string $manualExpectedReplacementDate
+    ): ?string {
+        if ($manualExpectedReplacementDate !== null) {
+            return $manualExpectedReplacementDate;
+        }
+
+        if ($usefulLifeMonths === null) {
+            return null;
+        }
+
+        return $this->calculateExpectedReplacementDate($baseDate, $usefulLifeMonths);
+    }
+
+    private function calculateExpectedReplacementDate(?CarbonInterface $baseDate, int $usefulLifeMonths): ?string
+    {
+        if ($baseDate === null) {
+            return null;
+        }
+
+        return $baseDate
+            ->toImmutable()
+            ->startOfDay()
+            ->addMonthsNoOverflow($usefulLifeMonths)
+            ->toDateString();
+    }
+
+    private function normalizeNullableInput(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = trim($value);
+
+        return $normalized === '' ? null : $normalized;
     }
 
     private function requiresCurrentEmployeeSelection(): bool

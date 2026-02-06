@@ -64,6 +64,54 @@
                             @enderror
                         </div>
 
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                Vida útil y renovación <span class="text-muted fw-normal">(opcional)</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="asset-useful-life-months" class="form-label">Vida útil (meses)</label>
+                                        <input
+                                            id="asset-useful-life-months"
+                                            type="number"
+                                            min="1"
+                                            max="600"
+                                            class="form-control @error('usefulLifeMonths') is-invalid @enderror"
+                                            wire:model.defer="usefulLifeMonths"
+                                            placeholder="Ej. 60"
+                                        />
+                                        <div class="form-text">
+                                            @if ($defaultUsefulLifeMonths !== null)
+                                                Si lo dejas vacío, se usará el default de categoría: {{ $defaultUsefulLifeMonths }} meses.
+                                            @else
+                                                Define un valor entre 1 y 600 meses.
+                                            @endif
+                                        </div>
+                                        @error('usefulLifeMonths')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="asset-expected-replacement-date" class="form-label">Fecha estimada de reemplazo</label>
+                                        <input
+                                            id="asset-expected-replacement-date"
+                                            type="date"
+                                            class="form-control @error('expectedReplacementDate') is-invalid @enderror"
+                                            wire:model.defer="expectedReplacementDate"
+                                        />
+                                        <div class="form-text">
+                                            Si lo dejas vacío y hay meses de vida útil, se calcula automáticamente.
+                                        </div>
+                                        @error('expectedReplacementDate')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label for="asset-status" class="form-label">Estado</label>
                             <select

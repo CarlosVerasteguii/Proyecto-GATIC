@@ -264,6 +264,12 @@
                 </div>
             </div>
 
+            {{-- Timeline panel --}}
+            <livewire:ui.timeline-panel
+                :entity-type="\App\Models\Asset::class"
+                :entity-id="$asset->id"
+            />
+
             {{-- Notes panel --}}
             <livewire:ui.notes-panel
                 :noteable-type="\App\Models\Asset::class"

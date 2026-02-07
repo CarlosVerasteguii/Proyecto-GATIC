@@ -142,6 +142,12 @@
                 </div>
             @endif
 
+            {{-- Timeline panel --}}
+            <livewire:ui.timeline-panel
+                :entity-type="\App\Models\Product::class"
+                :entity-id="$product->id"
+            />
+
             {{-- Notes panel --}}
             <livewire:ui.notes-panel
                 :noteable-type="\App\Models\Product::class"

@@ -131,6 +131,12 @@
                 </div>
             </div>
 
+            {{-- Timeline panel --}}
+            <livewire:ui.timeline-panel
+                :entity-type="\App\Models\Employee::class"
+                :entity-id="$employee->id"
+            />
+
             {{-- Notes panel --}}
             <livewire:ui.notes-panel
                 :noteable-type="\App\Models\Employee::class"

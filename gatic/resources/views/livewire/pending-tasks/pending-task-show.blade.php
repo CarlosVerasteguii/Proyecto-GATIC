@@ -428,6 +428,12 @@
                 </div>
             </div>
         </div>
+
+            {{-- Timeline panel --}}
+            <livewire:ui.timeline-panel
+                :entity-type="\App\Models\PendingTask::class"
+                :entity-id="$task->id"
+            />
     </div>
 
     {{-- Line Modal (Draft mode) --}}

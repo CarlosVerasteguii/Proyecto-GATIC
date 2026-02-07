@@ -1,6 +1,20 @@
+import { getBootstrapUiPreferences, persistUiPreference } from './user-ui-preferences';
+
 const STORAGE_KEY = 'gatic:theme';
 
+function getBootstrapTheme() {
+    const bootstrap = getBootstrapUiPreferences();
+    const theme = bootstrap?.theme;
+
+    return theme === 'dark' || theme === 'light' ? theme : null;
+}
+
 function getStoredTheme() {
+    const bootstrapTheme = getBootstrapTheme();
+    if (bootstrapTheme !== null) {
+        return bootstrapTheme;
+    }
+
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
         return stored === 'dark' || stored === 'light' ? stored : null;
@@ -70,6 +84,7 @@ function toggleTheme() {
     const next = current === 'dark' ? 'light' : 'dark';
     setStoredTheme(next);
     applyTheme(next);
+    persistUiPreference('ui.theme', next);
 }
 
 let registered = false;
@@ -89,4 +104,3 @@ export function registerThemeToggle() {
         toggleTheme();
     });
 }
-

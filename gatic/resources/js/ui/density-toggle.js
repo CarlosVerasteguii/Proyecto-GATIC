@@ -4,6 +4,7 @@
  * Handles switching between normal and compact density modes.
  * State is persisted in localStorage.
  */
+import { getBootstrapUiPreferences, persistUiPreference } from './user-ui-preferences';
 
 const STORAGE_KEY = 'gatic-density-mode';
 const COMPACT_CLASS = 'app-compact';
@@ -15,10 +16,19 @@ const COMPACT_CLASS = 'app-compact';
 function getStoredMode() {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
-        return stored === 'compact' ? 'compact' : 'normal';
+        if (stored === 'compact' || stored === 'normal') {
+            return stored;
+        }
     } catch {
-        return 'normal';
+        // ignore
     }
+
+    const bootstrap = getBootstrapUiPreferences();
+    if (bootstrap?.density === 'normal' || bootstrap?.density === 'compact') {
+        return bootstrap.density;
+    }
+
+    return 'normal';
 }
 
 /**
@@ -71,6 +81,7 @@ function toggleDensity() {
 
     applyMode(newMode);
     setStoredMode(newMode);
+    persistUiPreference('ui.density', newMode);
 }
 
 /**

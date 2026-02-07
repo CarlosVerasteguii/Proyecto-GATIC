@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Users;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Support\Settings\UserSettingsStore;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -23,6 +24,10 @@ class UserForm extends Component
     public string $role = UserRole::Lector->value;
 
     public bool $is_active = true;
+
+    public string $department = '';
+
+    public string $position = '';
 
     public string $password = '';
 
@@ -47,6 +52,8 @@ class UserForm extends Component
         $this->email = $model->email;
         $this->role = $model->role->value;
         $this->is_active = (bool) $model->is_active;
+        $this->department = $model->department ?? '';
+        $this->position = $model->position ?? '';
     }
 
     /**
@@ -61,6 +68,8 @@ class UserForm extends Component
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class, 'email')],
                 'role' => ['required', $roleRule],
+                'department' => ['nullable', 'string', 'max:255'],
+                'position' => ['nullable', 'string', 'max:255'],
                 'password' => ['required', 'confirmed', Password::defaults()],
             ];
         }
@@ -68,9 +77,24 @@ class UserForm extends Component
         return [
             'role' => ['required', $roleRule],
             'is_active' => ['boolean'],
+            'department' => ['nullable', 'string', 'max:255'],
+            'position' => ['nullable', 'string', 'max:255'],
             'password' => $this->password !== ''
                 ? ['nullable', 'confirmed', Password::defaults()]
                 : ['nullable', 'confirmed'],
+        ];
+    }
+
+    /**
+     * UI copy must be Spanish (see project-context).
+     *
+     * @return array<string, string>
+     */
+    protected function messages(): array
+    {
+        return [
+            'department.max' => 'El campo Departamento no debe exceder 255 caracteres.',
+            'position.max' => 'El campo Puesto no debe exceder 255 caracteres.',
         ];
     }
 
@@ -78,7 +102,7 @@ class UserForm extends Component
     {
         Gate::authorize('users.manage');
 
-        $this->validate();
+        $this->validate($this->rules(), $this->messages());
 
         if (! $this->userId) {
             $user = User::query()->create([
@@ -87,6 +111,8 @@ class UserForm extends Component
                 'role' => $this->role,
                 'password' => $this->password,
                 'is_active' => true,
+                'department' => $this->normalizeOptionalText($this->department),
+                'position' => $this->normalizeOptionalText($this->position),
             ]);
 
             return redirect()
@@ -138,6 +164,8 @@ class UserForm extends Component
 
         $user->role = $newRole;
         $user->is_active = $this->is_active;
+        $user->department = $this->normalizeOptionalText($this->department);
+        $user->position = $this->normalizeOptionalText($this->position);
 
         if ($this->password !== '') {
             $user->password = $this->password;
@@ -158,5 +186,26 @@ class UserForm extends Component
             'roles' => UserRole::values(),
             'isEdit' => (bool) $this->userId,
         ]);
+    }
+
+    public function resetUiPreferences(): void
+    {
+        Gate::authorize('users.manage');
+
+        if (! $this->userId) {
+            return;
+        }
+
+        $user = User::query()->findOrFail($this->userId);
+        app(UserSettingsStore::class)->forgetUiPreferencesForUser($user->id);
+
+        session()->flash('status', 'Preferencias UI restablecidas.');
+    }
+
+    private function normalizeOptionalText(string $value): ?string
+    {
+        $normalized = trim($value);
+
+        return $normalized !== '' ? $normalized : null;
     }
 }

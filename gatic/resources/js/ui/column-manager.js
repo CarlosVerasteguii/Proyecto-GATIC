@@ -1,3 +1,5 @@
+import { persistUiPreference } from './user-ui-preferences';
+
 const STORAGE_PREFIX = 'gatic:columns:';
 
 function getStorageKey(tableKey) {
@@ -158,6 +160,7 @@ function initManager(managerEl) {
         }
 
         writeHiddenSet(tableKey, freshHidden);
+        persistUiPreference(`ui.columns.${tableKey}`, Array.from(freshHidden), { debounceMs: 500 });
 
         const freshColumns = getColumnDefs(tableEl);
         applyVisibility(tableEl, freshColumns, freshHidden);
@@ -175,6 +178,7 @@ function initManager(managerEl) {
 
         const empty = new Set();
         writeHiddenSet(tableKey, empty);
+        persistUiPreference(`ui.columns.${tableKey}`, [], { debounceMs: 500 });
 
         const freshColumns = getColumnDefs(tableEl);
         applyVisibility(tableEl, freshColumns, empty);

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Attachments\DownloadAttachmentController;
+use App\Http\Controllers\Me\UpdateUiPreferenceController;
 use App\Livewire\Admin\Audit\AuditLogsIndex;
 use App\Livewire\Admin\ErrorReports\ErrorReportsLookup;
 use App\Livewire\Admin\Settings\SettingsForm as AdminSettingsForm;
@@ -51,6 +52,13 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'active'])->name('dashboard');
+
+Route::middleware(['auth', 'active'])
+    ->prefix('me')
+    ->name('me.')
+    ->group(function () {
+        Route::post('/ui-preferences', UpdateUiPreferenceController::class)->name('ui-preferences.update');
+    });
 
 Route::middleware(['auth', 'active', 'can:users.manage'])
     ->prefix('admin')

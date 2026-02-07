@@ -4,6 +4,7 @@
  * Handles collapsing/expanding the sidebar on desktop.
  * State is persisted in localStorage.
  */
+import { getBootstrapUiPreferences, persistUiPreference } from './user-ui-preferences';
 
 const STORAGE_KEY = 'gatic-sidebar-collapsed';
 const COLLAPSED_CLASS = 'sidebar-collapsed';
@@ -12,6 +13,11 @@ const COLLAPSED_CLASS = 'sidebar-collapsed';
  * Get current collapsed state from localStorage
  */
 function getStoredState() {
+    const bootstrap = getBootstrapUiPreferences();
+    if (typeof bootstrap?.sidebarCollapsed === 'boolean') {
+        return bootstrap.sidebarCollapsed;
+    }
+
     try {
         return localStorage.getItem(STORAGE_KEY) === 'true';
     } catch {
@@ -64,6 +70,7 @@ function toggleSidebar() {
 
     applyState(newState);
     setStoredState(newState);
+    persistUiPreference('ui.sidebar_collapsed', newState);
 }
 
 /**

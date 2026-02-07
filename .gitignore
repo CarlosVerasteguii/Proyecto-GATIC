@@ -9,6 +9,14 @@ Desktop.ini
 # --- IDEs / Local tooling (do not commit) ---
 .vscode/
 .idea/
+.perf_*.txt
+.perf_*.html
+.perf_*.json
+.perf_*.md
+
+# Local-only study plan exports (not part of the app)
+plan_estudios_qfb.png
+plan_qfb.pdf
 
 # Agent / assistant local state (do not commit)
 .agent/

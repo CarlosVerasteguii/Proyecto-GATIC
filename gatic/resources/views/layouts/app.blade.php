@@ -9,12 +9,51 @@
 
     <title>{{ config('app.name', 'GATIC') }}</title>
 
-    {{-- Theme bootstrapper (prevents flash before Vite loads) --}}
+    @php
+        $uiPreferences = [];
+        if (auth()->check()) {
+            $uiPreferences = app(\App\Support\Settings\UserSettingsStore::class)
+                ->getBootstrapPreferencesForUser((int) auth()->id());
+        }
+    @endphp
+
+    {{-- UI preferences bootstrapper (hydrates localStorage + prevents theme flash before Vite loads) --}}
     <script>
+        window.gaticUserPrefs = @json($uiPreferences);
+
         (() => {
             try {
-                const STORAGE_KEY = 'gatic:theme';
-                const stored = localStorage.getItem(STORAGE_KEY);
+                const prefs = window.gaticUserPrefs && typeof window.gaticUserPrefs === 'object'
+                    ? window.gaticUserPrefs
+                    : {};
+
+                if (prefs.theme === 'light' || prefs.theme === 'dark') {
+                    localStorage.setItem('gatic:theme', prefs.theme);
+                }
+
+                if (prefs.density === 'normal' || prefs.density === 'compact') {
+                    localStorage.setItem('gatic-density-mode', prefs.density);
+                }
+
+                if (typeof prefs.sidebarCollapsed === 'boolean') {
+                    localStorage.setItem('gatic-sidebar-collapsed', prefs.sidebarCollapsed ? 'true' : 'false');
+                }
+
+                if (prefs.columns && typeof prefs.columns === 'object') {
+                    Object.entries(prefs.columns).forEach(([tableKey, hiddenColumns]) => {
+                        if (!Array.isArray(hiddenColumns)) {
+                            return;
+                        }
+
+                        localStorage.setItem(`gatic:columns:${tableKey}`, JSON.stringify(hiddenColumns));
+                    });
+                }
+            } catch {
+                // ignore (no localStorage access)
+            }
+
+            try {
+                const stored = localStorage.getItem('gatic:theme');
                 const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches === true;
                 const theme = stored === 'dark' || stored === 'light' ? stored : (prefersDark ? 'dark' : 'light');
                 document.documentElement.setAttribute('data-bs-theme', theme);

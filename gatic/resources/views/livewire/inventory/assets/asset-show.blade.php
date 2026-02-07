@@ -76,10 +76,11 @@
                         <dd class="col-sm-9">
                             @if ($asset->acquisition_cost !== null)
                                 @php
-                                    $defaultCurrency = config('gatic.inventory.money.default_currency', 'MXN');
+                                    $settingsStore = app(\App\Support\Settings\SettingsStore::class);
+                                    $defaultCurrency = $settingsStore->getString('gatic.inventory.money.default_currency', 'MXN');
                                     $currency = is_string($asset->acquisition_currency) && $asset->acquisition_currency !== ''
                                         ? $asset->acquisition_currency
-                                        : (is_string($defaultCurrency) ? $defaultCurrency : 'MXN');
+                                        : ($defaultCurrency !== '' ? $defaultCurrency : 'MXN');
                                 @endphp
                                 {{ number_format((float) $asset->acquisition_cost, 2) }} {{ $currency }}
                             @else
@@ -101,17 +102,14 @@
                                 {{ $asset->expected_replacement_date->format('d/m/Y') }}
                                 @php
                                     $today = \Illuminate\Support\Carbon::today();
-                                    $allowedOptions = config('gatic.alerts.renewals.due_soon_window_days_options', [30, 60, 90, 180]);
-                                    if (! is_array($allowedOptions) || $allowedOptions === []) {
-                                        $allowedOptions = [30, 60, 90, 180];
-                                    }
-                                    $allowedOptions = array_values(array_unique(array_map('intval', $allowedOptions)));
-                                    sort($allowedOptions);
+                                    $renewalStore = app(\App\Support\Settings\SettingsStore::class);
+                                    $allowedOptions = $renewalStore->getIntList('gatic.alerts.renewals.due_soon_window_days_options', [30, 60, 90, 180]);
                                     if ($allowedOptions === []) {
                                         $allowedOptions = [30, 60, 90, 180];
                                     }
+                                    sort($allowedOptions);
 
-                                    $renewalWindowDays = (int) config('gatic.alerts.renewals.due_soon_window_days_default', $allowedOptions[0] ?? 90);
+                                    $renewalWindowDays = $renewalStore->getInt('gatic.alerts.renewals.due_soon_window_days_default', $allowedOptions[0] ?? 90);
                                     if (! in_array($renewalWindowDays, $allowedOptions, true)) {
                                         $renewalWindowDays = (int) ($allowedOptions[0] ?? 90);
                                     }
@@ -232,7 +230,8 @@
                                         @php
                                             $today = \Illuminate\Support\Carbon::today();
                                             $isExpired = $asset->warranty_end_date->lt($today);
-                                            $dueSoonDays = (int) config('gatic.alerts.warranties.due_soon_window_days_default', 30);
+                                            $warrantyStore = app(\App\Support\Settings\SettingsStore::class);
+                                            $dueSoonDays = $warrantyStore->getInt('gatic.alerts.warranties.due_soon_window_days_default', 30);
                                             if ($dueSoonDays <= 0) {
                                                 $dueSoonDays = 30;
                                             }

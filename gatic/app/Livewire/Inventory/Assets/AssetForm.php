@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\Supplier;
+use App\Support\Settings\SettingsStore;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
@@ -139,10 +140,9 @@ class AssetForm extends Component
 
         $this->allowedCurrencies = $normalizedCurrencies !== [] ? $normalizedCurrencies : ['MXN', 'USD'];
 
-        /** @var mixed $defaultCurrency */
-        $defaultCurrency = config('gatic.inventory.money.default_currency', 'MXN');
-        $normalizedDefaultCurrency = is_string($defaultCurrency) ? strtoupper(trim($defaultCurrency)) : 'MXN';
-        if (! in_array($normalizedDefaultCurrency, $this->allowedCurrencies, true)) {
+        $store = app(SettingsStore::class);
+        $normalizedDefaultCurrency = strtoupper(trim($store->getString('gatic.inventory.money.default_currency', 'MXN')));
+        if ($normalizedDefaultCurrency === '' || ! in_array($normalizedDefaultCurrency, $this->allowedCurrencies, true)) {
             $normalizedDefaultCurrency = $this->allowedCurrencies[0] ?? 'MXN';
         }
 
@@ -342,10 +342,9 @@ class AssetForm extends Component
         $acquisitionCost = isset($validated['acquisitionCost']) && $validated['acquisitionCost'] !== ''
             ? (string) $validated['acquisitionCost']
             : null;
-        /** @var mixed $defaultCurrency */
-        $defaultCurrency = config('gatic.inventory.money.default_currency', 'MXN');
-        $normalizedDefaultCurrency = is_string($defaultCurrency) ? strtoupper(trim($defaultCurrency)) : ($this->allowedCurrencies[0] ?? 'MXN');
-        if (! in_array($normalizedDefaultCurrency, $this->allowedCurrencies, true)) {
+        $saveCurrencyStore = app(SettingsStore::class);
+        $normalizedDefaultCurrency = strtoupper(trim($saveCurrencyStore->getString('gatic.inventory.money.default_currency', 'MXN')));
+        if ($normalizedDefaultCurrency === '' || ! in_array($normalizedDefaultCurrency, $this->allowedCurrencies, true)) {
             $normalizedDefaultCurrency = $this->allowedCurrencies[0] ?? 'MXN';
         }
 

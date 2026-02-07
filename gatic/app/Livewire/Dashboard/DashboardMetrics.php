@@ -7,6 +7,7 @@ use App\Models\AssetMovement;
 use App\Models\Product;
 use App\Models\ProductQuantityMovement;
 use App\Support\Errors\ErrorReporter;
+use App\Support\Settings\SettingsStore;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -58,9 +59,9 @@ class DashboardMetrics extends Component
 
     public function mount(): void
     {
-        /** @var mixed $currency */
-        $currency = config('gatic.inventory.money.default_currency', 'MXN');
-        $this->defaultCurrency = is_string($currency) ? strtoupper(trim($currency)) : 'MXN';
+        $store = app(SettingsStore::class);
+        $currency = $store->getString('gatic.inventory.money.default_currency', 'MXN');
+        $this->defaultCurrency = strtoupper(trim($currency !== '' ? $currency : 'MXN'));
 
         $this->refreshMetrics();
     }
@@ -143,12 +144,13 @@ class DashboardMetrics extends Component
     {
         $today = Carbon::today();
 
-        $allowedOptions = config('gatic.alerts.loans.due_soon_window_days_options', [7, 14, 30]);
-        if (! is_array($allowedOptions) || $allowedOptions === []) {
+        $store = app(SettingsStore::class);
+        $allowedOptions = $store->getIntList('gatic.alerts.loans.due_soon_window_days_options', [7, 14, 30]);
+        if ($allowedOptions === []) {
             $allowedOptions = [7, 14, 30];
         }
 
-        $defaultWindowDays = (int) config('gatic.alerts.loans.due_soon_window_days_default', $allowedOptions[0] ?? 7);
+        $defaultWindowDays = $store->getInt('gatic.alerts.loans.due_soon_window_days_default', $allowedOptions[0] ?? 7);
         if (! in_array($defaultWindowDays, $allowedOptions, true)) {
             $defaultWindowDays = (int) ($allowedOptions[0] ?? 7);
         }

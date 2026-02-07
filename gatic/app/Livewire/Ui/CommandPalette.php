@@ -61,6 +61,10 @@ class CommandPalette extends Component
             $nav[] = $this->item('Admin: Usuarios', route('admin.users.index'), 'bi-shield-lock', null);
         }
 
+        if ($user->can('admin-only')) {
+            $nav[] = $this->item('Admin: Configuración', route('admin.settings.index'), 'bi-gear', null);
+        }
+
         $groups[] = [
             'label' => 'Navegación',
             'items' => $nav,

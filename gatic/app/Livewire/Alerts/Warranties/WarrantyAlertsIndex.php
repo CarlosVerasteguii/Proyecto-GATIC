@@ -3,6 +3,7 @@
 namespace App\Livewire\Alerts\Warranties;
 
 use App\Models\Asset;
+use App\Support\Settings\SettingsStore;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
@@ -127,12 +128,13 @@ class WarrantyAlertsIndex extends Component
      */
     private function getWindowDaysOptionsFromConfig(): array
     {
-        $options = config('gatic.alerts.warranties.due_soon_window_days_options', [7, 14, 30]);
-        if (! is_array($options) || $options === []) {
+        $store = app(SettingsStore::class);
+        $options = $store->getIntList('gatic.alerts.warranties.due_soon_window_days_options', [7, 14, 30]);
+        if ($options === []) {
             $options = [7, 14, 30];
         }
 
-        $options = array_values(array_unique(array_map('intval', $options)));
+        $options = array_values(array_unique($options));
         sort($options);
 
         if ($options === []) {
@@ -147,7 +149,8 @@ class WarrantyAlertsIndex extends Component
      */
     private function getDefaultWindowDaysFromConfig(array $options): int
     {
-        $default = (int) config('gatic.alerts.warranties.due_soon_window_days_default', $options[0] ?? 30);
+        $store = app(SettingsStore::class);
+        $default = $store->getInt('gatic.alerts.warranties.due_soon_window_days_default', $options[0] ?? 30);
         if (! in_array($default, $options, true)) {
             $default = (int) ($options[0] ?? 30);
         }

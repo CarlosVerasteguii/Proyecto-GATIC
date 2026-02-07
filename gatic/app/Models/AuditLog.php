@@ -87,6 +87,9 @@ class AuditLog extends Model
 
     public const ACTION_TRASH_PURGE = 'trash.purge';
 
+    // Settings (Story 14.6)
+    public const ACTION_SETTINGS_UPDATE = 'admin.settings.update';
+
     /**
      * All defined actions for filtering/validation.
      *
@@ -107,6 +110,7 @@ class AuditLog extends Model
         self::ACTION_TRASH_SOFT_DELETE,
         self::ACTION_TRASH_RESTORE,
         self::ACTION_TRASH_PURGE,
+        self::ACTION_SETTINGS_UPDATE,
     ];
 
     /**
@@ -129,6 +133,7 @@ class AuditLog extends Model
         self::ACTION_TRASH_SOFT_DELETE => 'Registro eliminado',
         self::ACTION_TRASH_RESTORE => 'Registro restaurado',
         self::ACTION_TRASH_PURGE => 'Registro purgado',
+        self::ACTION_SETTINGS_UPDATE => 'Configuración actualizada',
     ];
 
     // ──────────────────────────────────────────────────────────────────────────

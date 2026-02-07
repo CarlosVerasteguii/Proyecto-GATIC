@@ -3,6 +3,7 @@
 namespace App\Livewire\Alerts\Renewals;
 
 use App\Models\Asset;
+use App\Support\Settings\SettingsStore;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
@@ -126,12 +127,13 @@ class RenewalAlertsIndex extends Component
      */
     private function getWindowDaysOptionsFromConfig(): array
     {
-        $options = config('gatic.alerts.renewals.due_soon_window_days_options', [30, 60, 90, 180]);
-        if (! is_array($options) || $options === []) {
+        $store = app(SettingsStore::class);
+        $options = $store->getIntList('gatic.alerts.renewals.due_soon_window_days_options', [30, 60, 90, 180]);
+        if ($options === []) {
             $options = [30, 60, 90, 180];
         }
 
-        $options = array_values(array_unique(array_map('intval', $options)));
+        $options = array_values(array_unique($options));
         sort($options);
 
         if ($options === []) {
@@ -146,7 +148,8 @@ class RenewalAlertsIndex extends Component
      */
     private function getDefaultWindowDaysFromConfig(array $options): int
     {
-        $default = (int) config('gatic.alerts.renewals.due_soon_window_days_default', $options[0] ?? 90);
+        $store = app(SettingsStore::class);
+        $default = $store->getInt('gatic.alerts.renewals.due_soon_window_days_default', $options[0] ?? 90);
         if (! in_array($default, $options, true)) {
             $default = (int) ($options[0] ?? 90);
         }

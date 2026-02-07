@@ -3,6 +3,7 @@
 use App\Http\Controllers\Attachments\DownloadAttachmentController;
 use App\Livewire\Admin\Audit\AuditLogsIndex;
 use App\Livewire\Admin\ErrorReports\ErrorReportsLookup;
+use App\Livewire\Admin\Settings\SettingsForm as AdminSettingsForm;
 use App\Livewire\Admin\Users\UserForm;
 use App\Livewire\Admin\Users\UsersIndex;
 use App\Livewire\Alerts\Loans\LoanAlertsIndex;
@@ -67,6 +68,7 @@ Route::middleware(['auth', 'active', 'can:admin-only'])
         Route::get('/error-reports', ErrorReportsLookup::class)->name('error-reports.lookup');
         Route::get('/audit', AuditLogsIndex::class)->name('audit.index');
         Route::get('/trash', \App\Livewire\Admin\Trash\TrashIndex::class)->name('trash.index');
+        Route::get('/settings', AdminSettingsForm::class)->name('settings.index');
     });
 
 Route::middleware(['auth', 'active', 'can:catalogs.manage'])

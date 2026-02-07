@@ -3,6 +3,7 @@
     $adminUsersActive = request()->routeIs('admin.users.*');
     $adminTrashActive = request()->routeIs('admin.trash.*');
     $adminErrorReportsActive = request()->routeIs('admin.error-reports.*');
+    $adminSettingsActive = request()->routeIs('admin.settings.*');
     $employeesActive = request()->routeIs('employees.*');
     $pendingTasksActive = request()->routeIs('pending-tasks.*');
     $catalogsCategoriesActive = request()->routeIs('catalogs.categories.*');
@@ -225,6 +226,17 @@
                 >
                     <i class="bi bi-trash3 nav-icon" aria-hidden="true"></i>
                     <span class="nav-text">Papelera catálogos</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a
+                    class="nav-link @if ($adminSettingsActive) active @endif"
+                    href="{{ route('admin.settings.index') }}"
+                    data-tooltip="Configuración"
+                    @if ($adminSettingsActive) aria-current="page" @endif
+                >
+                    <i class="bi bi-gear nav-icon" aria-hidden="true"></i>
+                    <span class="nav-text">Configuración</span>
                 </a>
             </li>
         @endcan

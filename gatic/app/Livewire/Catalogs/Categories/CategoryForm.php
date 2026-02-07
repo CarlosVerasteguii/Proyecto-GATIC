@@ -20,6 +20,8 @@ class CategoryForm extends Component
 
     public bool $requires_asset_tag = false;
 
+    public ?string $default_useful_life_months = null;
+
     public function updatedIsSerialized(bool $value): void
     {
         if ($value) {
@@ -27,7 +29,8 @@ class CategoryForm extends Component
         }
 
         $this->requires_asset_tag = false;
-        $this->resetValidation('requires_asset_tag');
+        $this->default_useful_life_months = null;
+        $this->resetValidation(['requires_asset_tag', 'default_useful_life_months']);
     }
 
     public function mount(?string $category = null): void
@@ -48,6 +51,9 @@ class CategoryForm extends Component
         $this->name = $model->name;
         $this->is_serialized = (bool) $model->is_serialized;
         $this->requires_asset_tag = $this->is_serialized ? (bool) $model->requires_asset_tag : false;
+        $this->default_useful_life_months = $this->is_serialized && $model->default_useful_life_months !== null
+            ? (string) $model->default_useful_life_months
+            : null;
     }
 
     /**
@@ -64,6 +70,7 @@ class CategoryForm extends Component
             ],
             'is_serialized' => ['boolean'],
             'requires_asset_tag' => ['boolean'],
+            'default_useful_life_months' => ['nullable', 'integer', 'min:1', 'max:600'],
         ];
     }
 
@@ -75,6 +82,9 @@ class CategoryForm extends Component
         return [
             'name.required' => 'El nombre es obligatorio.',
             'name.unique' => 'El nombre ya existe.',
+            'default_useful_life_months.integer' => 'La vida útil debe ser un número entero.',
+            'default_useful_life_months.min' => 'La vida útil debe ser mayor o igual a 1.',
+            'default_useful_life_months.max' => 'La vida útil no debe exceder 600 meses.',
         ];
     }
 
@@ -84,19 +94,40 @@ class CategoryForm extends Component
 
         $this->name = Category::normalizeName($this->name) ?? '';
 
+        if (is_string($this->default_useful_life_months)) {
+            $this->default_useful_life_months = trim($this->default_useful_life_months);
+        }
+        if ($this->default_useful_life_months === '') {
+            $this->default_useful_life_months = null;
+        }
+        if (! $this->is_serialized) {
+            $this->default_useful_life_months = null;
+            $this->resetValidation('default_useful_life_months');
+        }
+
         if (! $this->is_serialized && $this->requires_asset_tag) {
             $this->addError('requires_asset_tag', 'Solo aplica si la categoría es serializada.');
 
             return null;
         }
 
-        $this->validate();
+        $validated = $this->validate();
+
+        $defaultUsefulLifeMonths = null;
+        if (
+            $this->is_serialized
+            && isset($validated['default_useful_life_months'])
+            && $validated['default_useful_life_months'] !== null
+        ) {
+            $defaultUsefulLifeMonths = (int) $validated['default_useful_life_months'];
+        }
 
         if (! $this->categoryId) {
             Category::query()->create([
                 'name' => $this->name,
                 'is_serialized' => $this->is_serialized,
                 'requires_asset_tag' => $this->requires_asset_tag,
+                'default_useful_life_months' => $defaultUsefulLifeMonths,
             ]);
 
             return redirect()
@@ -108,6 +139,7 @@ class CategoryForm extends Component
         $model->name = $this->name;
         $model->is_serialized = $this->is_serialized;
         $model->requires_asset_tag = $this->requires_asset_tag;
+        $model->default_useful_life_months = $defaultUsefulLifeMonths;
         $model->save();
 
         return redirect()

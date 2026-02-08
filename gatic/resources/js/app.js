@@ -29,3 +29,8 @@ registerDensityToggle();
 registerThemeToggle();
 registerColumnManager();
 registerDropdownPopperFix();
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!document.querySelector('[data-page="dashboard"]')) return;
+    import('./pages/dashboard').then((m) => m.registerDashboardCharts());
+});

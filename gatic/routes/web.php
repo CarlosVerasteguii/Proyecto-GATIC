@@ -25,6 +25,7 @@ use App\Livewire\Inventory\Adjustments\AssetAdjustmentForm as InventoryAssetAdju
 use App\Livewire\Inventory\Adjustments\ProductAdjustmentForm as InventoryProductAdjustmentForm;
 use App\Livewire\Inventory\Assets\AssetForm as InventoryAssetForm;
 use App\Livewire\Inventory\Assets\AssetShow as InventoryAssetShow;
+use App\Livewire\Inventory\Assets\AssetsGlobalIndex as InventoryAssetsGlobalIndex;
 use App\Livewire\Inventory\Assets\AssetsIndex as InventoryAssetsIndex;
 use App\Livewire\Inventory\Contracts\ContractForm as InventoryContractForm;
 use App\Livewire\Inventory\Contracts\ContractShow as InventoryContractShow;
@@ -103,6 +104,7 @@ Route::middleware(['auth', 'active', 'can:inventory.view'])
     ->name('inventory.')
     ->group(function () {
         Route::get('/search', InventorySearch::class)->name('search');
+        Route::get('/assets', InventoryAssetsGlobalIndex::class)->name('assets.index');
         Route::get('/products', InventoryProductsIndex::class)->name('products.index');
         Route::get('/products/{product}', InventoryProductShow::class)
             ->whereNumber('product')

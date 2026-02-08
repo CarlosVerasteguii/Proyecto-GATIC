@@ -12,6 +12,7 @@
     $catalogsSuppliersActive = request()->routeIs('catalogs.suppliers.*');
     $catalogsTrashActive = request()->routeIs('catalogs.trash.*');
     $inventorySearchActive = request()->routeIs('inventory.search');
+    $inventoryAssetsActive = request()->routeIs('inventory.assets.*');
     $inventoryProductsActive = request()->routeIs('inventory.products.*');
     $inventoryContractsActive = request()->routeIs('inventory.contracts.*');
     $showAdminSection = auth()->user()->can('users.manage')
@@ -64,6 +65,18 @@
             >
                 <i class="bi bi-box-seam nav-icon" aria-hidden="true"></i>
                 <span class="nav-text">Productos</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a
+                class="nav-link @if ($inventoryAssetsActive) active @endif"
+                href="{{ route('inventory.assets.index') }}"
+                data-tooltip="Activos"
+                @if ($inventoryAssetsActive) aria-current="page" @endif
+            >
+                <i class="bi bi-hdd nav-icon" aria-hidden="true"></i>
+                <span class="nav-text">Activos</span>
             </a>
         </li>
 

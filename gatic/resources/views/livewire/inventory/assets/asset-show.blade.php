@@ -10,13 +10,21 @@
             {{-- Detail Header --}}
             <x-ui.detail-header :title="$asset->serial" :subtitle="$product->name">
                 <x-slot:breadcrumbs>
-                    <x-ui.breadcrumbs :items="[
-                        ['label' => 'Inicio', 'url' => route('dashboard')],
-                        ['label' => 'Productos', 'url' => route('inventory.products.index', $returnQuery)],
-                        ['label' => $product->name, 'url' => route('inventory.products.show', ['product' => $product->id] + $returnQuery)],
-                        ['label' => 'Activos', 'url' => route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery)],
-                        ['label' => $asset->serial, 'url' => null],
-                    ]" />
+                    @if (is_string($returnTo) && $returnTo !== '')
+                        <x-ui.breadcrumbs :items="[
+                            ['label' => 'Inicio', 'url' => route('dashboard')],
+                            ['label' => 'Activos', 'url' => $returnTo],
+                            ['label' => $asset->serial, 'url' => null],
+                        ]" />
+                    @else
+                        <x-ui.breadcrumbs :items="[
+                            ['label' => 'Inicio', 'url' => route('dashboard')],
+                            ['label' => 'Productos', 'url' => route('inventory.products.index', $returnQuery)],
+                            ['label' => $product->name, 'url' => route('inventory.products.show', ['product' => $product->id] + $returnQuery)],
+                            ['label' => 'Activos', 'url' => route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery)],
+                            ['label' => $asset->serial, 'url' => null],
+                        ]" />
+                    @endif
                 </x-slot:breadcrumbs>
 
                 <x-slot:status>
@@ -36,7 +44,7 @@
                             </a>
                         @endif
                         @if (\App\Support\Assets\AssetStatusTransitions::canReturn($asset->status))
-                            <a class="btn btn-sm btn-info text-dark" href="{{ route('inventory.products.assets.return', ['product' => $product->id, 'asset' => $asset->id]) }}">
+                            <a class="btn btn-sm btn-info text-dark" href="{{ route('inventory.products.assets.return', ['product' => $product->id, 'asset' => $asset->id] + (is_string($returnTo) && $returnTo !== '' ? ['returnTo' => $returnTo] : [])) }}">
                                 <i class="bi bi-arrow-return-left me-1" aria-hidden="true"></i>Devolver
                             </a>
                         @endif

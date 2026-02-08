@@ -20,6 +20,8 @@ class AssetShow extends Component
 
     public ?Asset $assetModel = null;
 
+    public ?string $returnTo = null;
+
     public function mount(string $product, string $asset): void
     {
         Gate::authorize('inventory.view');
@@ -30,6 +32,7 @@ class AssetShow extends Component
 
         $this->productId = (int) $product;
         $this->assetId = (int) $asset;
+        $this->returnTo = $this->sanitizeReturnTo(request()->query('returnTo'));
 
         $this->productModel = Product::query()
             ->with('category')
@@ -52,6 +55,26 @@ class AssetShow extends Component
         return view('livewire.inventory.assets.asset-show', [
             'product' => $this->productModel,
             'asset' => $this->assetModel,
+            'returnTo' => $this->returnTo,
         ]);
+    }
+
+    private function sanitizeReturnTo(?string $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        if ($value === '' || ! str_starts_with($value, '/') || str_starts_with($value, '//')) {
+            return null;
+        }
+
+        if (str_contains($value, "\n") || str_contains($value, "\r") || strlen($value) > 2000) {
+            return null;
+        }
+
+        return $value;
     }
 }

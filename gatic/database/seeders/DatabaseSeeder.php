@@ -57,5 +57,10 @@ class DatabaseSeeder extends Seeder
 
         // Demo pending task for lock testing
         $this->call(DemoPendingTaskSeeder::class);
+
+        // Rich dashboard demo dataset (movements + alerts). Local only.
+        if (app()->environment('local')) {
+            $this->call(DemoDashboardSeeder::class);
+        }
     }
 }

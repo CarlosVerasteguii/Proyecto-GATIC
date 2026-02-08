@@ -18,12 +18,29 @@
     'asset',
     'productId',
     'size' => 'sm',
+    'returnTo' => null,
 ])
 
 @php
     use App\Support\Assets\AssetStatusTransitions;
     use App\Models\Asset;
     use Illuminate\Support\Facades\Route;
+
+    $returnToParam = [];
+    if (is_string($returnTo)) {
+        $candidate = trim($returnTo);
+
+        if (
+            $candidate !== ''
+            && str_starts_with($candidate, '/')
+            && ! str_starts_with($candidate, '//')
+            && ! str_contains($candidate, "\n")
+            && ! str_contains($candidate, "\r")
+            && strlen($candidate) <= 2000
+        ) {
+            $returnToParam = ['returnTo' => $candidate];
+        }
+    }
 
     $canAssign = AssetStatusTransitions::canAssign($asset->status);
     $canLoan = AssetStatusTransitions::canLoan($asset->status);
@@ -54,7 +71,7 @@
                     <li>
                         <a
                             class="dropdown-item py-2"
-                            href="{{ route('inventory.products.assets.assign', ['product' => $productId, 'asset' => $asset->id]) }}"
+                            href="{{ route('inventory.products.assets.assign', ['product' => $productId, 'asset' => $asset->id] + $returnToParam) }}"
                             style="min-height: 44px; display: flex; align-items: center;"
                         >
                             <i class="bi bi-person-check me-2 text-success" aria-hidden="true"></i>
@@ -67,7 +84,7 @@
                     <li>
                         <a
                             class="dropdown-item py-2"
-                            href="{{ route('inventory.products.assets.loan', ['product' => $productId, 'asset' => $asset->id]) }}"
+                            href="{{ route('inventory.products.assets.loan', ['product' => $productId, 'asset' => $asset->id] + $returnToParam) }}"
                             style="min-height: 44px; display: flex; align-items: center;"
                         >
                             <i class="bi bi-box-arrow-up-right me-2 text-info" aria-hidden="true"></i>
@@ -80,7 +97,7 @@
                     <li>
                         <a
                             class="dropdown-item py-2"
-                            href="{{ route('inventory.products.assets.return', ['product' => $productId, 'asset' => $asset->id]) }}"
+                            href="{{ route('inventory.products.assets.return', ['product' => $productId, 'asset' => $asset->id] + $returnToParam) }}"
                             style="min-height: 44px; display: flex; align-items: center;"
                         >
                             <i class="bi bi-arrow-return-left me-2 text-warning" aria-hidden="true"></i>
@@ -93,7 +110,7 @@
                     <li>
                         <a
                             class="dropdown-item py-2"
-                            href="{{ route('inventory.products.assets.unassign', ['product' => $productId, 'asset' => $asset->id]) }}"
+                            href="{{ route('inventory.products.assets.unassign', ['product' => $productId, 'asset' => $asset->id] + $returnToParam) }}"
                             style="min-height: 44px; display: flex; align-items: center;"
                         >
                             <i class="bi bi-person-x me-2 text-danger" aria-hidden="true"></i>
@@ -106,7 +123,7 @@
                 <li>
                     <a
                         class="dropdown-item py-2"
-                        href="{{ route('inventory.products.assets.show', ['product' => $productId, 'asset' => $asset->id]) }}"
+                        href="{{ route('inventory.products.assets.show', ['product' => $productId, 'asset' => $asset->id] + $returnToParam) }}"
                         style="min-height: 44px; display: flex; align-items: center;"
                     >
                         <i class="bi bi-eye me-2" aria-hidden="true"></i>

@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GATIC Dashboard (Mockup)</title>
+  <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
+  <link href="https://fonts.bunny.net/css?family=Nunito:400,600,700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      /* Brand */
+      --cfe-green: #008e5a;
+      --cfe-green-dark: #006b47;
+      --cfe-green-bg: rgba(0, 142, 90, 0.12);
+
+      /* Neutrals */
+      --bg: #0b1220;
+      --surface: rgba(255, 255, 255, 0.06);
+      --surface-2: rgba(255, 255, 255, 0.09);
+      --border: rgba(255, 255, 255, 0.10);
+      --text: rgba(255, 255, 255, 0.92);
+      --muted: rgba(255, 255, 255, 0.62);
+
+      /* Semantic */
+      --danger: #ff4d5b;
+      --warning: #ffcc33;
+      --info: #50d0ff;
+      --success: #35d07f;
+
+      /* Motion */
+      --t-fast: 150ms;
+      --t-med: 220ms;
+
+      /* Layout */
+      --radius: 16px;
+      --radius-sm: 12px;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      --shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.22);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Nunito", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 800px at 20% -10%, rgba(0, 142, 90, 0.25), transparent 65%),
+        radial-gradient(900px 700px at 85% 0%, rgba(80, 208, 255, 0.10), transparent 60%),
+        radial-gradient(1200px 800px at 50% 110%, rgba(255, 204, 51, 0.08), transparent 60%),
+        linear-gradient(180deg, #0a1020 0%, #070b14 100%);
+    }
+
+    a { color: inherit; }
+    a:hover { text-decoration: none; }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 18px 48px;
+    }
+
+    .top {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    .title {
+      display: grid;
+      gap: 6px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.01em;
+    }
+    .title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .controls {
+      display: grid;
+      gap: 10px;
+      justify-items: end;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.18);
+      color: var(--muted);
+      font-size: 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: transform var(--t-fast) ease, background var(--t-fast) ease, border-color var(--t-fast) ease;
+    }
+    .btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.18); }
+    .btn:focus-visible { outline: 3px solid rgba(0, 142, 90, 0.55); outline-offset: 2px; }
+
+    .select {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .rail {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .rail-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.035));
+      box-shadow: var(--shadow-soft);
+      padding: 14px 14px 12px;
+      transition: transform var(--t-fast) ease, border-color var(--t-fast) ease;
+      min-height: 92px;
+    }
+
+    .rail-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.18); }
+
+    .rail-card::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 6px;
+      background: var(--accent, var(--cfe-green));
+    }
+
+    .rail-label {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .rail-value {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .rail-value strong {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rail-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      color: rgba(255,255,255,0.78);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.16);
+      transition: background var(--t-fast) ease, transform var(--t-fast) ease;
+    }
+    .rail-cta:hover { background: rgba(0,0,0,0.22); transform: translateY(-1px); }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .kpi {
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.045);
+      box-shadow: var(--shadow-soft);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      min-height: 120px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(600px 220px at 30% 20%, rgba(0, 142, 90, 0.13), transparent 60%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .kpi .row1 { display: flex; align-items: start; justify-content: space-between; gap: 10px; z-index: 1; }
+    .kpi .label { color: var(--muted); font-size: 12px; letter-spacing: 0.02em; text-transform: uppercase; }
+    .kpi .meta { color: rgba(255,255,255,0.50); font-size: 12px; }
+    .kpi .value { z-index: 1; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .kpi .value strong { font-size: 30px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+    .kpi .delta { font-size: 12px; font-weight: 800; padding: 6px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.15); color: rgba(255,255,255,0.82); }
+    .kpi .delta.positive { color: rgba(53, 208, 127, 0.95); border-color: rgba(53, 208, 127, 0.25); }
+    .kpi .delta.negative { color: rgba(255, 77, 91, 0.95); border-color: rgba(255, 77, 91, 0.25); }
+    .kpi .hint { z-index: 1; color: rgba(255,255,255,0.62); font-size: 12px; line-height: 1.35; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.35fr 0.65fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .card {
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.045);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
+    .card-h {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.14);
+    }
+    .card-h h2 {
+      margin: 0;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.78);
+    }
+    .card-h .sub { color: rgba(255,255,255,0.55); font-size: 12px; }
+
+    .card-b { padding: 14px; }
+
+    .chart-wrap { height: 260px; }
+    canvas { display: block; width: 100% !important; height: 100% !important; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    thead th {
+      text-align: left;
+      color: rgba(255,255,255,0.70);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-size: 11px;
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+    tbody td {
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.82);
+    }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+    .right { text-align: right; font-variant-numeric: tabular-nums; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.12);
+      color: rgba(255,255,255,0.78);
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--dot, var(--cfe-green));
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+    }
+
+    @media (max-width: 1020px) {
+      .rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .two-col { grid-template-columns: 1fr; }
+      .controls { justify-items: start; }
+      .pill-row { justify-content: flex-start; }
+      .top { grid-template-columns: 1fr; align-items: start; }
+    }
+
+    @media (max-width: 520px) {
+      .wrap { padding: 22px 14px 38px; }
+      .rail { grid-template-columns: 1fr; }
+      .kpis { grid-template-columns: 1fr; }
+      .rail-value strong { font-size: 24px; }
+      .kpi .value strong { font-size: 28px; }
+      .chart-wrap { height: 240px; }
+      .btn, .select { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">
+        <h1>GATIC Dashboard</h1>
+        <p>Mockup conceptual: jerarquia por urgencia, rail de alertas, KPIs compactos y tendencias (Chart.js). No esta integrado al sistema.</p>
+      </div>
+      <div class="controls">
+        <div class="pill-row">
+          <span class="pill">Actualizado: <strong id="updatedAt" style="color: var(--text)">--:--</strong></span>
+          <span class="pill">Rango:
+            <select id="range" class="select" aria-label="Rango de fechas">
+              <option value="7">7 dias</option>
+              <option value="30" selected>30 dias</option>
+              <option value="90">90 dias</option>
+            </select>
+          </span>
+          <button id="refresh" class="btn" type="button">Actualizar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="rail" aria-label="Alertas criticas">
+        <div class="rail-card" style="--accent: var(--danger)">
+          <div class="rail-label">Prestamos vencidos</div>
+          <div class="rail-value"><strong id="a_overdue">0</strong><span class="tag"><span class="dot" style="--dot: var(--danger)"></span>Prioridad P0</span></div>
+          <a class="rail-cta" href="#" aria-label="Ver lista de prestamos vencidos">Ver lista</a>
+        </div>
+        <div class="rail-card" style="--accent: var(--warning)">
+          <div class="rail-label">Por vencer (7 dias)</div>
+          <div class="rail-value"><strong id="a_dueSoon">0</strong><span class="tag"><span class="dot" style="--dot: var(--warning)"></span>Accion hoy</span></div>
+          <a class="rail-cta" href="#" aria-label="Ver lista de prestamos por vencer">Ver lista</a>
+        </div>
+        <div class="rail-card" style="--accent: var(--danger)">
+          <div class="rail-label">Garantias vencidas</div>
+          <div class="rail-value"><strong id="a_warrantyExpired">0</strong><span class="tag"><span class="dot" style="--dot: var(--danger)"></span>Riesgo</span></div>
+          <a class="rail-cta" href="#" aria-label="Ver lista de garantias vencidas">Ver lista</a>
+        </div>
+        <div class="rail-card" style="--accent: var(--warning)">
+          <div class="rail-label">Stock bajo</div>
+          <div class="rail-value"><strong id="a_lowStock">0</strong><span class="tag"><span class="dot" style="--dot: var(--warning)"></span>Reponer</span></div>
+          <a class="rail-cta" href="#" aria-label="Ver lista de stock bajo">Ver lista</a>
+        </div>
+      </section>
+
+      <section class="kpis" aria-label="KPIs operativos">
+        <div class="kpi">
+          <div class="row1">
+            <div>
+              <div class="label">Movimientos hoy</div>
+              <div class="meta">Activos + cantidad</div>
+            </div>
+            <div class="delta positive" id="k_mov_delta">+0% vs ayer</div>
+          </div>
+          <div class="value"><strong id="k_mov">0</strong><span class="tag"><span class="dot" style="--dot: var(--info)"></span>Operacion</span></div>
+          <div class="hint">Indicador de ritmo operativo. Click en la serie del chart para drill-down por tipo.</div>
+        </div>
+        <div class="kpi">
+          <div class="row1">
+            <div>
+              <div class="label">Activos no disponibles</div>
+              <div class="meta">Asignados + prestados + retiro</div>
+            </div>
+            <div class="delta negative" id="k_unavail_delta">+0% vs 7d</div>
+          </div>
+          <div class="value"><strong id="k_unavail">0</strong><span class="tag"><span class="dot" style="--dot: var(--warning)"></span>Capacidad</span></div>
+          <div class="hint">Resumen de disponibilidad. Ideal: link a lista global filtrada por status.</div>
+        </div>
+        <div class="kpi">
+          <div class="row1">
+            <div>
+              <div class="label">Renovaciones vencidas</div>
+              <div class="meta">Reemplazo esperado</div>
+            </div>
+            <div class="delta negative" id="k_renew_delta">+0 vs ayer</div>
+          </div>
+          <div class="value"><strong id="k_renew">0</strong><span class="tag"><span class="dot" style="--dot: var(--danger)"></span>P0</span></div>
+          <div class="hint">Este KPI falta en el dashboard actual, pero ya existe su modulo de alertas.</div>
+        </div>
+        <div class="kpi">
+          <div class="row1">
+            <div>
+              <div class="label">Tareas pendientes</div>
+              <div class="meta">Ready + Processing</div>
+            </div>
+            <div class="delta positive" id="k_tasks_delta">-0 vs ayer</div>
+          </div>
+          <div class="value"><strong id="k_tasks">0</strong><span class="tag"><span class="dot" style="--dot: var(--success)"></span>Flujo</span></div>
+          <div class="hint">Orquesta el trabajo diario (captura, revision, procesamiento). CTA a "Crear tarea".</div>
+        </div>
+      </section>
+
+      <section class="two-col" aria-label="Tendencias y backlog">
+        <div class="card">
+          <div class="card-h">
+            <h2>Tendencia: Movimientos (rango)</h2>
+            <div class="sub">Stacked bar por dia (demo)</div>
+          </div>
+          <div class="card-b">
+            <div class="chart-wrap">
+              <canvas id="movChart" aria-label="Grafica de movimientos"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <h2>Backlog de alertas</h2>
+            <div class="sub">Line chart (demo)</div>
+          </div>
+          <div class="card-b">
+            <div class="chart-wrap">
+              <canvas id="backlogChart" aria-label="Grafica de backlog"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="two-col" aria-label="Valor y actividad">
+        <div class="card">
+          <div class="card-h">
+            <h2>Valor por categoria (Top 5)</h2>
+            <div class="sub">Ranking visual (demo)</div>
+          </div>
+          <div class="card-b">
+            <table aria-label="Valor por categoria">
+              <thead>
+                <tr>
+                  <th>Categoria</th>
+                  <th class="right">Valor (MXN)</th>
+                </tr>
+              </thead>
+              <tbody id="catTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <h2>Actividad reciente</h2>
+            <div class="sub">Ultimos eventos (demo)</div>
+          </div>
+          <div class="card-b">
+            <table aria-label="Actividad reciente">
+              <thead>
+                <tr>
+                  <th>Evento</th>
+                  <th class="right">Hace</th>
+                </tr>
+              </thead>
+              <tbody id="activityTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const fmt = new Intl.NumberFormat("es-MX");
+
+    function nowHHMM() {
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mm = String(d.getMinutes()).padStart(2, "0");
+      return `${hh}:${mm}`;
+    }
+
+    function seedData(days) {
+      // Deterministic-ish pseudo data for mockup.
+      const labels = [];
+      const assign = [];
+      const loan = [];
+      const ret = [];
+      const qty = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+        labels.push(`${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`);
+        const base = 8 + Math.floor((i % 7) * 1.2);
+        assign.push(Math.max(0, Math.round(base * (0.7 + (i % 3) * 0.08))));
+        loan.push(Math.max(0, Math.round(base * (0.55 + (i % 4) * 0.06))));
+        ret.push(Math.max(0, Math.round(base * (0.5 + (i % 5) * 0.05))));
+        qty.push(Math.max(0, Math.round(base * (0.9 + (i % 2) * 0.12))));
+      }
+
+      const kpis = {
+        overdue: 14 + (days >= 30 ? 3 : 0),
+        dueSoon: 26 + (days >= 90 ? 8 : 0),
+        warrantyExpired: 9 + (days >= 30 ? 2 : 0),
+        lowStock: 7 + (days >= 90 ? 5 : 0),
+        movementsToday: 21,
+        movementsDeltaPct: 12.5,
+        unavailable: 183,
+        unavailableDeltaPct: 4.2,
+        renewalsOverdue: 6,
+        renewalsDelta: 1,
+        pendingTasks: 11,
+        pendingTasksDelta: -2,
+      };
+
+      const backlog = labels.map((_, idx) => {
+        const wobble = Math.sin(idx / 3) * 4;
+        return Math.max(0, Math.round(38 + wobble - idx * 0.10));
+      });
+
+      const categories = [
+        ["Computo", 3920000.50],
+        ["Seguridad", 2410000.00],
+        ["Herramienta", 1185000.45],
+        ["Mobiliario", 990000.00],
+        ["Otros", 650000.10],
+      ];
+
+      const activity = [
+        ["Prestamo: ACT-01092", "hace 12 min"],
+        ["Movimiento cantidad: Cable UTP (+20)", "hace 40 min"],
+        ["Devolucion: ACT-00931", "hace 2 h"],
+        ["Nota en producto: Switch 24p", "hace 6 h"],
+        ["Ajuste inventario: Herramienta", "hace 1 d"],
+      ];
+
+      return { labels, assign, loan, ret, qty, kpis, backlog, categories, activity };
+    }
+
+    function setDelta(el, value, suffix) {
+      const sign = value > 0 ? "+" : "";
+      el.textContent = `${sign}${value}${suffix}`;
+      el.classList.remove("positive", "negative");
+      if (value > 0) el.classList.add("negative");
+      if (value < 0) el.classList.add("positive");
+      if (value === 0) el.classList.add("positive");
+    }
+
+    function setDeltaPct(el, pct, suffix) {
+      const sign = pct >= 0 ? "+" : "";
+      el.textContent = `${sign}${pct.toFixed(1)}%${suffix}`;
+      el.classList.remove("positive", "negative");
+      el.classList.add(pct >= 0 ? "negative" : "positive");
+    }
+
+    let movChart, backlogChart;
+
+    function render(days) {
+      const data = seedData(days);
+      document.getElementById("updatedAt").textContent = nowHHMM();
+
+      // Alert rail
+      document.getElementById("a_overdue").textContent = fmt.format(data.kpis.overdue);
+      document.getElementById("a_dueSoon").textContent = fmt.format(data.kpis.dueSoon);
+      document.getElementById("a_warrantyExpired").textContent = fmt.format(data.kpis.warrantyExpired);
+      document.getElementById("a_lowStock").textContent = fmt.format(data.kpis.lowStock);
+
+      // KPIs
+      document.getElementById("k_mov").textContent = fmt.format(data.kpis.movementsToday);
+      document.getElementById("k_unavail").textContent = fmt.format(data.kpis.unavailable);
+      document.getElementById("k_renew").textContent = fmt.format(data.kpis.renewalsOverdue);
+      document.getElementById("k_tasks").textContent = fmt.format(data.kpis.pendingTasks);
+
+      setDeltaPct(document.getElementById("k_mov_delta"), data.kpis.movementsDeltaPct, " vs ayer");
+      setDeltaPct(document.getElementById("k_unavail_delta"), data.kpis.unavailableDeltaPct, " vs 7d");
+      setDelta(document.getElementById("k_renew_delta"), data.kpis.renewalsDelta, " vs ayer");
+      setDelta(document.getElementById("k_tasks_delta"), data.kpis.pendingTasksDelta, " vs ayer");
+
+      // Tables
+      const catBody = document.getElementById("catTable");
+      catBody.innerHTML = "";
+      for (const [name, value] of data.categories) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${name}</td><td class="right">${fmt.format(value.toFixed(0))}</td>`;
+        catBody.appendChild(tr);
+      }
+
+      const actBody = document.getElementById("activityTable");
+      actBody.innerHTML = "";
+      for (const [event, when] of data.activity) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${event}</td><td class="right">${when}</td>`;
+        actBody.appendChild(tr);
+      }
+
+      // Charts
+      const movCtx = document.getElementById("movChart").getContext("2d");
+      const backlogCtx = document.getElementById("backlogChart").getContext("2d");
+
+      const commonOpts = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "rgba(255,255,255,0.75)", usePointStyle: true, boxWidth: 8 } },
+          tooltip: { enabled: true }
+        },
+        scales: {
+          x: { ticks: { color: "rgba(255,255,255,0.55)" }, grid: { color: "rgba(255,255,255,0.05)" } },
+          y: { ticks: { color: "rgba(255,255,255,0.55)" }, grid: { color: "rgba(255,255,255,0.05)" } }
+        }
+      };
+
+      if (movChart) movChart.destroy();
+      movChart = new Chart(movCtx, {
+        type: "bar",
+        data: {
+          labels: data.labels,
+          datasets: [
+            { label: "Asignar", data: data.assign, backgroundColor: "rgba(80, 208, 255, 0.35)", borderColor: "rgba(80, 208, 255, 0.9)", borderWidth: 1 },
+            { label: "Prestar", data: data.loan, backgroundColor: "rgba(255, 204, 51, 0.35)", borderColor: "rgba(255, 204, 51, 0.9)", borderWidth: 1 },
+            { label: "Devolver", data: data.ret, backgroundColor: "rgba(53, 208, 127, 0.35)", borderColor: "rgba(53, 208, 127, 0.9)", borderWidth: 1 },
+            { label: "Cantidad", data: data.qty, backgroundColor: "rgba(0, 142, 90, 0.35)", borderColor: "rgba(0, 142, 90, 0.9)", borderWidth: 1 }
+          ]
+        },
+        options: {
+          ...commonOpts,
+          interaction: { mode: "index", intersect: false },
+          scales: {
+            ...commonOpts.scales,
+            x: { ...commonOpts.scales.x, stacked: true },
+            y: { ...commonOpts.scales.y, stacked: true }
+          }
+        }
+      });
+
+      if (backlogChart) backlogChart.destroy();
+      backlogChart = new Chart(backlogCtx, {
+        type: "line",
+        data: {
+          labels: data.labels,
+          datasets: [
+            {
+              label: "Backlog",
+              data: data.backlog,
+              borderColor: "rgba(255, 77, 91, 0.95)",
+              backgroundColor: "rgba(255, 77, 91, 0.15)",
+              fill: true,
+              tension: 0.32,
+              pointRadius: 0,
+            }
+          ]
+        },
+        options: {
+          ...commonOpts,
+          scales: {
+            ...commonOpts.scales,
+            x: { ...commonOpts.scales.x, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    const rangeEl = document.getElementById("range");
+    const refreshEl = document.getElementById("refresh");
+
+    rangeEl.addEventListener("change", () => render(parseInt(rangeEl.value, 10)));
+    refreshEl.addEventListener("click", () => render(parseInt(rangeEl.value, 10)));
+
+    render(parseInt(rangeEl.value, 10));
+  </script>
+</body>
+</html>
+

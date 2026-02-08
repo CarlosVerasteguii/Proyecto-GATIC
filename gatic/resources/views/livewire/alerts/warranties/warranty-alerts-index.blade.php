@@ -19,7 +19,7 @@
                         <li class="nav-item">
                             <a
                                 class="nav-link {{ $type === 'expired' ? 'active' : '' }}"
-                                href="{{ route('alerts.warranties.index', ['type' => 'expired']) }}"
+                                href="{{ route('alerts.warranties.index', array_merge(['type' => 'expired'], $filterParams ?? [])) }}"
                             >
                                 Vencidas
                             </a>
@@ -27,7 +27,7 @@
                         <li class="nav-item">
                             <a
                                 class="nav-link {{ $type === 'due-soon' ? 'active' : '' }}"
-                                href="{{ route('alerts.warranties.index', ['type' => 'due-soon', 'windowDays' => $resolvedWindowDays]) }}"
+                                href="{{ route('alerts.warranties.index', array_merge(['type' => 'due-soon', 'windowDays' => $resolvedWindowDays], $filterParams ?? [])) }}"
                             >
                                 Por vencer
                             </a>
@@ -109,7 +109,7 @@
                                         </td>
                                         <td class="text-end">
                                             <a
-                                                href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id]) }}"
+                                                href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id, 'returnTo' => $returnTo]) }}"
                                                 class="btn btn-sm btn-outline-secondary"
                                             >
                                                 Ver detalle

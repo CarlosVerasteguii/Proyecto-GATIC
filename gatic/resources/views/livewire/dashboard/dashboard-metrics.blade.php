@@ -38,35 +38,179 @@
         </div>
 
         @php
+            $locName = collect($locationOptions)->firstWhere('id', $locationId)['name'] ?? null;
+            $catName = collect($categoryOptions)->firstWhere('id', $categoryId)['name'] ?? null;
+            $brandName = collect($brandOptions)->firstWhere('id', $brandId)['name'] ?? null;
+            $activeFiltersCount = collect([$locationId, $categoryId, $brandId])->filter(static fn ($value): bool => $value !== null && $value !== '')->count();
+        @endphp
+
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div class="fw-semibold">
+                    Filtros globales
+                    @if ($activeFiltersCount > 0)
+                        <span class="badge bg-primary ms-1">{{ $activeFiltersCount }}</span>
+                    @endif
+                </div>
+                <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    wire:click="toggleFiltersPanel"
+                    aria-expanded="{{ $filtersPanelExpanded ? 'true' : 'false' }}"
+                    aria-controls="dashboard-filters-panel"
+                >
+                    @if ($filtersPanelExpanded)
+                        <i class="bi bi-chevron-up me-1" aria-hidden="true"></i>Ocultar filtros
+                    @else
+                        <i class="bi bi-chevron-down me-1" aria-hidden="true"></i>Mostrar filtros
+                    @endif
+                </button>
+            </div>
+
+            @if ($filtersPanelExpanded)
+                <div class="card-body" id="dashboard-filters-panel">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-4">
+                            <label for="dash-filter-location" class="form-label mb-1">Ubicación</label>
+                            <select
+                                id="dash-filter-location"
+                                class="form-select"
+                                wire:model.live="locationId"
+                                aria-label="Filtrar por ubicación"
+                            >
+                                <option value="">Todas</option>
+                                @foreach ($locationOptions as $loc)
+                                    <option value="{{ $loc['id'] }}">{{ $loc['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label for="dash-filter-category" class="form-label mb-1">Categoría</label>
+                            <select
+                                id="dash-filter-category"
+                                class="form-select"
+                                wire:model.live="categoryId"
+                                aria-label="Filtrar por categoría"
+                            >
+                                <option value="">Todas</option>
+                                @foreach ($categoryOptions as $cat)
+                                    <option value="{{ $cat['id'] }}">{{ $cat['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label for="dash-filter-brand" class="form-label mb-1">Marca</label>
+                            <select
+                                id="dash-filter-brand"
+                                class="form-select"
+                                wire:model.live="brandId"
+                                aria-label="Filtrar por marca"
+                            >
+                                <option value="">Todas</option>
+                                @foreach ($brandOptions as $brand)
+                                    <option value="{{ $brand['id'] }}">{{ $brand['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        @if ($this->hasActiveFilters())
+                            <div class="col-12">
+                                <div class="d-flex flex-wrap gap-2 align-items-center">
+                                    <span class="text-muted small">Aplicando filtros:</span>
+                                    @if (is_string($locName) && $locName !== '')
+                                        <span class="badge bg-light text-dark border">Ubicación: {{ $locName }}</span>
+                                    @endif
+                                    @if (is_string($catName) && $catName !== '')
+                                        <span class="badge bg-light text-dark border">Categoría: {{ $catName }}</span>
+                                    @endif
+                                    @if (is_string($brandName) && $brandName !== '')
+                                        <span class="badge bg-light text-dark border">Marca: {{ $brandName }}</span>
+                                    @endif
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-secondary ms-auto"
+                                        wire:click="clearFilters"
+                                    >
+                                        <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Limpiar filtros
+                                    </button>
+                                </div>
+                                @if ($locationId !== null)
+                                    <div class="small text-muted mt-2">
+                                        Nota: stock por cantidad no está segmentado por ubicación.
+                                    </div>
+                                @endif
+                            </div>
+                        @else
+                            <div class="col-12">
+                                <div class="text-muted small">
+                                    Ubicación aplica a activos. Categoría y marca aplican a activos y productos por cantidad.
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @elseif ($this->hasActiveFilters())
+                <div class="card-body py-2">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <span class="text-muted small">Filtros activos:</span>
+                        @if (is_string($locName) && $locName !== '')
+                            <span class="badge bg-light text-dark border">Ubicación: {{ $locName }}</span>
+                        @endif
+                        @if (is_string($catName) && $catName !== '')
+                            <span class="badge bg-light text-dark border">Categoría: {{ $catName }}</span>
+                        @endif
+                        @if (is_string($brandName) && $brandName !== '')
+                            <span class="badge bg-light text-dark border">Marca: {{ $brandName }}</span>
+                        @endif
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        @php
             $canManageInventory = \Illuminate\Support\Facades\Gate::allows('inventory.manage');
             $canViewInventory = \Illuminate\Support\Facades\Gate::allows('inventory.view');
 
+            $dashboardFilters = array_filter([
+                'location' => $locationId,
+                'category' => $categoryId,
+                'brand' => $brandId,
+            ], static fn ($value): bool => $value !== null && $value !== '');
+
+            $dashboardProductFilters = array_filter([
+                'category' => $categoryId,
+                'brand' => $brandId,
+            ], static fn ($value): bool => $value !== null && $value !== '');
+
             $hrefLoansOverdue = $canManageInventory && \Illuminate\Support\Facades\Route::has('alerts.loans.index')
-                ? route('alerts.loans.index', ['type' => 'overdue'])
+                ? route('alerts.loans.index', array_merge(['type' => 'overdue'], $dashboardFilters))
                 : null;
 
             $hrefLoansDueSoon = $canManageInventory && \Illuminate\Support\Facades\Route::has('alerts.loans.index')
-                ? route('alerts.loans.index', ['type' => 'due-soon', 'windowDays' => $loanDueSoonWindowDays])
+                ? route('alerts.loans.index', array_merge(['type' => 'due-soon', 'windowDays' => $loanDueSoonWindowDays], $dashboardFilters))
                 : null;
 
             $hrefWarrantiesExpired = $canManageInventory && \Illuminate\Support\Facades\Route::has('alerts.warranties.index')
-                ? route('alerts.warranties.index', ['type' => 'expired'])
+                ? route('alerts.warranties.index', array_merge(['type' => 'expired'], $dashboardFilters))
                 : null;
 
             $hrefWarrantiesDueSoon = $canManageInventory && \Illuminate\Support\Facades\Route::has('alerts.warranties.index')
-                ? route('alerts.warranties.index', ['type' => 'due-soon', 'windowDays' => $warrantyDueSoonWindowDays])
+                ? route('alerts.warranties.index', array_merge(['type' => 'due-soon', 'windowDays' => $warrantyDueSoonWindowDays], $dashboardFilters))
                 : null;
 
             $hrefLowStock = $canManageInventory && \Illuminate\Support\Facades\Route::has('alerts.stock.index')
-                ? route('alerts.stock.index')
+                ? route('alerts.stock.index', $dashboardProductFilters)
                 : null;
 
             $hrefRenewalsOverdue = $canManageInventory && \Illuminate\Support\Facades\Route::has('alerts.renewals.index')
-                ? route('alerts.renewals.index', ['type' => 'overdue'])
+                ? route('alerts.renewals.index', array_merge(['type' => 'overdue'], $dashboardFilters))
                 : null;
 
             $hrefRenewalsDueSoon = $canManageInventory && \Illuminate\Support\Facades\Route::has('alerts.renewals.index')
-                ? route('alerts.renewals.index', ['type' => 'due-soon', 'windowDays' => $renewalDueSoonWindowDays])
+                ? route('alerts.renewals.index', array_merge(['type' => 'due-soon', 'windowDays' => $renewalDueSoonWindowDays], $dashboardFilters))
                 : null;
 
             $hrefPendingTasks = $canManageInventory && \Illuminate\Support\Facades\Route::has('pending-tasks.index')
@@ -74,23 +218,23 @@
                 : null;
 
             $hrefAssetsLoaned = $canViewInventory && \Illuminate\Support\Facades\Route::has('inventory.assets.index')
-                ? route('inventory.assets.index', ['status' => \App\Models\Asset::STATUS_LOANED])
+                ? route('inventory.assets.index', array_merge(['status' => \App\Models\Asset::STATUS_LOANED], $dashboardFilters))
                 : null;
 
             $hrefAssetsPendingRetirement = $canViewInventory && \Illuminate\Support\Facades\Route::has('inventory.assets.index')
-                ? route('inventory.assets.index', ['status' => \App\Models\Asset::STATUS_PENDING_RETIREMENT])
+                ? route('inventory.assets.index', array_merge(['status' => \App\Models\Asset::STATUS_PENDING_RETIREMENT], $dashboardFilters))
                 : null;
 
             $hrefAssetsAssigned = $canViewInventory && \Illuminate\Support\Facades\Route::has('inventory.assets.index')
-                ? route('inventory.assets.index', ['status' => \App\Models\Asset::STATUS_ASSIGNED])
+                ? route('inventory.assets.index', array_merge(['status' => \App\Models\Asset::STATUS_ASSIGNED], $dashboardFilters))
                 : null;
 
             $hrefAssetsUnavailable = $canViewInventory && \Illuminate\Support\Facades\Route::has('inventory.assets.index')
-                ? route('inventory.assets.index', ['status' => 'unavailable'])
+                ? route('inventory.assets.index', array_merge(['status' => 'unavailable'], $dashboardFilters))
                 : null;
 
             $hrefAssetsAvailable = $canViewInventory && \Illuminate\Support\Facades\Route::has('inventory.assets.index')
-                ? route('inventory.assets.index', ['status' => \App\Models\Asset::STATUS_AVAILABLE])
+                ? route('inventory.assets.index', array_merge(['status' => \App\Models\Asset::STATUS_AVAILABLE], $dashboardFilters))
                 : null;
 
             $movementsDeltaPct = $movementsYesterday > 0 ? (($movementsToday - $movementsYesterday) / $movementsYesterday) * 100 : null;
@@ -252,6 +396,68 @@
                     </x-ui.kpi-card>
                 </div>
             </div>
+
+            @can('inventory.manage')
+                @if (count($criticalQueue) > 0)
+                    <div class="mt-3" aria-label="Detalle rápido de alertas críticas">
+                        <x-ui.section-card
+                            title="Detalle rápido: críticas"
+                            subtitle="Top {{ count($criticalQueue) }} elementos"
+                            icon="bi-exclamation-triangle"
+                            body-class="p-0"
+                        >
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0" data-testid="dashboard-critical-queue">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Elemento</th>
+                                            <th>Detalle</th>
+                                            <th>Ubicación</th>
+                                            <th>Responsable</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($criticalQueue as $item)
+                                            <tr>
+                                                <td class="text-nowrap">
+                                                    <span class="badge text-bg-{{ $item['variant'] }}">
+                                                        <i class="bi {{ $item['icon'] }} me-1" aria-hidden="true"></i>{{ $item['type'] }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    @if (is_string($item['href']) && $item['href'] !== '')
+                                                        <a href="{{ $item['href'] }}" class="text-decoration-none">
+                                                            {{ $item['title'] }}
+                                                            <i class="bi bi-box-arrow-up-right small" aria-hidden="true"></i>
+                                                        </a>
+                                                    @else
+                                                        {{ $item['title'] }}
+                                                    @endif
+
+                                                    @if (is_string($item['subtitle']) && $item['subtitle'] !== '')
+                                                        <div class="small text-muted">{{ $item['subtitle'] }}</div>
+                                                    @endif
+                                                </td>
+                                                <td class="text-nowrap">
+                                                    <small class="text-muted">
+                                                        {{ $item['detail'] ?? '—' }}
+                                                    </small>
+                                                    @if (is_string($item['detailHint']) && $item['detailHint'] !== '')
+                                                        <div class="small text-muted">{{ $item['detailHint'] }}</div>
+                                                    @endif
+                                                </td>
+                                                <td>{{ $item['location'] ?? '—' }}</td>
+                                                <td>{{ $item['actor'] ?? '—' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </x-ui.section-card>
+                    </div>
+                @endif
+            @endcan
         </div>
 
         {{-- Estado de activos --}}
@@ -455,10 +661,10 @@
 
         @can('inventory.manage')
             {{-- Distribución del valor (solo moneda default) --}}
-            @if (count($valueByCategory) > 0 || count($valueByBrand) > 0)
+            @if ((count($valueByCategory) > 0 && $categoryId === null) || (count($valueByBrand) > 0 && $brandId === null))
                 <div class="row g-4 mt-4">
                     {{-- Valor por Categoría --}}
-                    @if (count($valueByCategory) > 0)
+                    @if (count($valueByCategory) > 0 && $categoryId === null)
                         <div class="col-lg-6">
                             <x-ui.section-card
                                 title="Valor por Categoría"
@@ -495,7 +701,7 @@
                     @endif
 
                     {{-- Valor por Marca --}}
-                    @if (count($valueByBrand) > 0)
+                    @if (count($valueByBrand) > 0 && $brandId === null)
                         <div class="col-lg-6">
                             <x-ui.section-card
                                 title="Valor por Marca"

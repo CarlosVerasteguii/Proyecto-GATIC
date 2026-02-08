@@ -22,6 +22,15 @@ class LoanAlertsIndex extends Component
     #[Url(as: 'windowDays')]
     public ?int $windowDays = null;
 
+    #[Url(as: 'location')]
+    public ?int $locationId = null;
+
+    #[Url(as: 'category')]
+    public ?int $categoryId = null;
+
+    #[Url(as: 'brand')]
+    public ?int $brandId = null;
+
     public function mount(): void
     {
         $this->normalizeFilters();
@@ -34,6 +43,24 @@ class LoanAlertsIndex extends Component
     }
 
     public function updatedWindowDays(): void
+    {
+        $this->normalizeFilters();
+        $this->resetPage();
+    }
+
+    public function updatedLocationId(): void
+    {
+        $this->normalizeFilters();
+        $this->resetPage();
+    }
+
+    public function updatedCategoryId(): void
+    {
+        $this->normalizeFilters();
+        $this->resetPage();
+    }
+
+    public function updatedBrandId(): void
     {
         $this->normalizeFilters();
         $this->resetPage();
@@ -76,6 +103,20 @@ class LoanAlertsIndex extends Component
             ])
             ->where('status', Asset::STATUS_LOANED)
             ->whereNotNull('loan_due_date')
+            ->when($this->locationId !== null, fn ($q) => $q->where('location_id', $this->locationId))
+            ->when($this->categoryId !== null || $this->brandId !== null, function ($q) {
+                $categoryId = $this->categoryId;
+                $brandId = $this->brandId;
+
+                $q->whereHas('product', function ($q) use ($categoryId, $brandId) {
+                    if ($categoryId !== null) {
+                        $q->where('category_id', $categoryId);
+                    }
+                    if ($brandId !== null) {
+                        $q->where('brand_id', $brandId);
+                    }
+                });
+            })
             ->when($this->type === 'overdue', function ($query) use ($today) {
                 $query->where('loan_due_date', '<', $today->toDateString());
             })
@@ -94,6 +135,7 @@ class LoanAlertsIndex extends Component
             'resolvedWindowDays' => $resolvedWindowDays,
             'windowDaysOptions' => $this->getWindowDaysOptionsFromConfig(),
             'returnTo' => $returnTo,
+            'filterParams' => $this->buildFilterParams(),
         ]);
     }
 
@@ -118,6 +160,18 @@ class LoanAlertsIndex extends Component
         }
 
         $this->windowDays = $value;
+
+        if ($this->locationId !== null && $this->locationId <= 0) {
+            $this->locationId = null;
+        }
+
+        if ($this->categoryId !== null && $this->categoryId <= 0) {
+            $this->categoryId = null;
+        }
+
+        if ($this->brandId !== null && $this->brandId <= 0) {
+            $this->brandId = null;
+        }
     }
 
     /**
@@ -157,7 +211,7 @@ class LoanAlertsIndex extends Component
 
     private function buildReturnToPath(int $page, int $resolvedWindowDays): string
     {
-        $params = ['type' => $this->type];
+        $params = array_merge(['type' => $this->type], $this->buildFilterParams());
 
         if ($this->type === 'due-soon') {
             $params['windowDays'] = $resolvedWindowDays;
@@ -174,5 +228,17 @@ class LoanAlertsIndex extends Component
         return is_string($query) && $query !== ''
             ? "{$path}?{$query}"
             : $path;
+    }
+
+    /**
+     * @return array{location?: int, category?: int, brand?: int}
+     */
+    private function buildFilterParams(): array
+    {
+        return array_filter([
+            'location' => $this->locationId,
+            'category' => $this->categoryId,
+            'brand' => $this->brandId,
+        ], static fn ($value): bool => $value !== null);
     }
 }

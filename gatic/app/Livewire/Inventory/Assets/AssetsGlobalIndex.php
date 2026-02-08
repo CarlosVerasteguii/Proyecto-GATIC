@@ -3,6 +3,8 @@
 namespace App\Livewire\Inventory\Assets;
 
 use App\Models\Asset;
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Location;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
@@ -37,6 +39,12 @@ class AssetsGlobalIndex extends Component
     #[Url(as: 'location')]
     public ?int $locationId = null;
 
+    #[Url(as: 'category')]
+    public ?int $categoryId = null;
+
+    #[Url(as: 'brand')]
+    public ?int $brandId = null;
+
     #[Url(as: 'status')]
     public string $status = self::STATUS_ALL;
 
@@ -65,6 +73,16 @@ class AssetsGlobalIndex extends Component
         $this->resetPage();
     }
 
+    public function updatedCategoryId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedBrandId(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedStatus(): void
     {
         $this->status = $this->normalizeStatus($this->status);
@@ -73,7 +91,7 @@ class AssetsGlobalIndex extends Component
 
     public function clearFilters(): void
     {
-        $this->reset(['search', 'locationId', 'status']);
+        $this->reset(['search', 'locationId', 'categoryId', 'brandId', 'status']);
         $this->status = self::STATUS_ALL;
         $this->resetPage();
     }
@@ -82,6 +100,8 @@ class AssetsGlobalIndex extends Component
     {
         return $this->search !== ''
             || $this->locationId !== null
+            || $this->categoryId !== null
+            || $this->brandId !== null
             || $this->status !== self::STATUS_ALL;
     }
 
@@ -114,6 +134,16 @@ class AssetsGlobalIndex extends Component
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $categories = Category::query()
+            ->whereNull('deleted_at')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $brands = Brand::query()
+            ->whereNull('deleted_at')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         $query = Asset::query()
             ->select('assets.*')
             ->join('products', function ($join) {
@@ -135,6 +165,12 @@ class AssetsGlobalIndex extends Component
             })
             ->when($this->locationId !== null, function ($query) {
                 $query->where('assets.location_id', $this->locationId);
+            })
+            ->when($this->categoryId !== null, function ($query) {
+                $query->where('products.category_id', $this->categoryId);
+            })
+            ->when($this->brandId !== null, function ($query) {
+                $query->where('products.brand_id', $this->brandId);
             });
 
         if ($this->status === self::STATUS_ALL) {
@@ -149,6 +185,8 @@ class AssetsGlobalIndex extends Component
 
         return view('livewire.inventory.assets.assets-global-index', [
             'locations' => $locations,
+            'categories' => $categories,
+            'brands' => $brands,
             'assetStatuses' => Asset::STATUSES,
             'assets' => $query
                 ->orderBy($sortColumn, $this->direction)
@@ -191,4 +229,3 @@ class AssetsGlobalIndex extends Component
         return addcslashes($value, '\\%_');
     }
 }
-

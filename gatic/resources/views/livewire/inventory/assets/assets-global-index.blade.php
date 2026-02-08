@@ -43,6 +43,36 @@
                     </div>
 
                     <div class="col-12 col-md-3">
+                        <label for="filter-category" class="form-label">Categoría</label>
+                        <select
+                            id="filter-category"
+                            class="form-select"
+                            wire:model.live="categoryId"
+                            aria-label="Filtrar por categoría"
+                        >
+                            <option value="">Todas</option>
+                            @foreach ($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <label for="filter-brand" class="form-label">Marca</label>
+                        <select
+                            id="filter-brand"
+                            class="form-select"
+                            wire:model.live="brandId"
+                            aria-label="Filtrar por marca"
+                        >
+                            <option value="">Todas</option>
+                            @foreach ($brands as $brand)
+                                <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-3">
                         <label for="filter-status" class="form-label">Estado</label>
                         <select
                             id="filter-status"
@@ -92,6 +122,8 @@
                     $returnToParams = array_filter([
                         'q' => $search !== '' ? $search : null,
                         'location' => $locationId,
+                        'category' => $categoryId,
+                        'brand' => $brandId,
                         'status' => $status !== 'all' ? $status : null,
                         'sort' => $sort !== 'serial' ? $sort : null,
                         'dir' => $direction !== 'asc' ? $direction : null,

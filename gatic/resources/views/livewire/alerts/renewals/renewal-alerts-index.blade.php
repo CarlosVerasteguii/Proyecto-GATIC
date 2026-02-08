@@ -19,7 +19,7 @@
                         <li class="nav-item">
                             <a
                                 class="nav-link {{ $type === 'overdue' ? 'active' : '' }}"
-                                href="{{ route('alerts.renewals.index', ['type' => 'overdue']) }}"
+                                href="{{ route('alerts.renewals.index', array_merge(['type' => 'overdue'], $filterParams ?? [])) }}"
                             >
                                 Vencidos
                             </a>
@@ -27,7 +27,7 @@
                         <li class="nav-item">
                             <a
                                 class="nav-link {{ $type === 'due-soon' ? 'active' : '' }}"
-                                href="{{ route('alerts.renewals.index', ['type' => 'due-soon', 'windowDays' => $resolvedWindowDays]) }}"
+                                href="{{ route('alerts.renewals.index', array_merge(['type' => 'due-soon', 'windowDays' => $resolvedWindowDays], $filterParams ?? [])) }}"
                             >
                                 Por vencer
                             </a>
@@ -105,7 +105,7 @@
                                         </td>
                                         <td class="text-end">
                                             <a
-                                                href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id]) }}"
+                                                href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id, 'returnTo' => $returnTo]) }}"
                                                 class="btn btn-sm btn-outline-secondary"
                                             >
                                                 Ver detalle
@@ -129,4 +129,3 @@
         </div>
     </div>
 </div>
-

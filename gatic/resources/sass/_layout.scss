@@ -96,6 +96,10 @@ $app-sidebar-collapsed-width: 4.5rem;
     }
 }
 
+.app-sidebar .sidebar-divider hr {
+    margin-block: 0.15rem;
+}
+
 // Sidebar nav link with icon
 .app-sidebar .nav-link {
     display: flex;

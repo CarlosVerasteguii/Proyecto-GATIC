@@ -1,6 +1,6 @@
 @php($appName = config('app.name', 'GATIC'))
 
-<aside class="app-sidebar d-none d-md-flex flex-column p-2 border-end" data-testid="app-sidebar">
+<aside class="app-sidebar d-none d-md-flex flex-column py-1 px-2 border-end" data-testid="app-sidebar">
     <div class="app-sidebar-header mb-2">
         <a class="app-sidebar-brand text-decoration-none" href="{{ route('dashboard') }}">
             <span class="fw-semibold">{{ $appName }}</span>

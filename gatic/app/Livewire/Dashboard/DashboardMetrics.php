@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\AssetMovement;
 use App\Models\Product;
 use App\Models\ProductQuantityMovement;
+use App\Support\Dashboard\RecentActivityBuilder;
 use App\Support\Errors\ErrorReporter;
 use App\Support\Settings\SettingsStore;
 use Illuminate\Contracts\View\View;
@@ -43,19 +44,30 @@ class DashboardMetrics extends Component
 
     public string $totalInventoryValue = '0.00';
 
+    public int $warrantiesExpiredCount = 0;
+
+    public int $warrantiesDueSoonCount = 0;
+
+    public int $warrantyDueSoonWindowDays = 30;
+
     public string $defaultCurrency = 'MXN';
 
     public int $valueBreakdownTopN = 5;
 
     /**
-     * @var array<int, array{name: string, value: string}>
+     * @var array<int, array{name: string, value: string, id: int|null}>
      */
     public array $valueByCategory = [];
 
     /**
-     * @var array<int, array{name: string, value: string}>
+     * @var array<int, array{name: string, value: string, id: int|null}>
      */
     public array $valueByBrand = [];
+
+    /**
+     * @var list<array{type: string, icon: string, label: string, title: string, summary: string, actor: string|null, occurred_at: string, occurred_at_human: string, route: string|null}>
+     */
+    public array $recentActivity = [];
 
     public function mount(): void
     {
@@ -85,11 +97,13 @@ class DashboardMetrics extends Component
             $this->loadMovementsToday();
             $this->loadLoanDueDateAlertCounts();
             $this->loadLowStockProductsCount();
+            $this->loadWarrantyAlertCounts();
             if (Gate::allows('inventory.manage')) {
                 $this->loadInventoryValue();
             } else {
                 $this->resetInventoryValue();
             }
+            $this->loadRecentActivity();
             $this->lastUpdatedAtIso = now()->toIso8601String();
         } catch (Throwable $e) {
             if (app()->environment(['local', 'testing'])) {
@@ -177,6 +191,38 @@ class DashboardMetrics extends Component
         $this->lowStockProductsCount = Product::query()->lowStockQuantity()->count();
     }
 
+    private function loadWarrantyAlertCounts(): void
+    {
+        $today = Carbon::today();
+
+        $store = app(SettingsStore::class);
+        $allowedOptions = $store->getIntList('gatic.alerts.warranties.due_soon_window_days_options', [7, 14, 30]);
+        if ($allowedOptions === []) {
+            $allowedOptions = [7, 14, 30];
+        }
+
+        $defaultWindowDays = $store->getInt('gatic.alerts.warranties.due_soon_window_days_default', $allowedOptions[0] ?? 30);
+        if (! in_array($defaultWindowDays, $allowedOptions, true)) {
+            $defaultWindowDays = (int) ($allowedOptions[0] ?? 30);
+        }
+
+        $this->warrantyDueSoonWindowDays = $defaultWindowDays;
+
+        $baseQuery = Asset::query()
+            ->whereNotNull('warranty_end_date')
+            ->where('status', '!=', Asset::STATUS_RETIRED);
+
+        $this->warrantiesExpiredCount = (clone $baseQuery)
+            ->where('warranty_end_date', '<', $today->toDateString())
+            ->count();
+
+        $windowEnd = $today->copy()->addDays($defaultWindowDays);
+
+        $this->warrantiesDueSoonCount = (clone $baseQuery)
+            ->whereBetween('warranty_end_date', [$today->toDateString(), $windowEnd->toDateString()])
+            ->count();
+    }
+
     private function resetInventoryValue(): void
     {
         $this->totalInventoryValue = '0.00';
@@ -213,9 +259,9 @@ class DashboardMetrics extends Component
         $this->totalInventoryValue = number_format($totalValue, 2, '.', '');
 
         // Value breakdown by Category (via Product relationship)
-        /** @var list<object{category_name: string, total_value: string}> $categoryBreakdown */
+        /** @var list<object{category_id: int, category_name: string, total_value: string}> $categoryBreakdown */
         $categoryBreakdown = (clone $baseDefaultCurrencyQuery)
-            ->selectRaw('categories.name as category_name, SUM(assets.acquisition_cost) as total_value')
+            ->selectRaw('categories.id as category_id, categories.name as category_name, SUM(assets.acquisition_cost) as total_value')
             ->groupBy('categories.id', 'categories.name')
             ->orderByDesc('total_value')
             ->limit($this->valueBreakdownTopN)
@@ -225,6 +271,7 @@ class DashboardMetrics extends Component
         $this->valueByCategory = array_map(static fn (object $row): array => [
             'name' => (string) $row->category_name,
             'value' => number_format((float) $row->total_value, 2, '.', ''),
+            'id' => (int) $row->category_id,
         ], $categoryBreakdown);
 
         $categoriesCount = (int) (clone $baseDefaultCurrencyQuery)->distinct()->count('categories.id');
@@ -234,15 +281,16 @@ class DashboardMetrics extends Component
             $this->valueByCategory[] = [
                 'name' => 'Otros',
                 'value' => number_format($otherCategoriesValue, 2, '.', ''),
+                'id' => null,
             ];
         }
 
         // Value breakdown by Brand (via Product relationship)
-        /** @var list<object{brand_name: string, total_value: string}> $brandBreakdown */
+        /** @var list<object{brand_id: int|null, brand_name: string, total_value: string}> $brandBreakdown */
         $brandBreakdown = (clone $baseDefaultCurrencyQuery)
-            ->selectRaw('COALESCE(brands.name, \'Sin marca\') as brand_name, SUM(assets.acquisition_cost) as total_value')
+            ->selectRaw('brands.id as brand_id, COALESCE(brands.name, \'Sin marca\') as brand_name, SUM(assets.acquisition_cost) as total_value')
             ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
-            ->groupByRaw('COALESCE(brands.id, 0), COALESCE(brands.name, \'Sin marca\')')
+            ->groupByRaw('brands.id, COALESCE(brands.name, \'Sin marca\')')
             ->orderByDesc('total_value')
             ->limit($this->valueBreakdownTopN)
             ->get()
@@ -251,6 +299,7 @@ class DashboardMetrics extends Component
         $this->valueByBrand = array_map(static fn (object $row): array => [
             'name' => (string) $row->brand_name,
             'value' => number_format((float) $row->total_value, 2, '.', ''),
+            'id' => $row->brand_id !== null ? (int) $row->brand_id : null,
         ], $brandBreakdown);
 
         $brandsCount = (int) (clone $baseDefaultCurrencyQuery)
@@ -263,8 +312,21 @@ class DashboardMetrics extends Component
             $this->valueByBrand[] = [
                 'name' => 'Otros',
                 'value' => number_format($otherBrandsValue, 2, '.', ''),
+                'id' => null,
             ];
         }
+    }
+
+    private function loadRecentActivity(): void
+    {
+        $builder = new RecentActivityBuilder(
+            canViewAttachments: Gate::allows('attachments.view'),
+            canManageInventory: Gate::allows('inventory.manage'),
+        );
+
+        $events = $builder->build();
+
+        $this->recentActivity = $events;
     }
 
     public function render(): View

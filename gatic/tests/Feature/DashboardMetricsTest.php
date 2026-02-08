@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Models\Asset;
 use App\Models\AssetMovement;
+use App\Models\Attachment;
+use App\Models\AuditLog;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Employee;
@@ -637,5 +639,416 @@ class DashboardMetricsTest extends TestCase
         $response->assertOk();
         $response->assertSee('Otros');
         $response->assertSee('data-testid="dashboard-value-by-category"', false);
+    }
+
+    // =====================================================
+    // Story 14.9 — Warranty alert counts
+    // =====================================================
+
+    public function test_dashboard_shows_warranty_expired_and_due_soon_counts(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 7, 12, 0, 0));
+
+        config([
+            'gatic.alerts.warranties.due_soon_window_days_default' => 30,
+            'gatic.alerts.warranties.due_soon_window_days_options' => [7, 14, 30],
+        ]);
+
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        // Expired warranty (2 assets)
+        Asset::factory()->count(2)->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'warranty_end_date' => Carbon::today()->subDay(),
+        ]);
+
+        // Due soon warranty (1 asset, within 30 days)
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'warranty_end_date' => Carbon::today()->addDays(10),
+        ]);
+
+        // Warranty in far future (should NOT count in either)
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'warranty_end_date' => Carbon::today()->addDays(60),
+        ]);
+
+        // Retired asset with expired warranty (should NOT count)
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_RETIRED,
+            'warranty_end_date' => Carbon::today()->subDays(5),
+        ]);
+
+        // Asset without warranty (should NOT count)
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'warranty_end_date' => null,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Garantías Vencidas');
+        $response->assertSee('Garantías Por Vencer');
+
+        $content = $response->getContent();
+        $this->assertMatchesRegularExpression('/data-testid="dashboard-metric-warranties-expired"[^>]*>\s*2\s*</', $content);
+        $this->assertMatchesRegularExpression('/data-testid="dashboard-metric-warranties-due-soon"[^>]*>\s*1\s*</', $content);
+    }
+
+    public function test_dashboard_warranty_counts_exclude_soft_deleted_assets(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 7, 12, 0, 0));
+
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        // Active expired warranty (should count)
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'warranty_end_date' => Carbon::today()->subDay(),
+        ]);
+
+        // Soft-deleted expired warranty (should NOT count)
+        $deleted = Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'warranty_end_date' => Carbon::today()->subDays(3),
+        ]);
+        $deleted->delete();
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+
+        $content = $response->getContent();
+        $this->assertMatchesRegularExpression('/data-testid="dashboard-metric-warranties-expired"[^>]*>\s*1\s*</', $content);
+    }
+
+    // =====================================================
+    // Story 14.9 — Warranty navigation links + RBAC
+    // =====================================================
+
+    public function test_dashboard_warranty_links_visible_for_admin(): void
+    {
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('dashboard-warranty-expired-link', false);
+        $response->assertSee('dashboard-warranty-due-soon-link', false);
+    }
+
+    public function test_dashboard_warranty_links_hidden_for_lector(): void
+    {
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Lector]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertDontSee('dashboard-warranty-expired-link');
+        $response->assertDontSee('dashboard-warranty-due-soon-link');
+    }
+
+    // =====================================================
+    // Story 14.9 — Recent activity feed
+    // =====================================================
+
+    public function test_dashboard_shows_recent_activity_section(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 7, 12, 0, 0));
+
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+        $asset = Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+        $employee = Employee::factory()->create();
+
+        // Create some asset movements to populate the feed
+        AssetMovement::factory()->count(2)->create([
+            'asset_id' => $asset->id,
+            'employee_id' => $employee->id,
+            'actor_user_id' => $user->id,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Actividad Reciente');
+        $response->assertSee('data-testid="dashboard-recent-activity"', false);
+    }
+
+    public function test_dashboard_hides_attachment_events_for_lector(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 7, 12, 0, 0));
+
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Lector]);
+        $admin = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        // Create an attachment record
+        Attachment::create([
+            'attachable_type' => Product::class,
+            'attachable_id' => $product->id,
+            'uploaded_by_user_id' => $admin->id,
+            'original_name' => 'secret-file.pdf',
+            'disk' => 'local',
+            'path' => 'attachments/test.pdf',
+            'mime_type' => 'application/pdf',
+            'size_bytes' => 1024,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        // Lector doesn't have attachments.view, so attachment events should be hidden
+        $response->assertDontSee('secret-file.pdf');
+    }
+
+    public function test_dashboard_shows_attachment_events_for_admin(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 7, 12, 0, 0));
+
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        Attachment::create([
+            'attachable_type' => Product::class,
+            'attachable_id' => $product->id,
+            'uploaded_by_user_id' => $user->id,
+            'original_name' => 'visible-file.pdf',
+            'disk' => 'local',
+            'path' => 'attachments/visible.pdf',
+            'mime_type' => 'application/pdf',
+            'size_bytes' => 2048,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('visible-file.pdf');
+    }
+
+    public function test_dashboard_shows_audit_log_events_for_admin_in_recent_activity_feed(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 7, 12, 0, 0));
+
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $product = Product::factory()->create(['category_id' => $category->id]);
+
+        AuditLog::create([
+            'created_at' => Carbon::now()->subMinutes(2),
+            'actor_user_id' => $user->id,
+            'action' => AuditLog::ACTION_TRASH_RESTORE,
+            'subject_type' => Product::class,
+            'subject_id' => $product->id,
+            'context' => ['summary' => 'restore-old'],
+        ]);
+
+        AuditLog::create([
+            'created_at' => Carbon::now(),
+            'actor_user_id' => $user->id,
+            'action' => AuditLog::ACTION_TRASH_SOFT_DELETE,
+            'subject_type' => Product::class,
+            'subject_id' => $product->id,
+            'context' => ['summary' => 'delete-new'],
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('Actividad Reciente', $content);
+        $this->assertStringContainsString('delete-new', $content);
+        $this->assertStringContainsString('restore-old', $content);
+        $response->assertSeeInOrder(['delete-new', 'restore-old']);
+    }
+
+    public function test_dashboard_hides_audit_attachment_delete_events_for_lector(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 7, 12, 0, 0));
+
+        $admin = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Lector]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $product = Product::factory()->create(['category_id' => $category->id]);
+
+        AuditLog::create([
+            'created_at' => Carbon::now(),
+            'actor_user_id' => $admin->id,
+            'action' => AuditLog::ACTION_ATTACHMENT_DELETE,
+            'subject_type' => Product::class,
+            'subject_id' => $product->id,
+            'context' => ['summary' => 'secret-audit-delete.pdf'],
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertDontSee('secret-audit-delete.pdf');
+    }
+
+    // =====================================================
+    // Story 14.9 — Value breakdown navigation
+    // =====================================================
+
+    public function test_dashboard_category_breakdown_has_navigation_links(): void
+    {
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['name' => 'Laptops', 'is_serialized' => true]);
+        $brand = Brand::factory()->create();
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '10000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        // Check that the category row has a link to filtered products index
+        $content = $response->getContent();
+        $expectedUrl = route('inventory.products.index', ['category' => $category->id]);
+        $this->assertStringContainsString($expectedUrl, $content);
+    }
+
+    public function test_dashboard_brand_breakdown_has_navigation_links(): void
+    {
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $brand = Brand::factory()->create(['name' => 'Dell']);
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '15000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $content = $response->getContent();
+        $expectedUrl = route('inventory.products.index', ['brand' => $brand->id]);
+        $this->assertStringContainsString($expectedUrl, $content);
+    }
+
+    public function test_dashboard_brand_breakdown_sin_marca_has_no_navigation_link(): void
+    {
+        config(['gatic.inventory.money.default_currency' => 'MXN']);
+        $user = User::factory()->create(['is_active' => true, 'role' => UserRole::Admin]);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $location = Location::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'brand_id' => null,
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'status' => Asset::STATUS_AVAILABLE,
+            'acquisition_cost' => '15000.00',
+            'acquisition_currency' => 'MXN',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/dashboard');
+
+        $response->assertOk();
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('Sin marca', $content);
+        $this->assertStringNotContainsString('brand=', $content);
     }
 }

@@ -99,6 +99,60 @@
                 </div>
             </div>
 
+            {{-- Garantías Vencidas --}}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-danger">
+                    <div class="card-body text-center">
+                        <h2 class="display-4 fw-bold text-danger" data-testid="dashboard-metric-warranties-expired">{{ $warrantiesExpiredCount }}</h2>
+                        <h6 class="card-title text-muted mb-2">Garantías Vencidas</h6>
+                        <small class="text-muted">
+                            Activos con garantía expirada (excluye retirados)
+                        </small>
+
+                        @can('inventory.manage')
+                            @if (\Illuminate\Support\Facades\Route::has('alerts.warranties.index'))
+                                <div class="mt-2">
+                                    <a
+                                        href="{{ route('alerts.warranties.index', ['type' => 'expired']) }}"
+                                        class="btn btn-sm btn-outline-danger"
+                                        data-testid="dashboard-warranty-expired-link"
+                                    >
+                                        Ver lista
+                                    </a>
+                                </div>
+                            @endif
+                        @endcan
+                    </div>
+                </div>
+            </div>
+
+            {{-- Garantías Por Vencer --}}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-warning">
+                    <div class="card-body text-center">
+                        <h2 class="display-4 fw-bold text-warning" data-testid="dashboard-metric-warranties-due-soon">{{ $warrantiesDueSoonCount }}</h2>
+                        <h6 class="card-title text-muted mb-2">Garantías Por Vencer</h6>
+                        <small class="text-muted">
+                            Vencen en los próximos {{ $warrantyDueSoonWindowDays }} días
+                        </small>
+
+                        @can('inventory.manage')
+                            @if (\Illuminate\Support\Facades\Route::has('alerts.warranties.index'))
+                                <div class="mt-2">
+                                    <a
+                                        href="{{ route('alerts.warranties.index', ['type' => 'due-soon', 'windowDays' => $warrantyDueSoonWindowDays]) }}"
+                                        class="btn btn-sm btn-outline-warning"
+                                        data-testid="dashboard-warranty-due-soon-link"
+                                    >
+                                        Ver lista
+                                    </a>
+                                </div>
+                            @endif
+                        @endcan
+                    </div>
+                </div>
+            </div>
+
             {{-- Activos Pendientes de Retiro --}}
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-danger">
@@ -224,7 +278,15 @@
                                         <tbody>
                                             @foreach ($valueByCategory as $item)
                                                 <tr @class(['table-light' => $item['name'] === 'Otros'])>
-                                                    <td>{{ $item['name'] }}</td>
+                                                    <td>
+                                                        @if ($item['id'] !== null)
+                                                            <a href="{{ route('inventory.products.index', ['category' => $item['id']]) }}" class="text-decoration-none">
+                                                                {{ $item['name'] }} <i class="bi bi-box-arrow-up-right small"></i>
+                                                            </a>
+                                                        @else
+                                                            {{ $item['name'] }}
+                                                        @endif
+                                                    </td>
                                                     <td class="text-end">{{ number_format((float) $item['value'], 2) }} {{ $defaultCurrency }}</td>
                                                 </tr>
                                             @endforeach
@@ -256,8 +318,16 @@
                                         </thead>
                                         <tbody>
                                             @foreach ($valueByBrand as $item)
-                                                <tr @class(['table-light' => $item['name'] === 'Otros'])>
-                                                    <td>{{ $item['name'] }}</td>
+                                                <tr @class(['table-light' => $item['name'] === 'Otros' || $item['name'] === 'Sin marca'])>
+                                                    <td>
+                                                        @if ($item['id'] !== null)
+                                                            <a href="{{ route('inventory.products.index', ['brand' => $item['id']]) }}" class="text-decoration-none">
+                                                                {{ $item['name'] }} <i class="bi bi-box-arrow-up-right small"></i>
+                                                            </a>
+                                                        @else
+                                                            {{ $item['name'] }}
+                                                        @endif
+                                                    </td>
                                                     <td class="text-end">{{ number_format((float) $item['value'], 2) }} {{ $defaultCurrency }}</td>
                                                 </tr>
                                             @endforeach
@@ -270,5 +340,66 @@
                 </div>
             @endif
         @endcan
+
+        {{-- Actividad Reciente --}}
+        @if (count($recentActivity) > 0)
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="bi bi-activity me-1"></i>
+                                Actividad Reciente
+                            </div>
+                            <small class="text-muted">Últimos {{ count($recentActivity) }} eventos</small>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-hover mb-0" data-testid="dashboard-recent-activity">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 2rem;"></th>
+                                        <th>Evento</th>
+                                        <th>Detalle</th>
+                                        <th>Usuario</th>
+                                        <th class="text-end">Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($recentActivity as $event)
+                                        <tr>
+                                            <td class="text-center text-muted">
+                                                <i class="{{ $event['icon'] }}"></i>
+                                            </td>
+                                            <td>
+                                                @if ($event['route'] !== null)
+                                                    <a href="{{ $event['route'] }}" class="text-decoration-none">
+                                                        {{ $event['title'] }}
+                                                    </a>
+                                                @else
+                                                    {{ $event['title'] }}
+                                                @endif
+                                                <br>
+                                                <small class="text-muted">{{ $event['label'] }}</small>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ \Illuminate\Support\Str::limit($event['summary'], 80) }}</small>
+                                            </td>
+                                            <td>
+                                                <small>{{ $event['actor'] ?? '—' }}</small>
+                                            </td>
+                                            <td class="text-end text-nowrap">
+                                                <small class="text-muted">
+                                                    {{ $event['occurred_at_human'] ?? \Illuminate\Support\Carbon::parse($event['occurred_at'])->diffForHumans() }}
+                                                </small>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 </x-ui.poll>

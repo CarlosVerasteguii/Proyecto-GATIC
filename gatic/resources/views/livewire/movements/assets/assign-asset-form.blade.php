@@ -22,7 +22,7 @@
             {{-- Header --}}
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0">Asignar Activo</h4>
-                <a href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
+                <a href="{{ $returnTo ?: route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
                     Cancelar
                 </a>
             </div>
@@ -50,7 +50,7 @@
                             <span class="badge bg-success">{{ $asset->status }}</span>
                         </dd>
 
-                        <dt class="col-sm-3">Ubicacion</dt>
+                        <dt class="col-sm-3">Ubicación</dt>
                         <dd class="col-sm-9">{{ $asset->location?->name ?? '-' }}</dd>
                     </dl>
                 </div>
@@ -59,7 +59,7 @@
             {{-- Formulario --}}
             <div class="card">
                 <div class="card-header">
-                    Datos de la asignacion
+                    Datos de la asignación
                 </div>
                 <div class="card-body">
                     <form wire:submit="assign">
@@ -86,7 +86,7 @@
                                 wire:model.blur="note"
                                 class="form-control @error('note') is-invalid @enderror"
                                 rows="3"
-                                placeholder="Motivo de la asignacion (minimo 5 caracteres)"
+                                placeholder="Motivo de la asignación (mínimo 5 caracteres)"
                                 maxlength="1000"
                             ></textarea>
                             @error('note')
@@ -95,14 +95,14 @@
                                 </div>
                             @enderror
                             <div class="form-text">
-                                {{ strlen($note) }}/1000 caracteres (minimo 5)
+                                {{ strlen($note) }}/1000 caracteres (mínimo 5)
                             </div>
                         </div>
 
                         {{-- Acciones --}}
                         <div class="d-flex justify-content-end gap-2">
                             <a
-                                href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}"
+                                href="{{ $returnTo ?: route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}"
                                 class="btn btn-outline-secondary"
                                 @if($isSubmitting) aria-disabled="true" style="pointer-events: none; opacity: 0.65;" @endif
                             >

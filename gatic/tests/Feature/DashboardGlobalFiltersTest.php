@@ -91,4 +91,3 @@ class DashboardGlobalFiltersTest extends TestCase
         $response->assertDontSee('SER-B-001');
     }
 }
-

@@ -26,6 +26,8 @@ class LoanAssetForm extends Component
 
     public ?Asset $assetModel = null;
 
+    public ?string $returnTo = null;
+
     public ?int $employeeId = null;
 
     public string $note = '';
@@ -44,6 +46,7 @@ class LoanAssetForm extends Component
 
         $this->productId = (int) $product;
         $this->assetId = (int) $asset;
+        $this->returnTo = $this->sanitizeReturnTo(request()->query('returnTo'));
 
         $this->productModel = Product::query()
             ->with('category')
@@ -60,10 +63,13 @@ class LoanAssetForm extends Component
 
         if (! AssetStatusTransitions::canLoan($this->assetModel->status)) {
             session()->flash('error', AssetStatusTransitions::getBlockingReason($this->assetModel->status, 'loan'));
+
+            $returnTo = $this->sanitizeReturnTo($this->returnTo);
+
             $this->redirectRoute('inventory.products.assets.show', [
                 'product' => $this->productId,
                 'asset' => $this->assetId,
-            ], navigate: true);
+            ] + ($returnTo !== null ? ['returnTo' => $returnTo] : []), navigate: true);
 
             return;
         }
@@ -135,6 +141,13 @@ class LoanAssetForm extends Component
                 message: 'El activo ha sido prestado correctamente.',
             );
 
+            $returnTo = $this->sanitizeReturnTo($this->returnTo);
+            if ($returnTo !== null) {
+                $this->redirect($returnTo, navigate: true);
+
+                return;
+            }
+
             $this->redirectRoute('inventory.products.assets.show', [
                 'product' => $this->productId,
                 'asset' => $this->assetId,
@@ -148,10 +161,12 @@ class LoanAssetForm extends Component
                     message: $e->errors()['asset_id'][0],
                 );
 
+                $returnTo = $this->sanitizeReturnTo($this->returnTo);
+
                 $this->redirectRoute('inventory.products.assets.show', [
                     'product' => $this->productId,
                     'asset' => $this->assetId,
-                ], navigate: true);
+                ] + ($returnTo !== null ? ['returnTo' => $returnTo] : []), navigate: true);
 
                 return;
             }
@@ -178,5 +193,24 @@ class LoanAssetForm extends Component
             'product' => $this->productModel,
             'asset' => $this->assetModel,
         ]);
+    }
+
+    private function sanitizeReturnTo(?string $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        if ($value === '' || ! str_starts_with($value, '/') || str_starts_with($value, '//')) {
+            return null;
+        }
+
+        if (str_contains($value, "\n") || str_contains($value, "\r") || strlen($value) > 2000) {
+            return null;
+        }
+
+        return $value;
     }
 }

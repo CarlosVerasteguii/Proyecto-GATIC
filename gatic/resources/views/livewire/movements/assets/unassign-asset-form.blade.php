@@ -21,7 +21,7 @@
         <div class="col-12 col-lg-8">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0">Desasignar Activo</h4>
-                <a href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
+                <a href="{{ $returnTo ?: route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
                     Cancelar
                 </a>
             </div>
@@ -48,7 +48,7 @@
                             <span class="badge bg-info text-dark">{{ $asset->status }}</span>
                         </dd>
 
-                        <dt class="col-sm-3">Ubicacion</dt>
+                        <dt class="col-sm-3">Ubicación</dt>
                         <dd class="col-sm-9">{{ $asset->location?->name ?? '-' }}</dd>
                     </dl>
                 </div>
@@ -106,7 +106,7 @@
                                 wire:model.blur="note"
                                 class="form-control @error('note') is-invalid @enderror"
                                 rows="3"
-                                placeholder="Motivo de la desasignacion (minimo 5 caracteres)"
+                                placeholder="Motivo de la desasignación (mínimo 5 caracteres)"
                                 maxlength="1000"
                             ></textarea>
                             @error('note')
@@ -115,13 +115,13 @@
                                 </div>
                             @enderror
                             <div class="form-text">
-                                {{ mb_strlen($note) }}/1000 caracteres (minimo 5)
+                                {{ mb_strlen($note) }}/1000 caracteres (mínimo 5)
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2">
                             <a
-                                href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}"
+                                href="{{ $returnTo ?: route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}"
                                 class="btn btn-outline-secondary"
                                 @if($isSubmitting) aria-disabled="true" style="pointer-events: none; opacity: 0.65;" @endif
                             >
@@ -149,4 +149,3 @@
         </div>
     </div>
 </div>
-

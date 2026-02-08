@@ -11,9 +11,18 @@
             <x-ui.detail-header :title="$asset->serial" :subtitle="$product->name">
                 <x-slot:breadcrumbs>
                     @if (is_string($returnTo) && $returnTo !== '')
+                        @php
+                            $returnToLabel = 'Regresar';
+
+                            if (str_starts_with($returnTo, '/inventory/search')) {
+                                $returnToLabel = 'Búsqueda';
+                            } elseif (str_starts_with($returnTo, '/inventory/assets')) {
+                                $returnToLabel = 'Activos';
+                            }
+                        @endphp
                         <x-ui.breadcrumbs :items="[
                             ['label' => 'Inicio', 'url' => route('dashboard')],
-                            ['label' => 'Activos', 'url' => $returnTo],
+                            ['label' => $returnToLabel, 'url' => $returnTo],
                             ['label' => $asset->serial, 'url' => null],
                         ]" />
                     @else
@@ -34,12 +43,12 @@
                 <x-slot:actions>
                     @can('inventory.manage')
                         @if (\App\Support\Assets\AssetStatusTransitions::canAssign($asset->status))
-                            <a class="btn btn-sm btn-success" href="{{ route('inventory.products.assets.assign', ['product' => $product->id, 'asset' => $asset->id]) }}">
+                            <a class="btn btn-sm btn-success" href="{{ route('inventory.products.assets.assign', ['product' => $product->id, 'asset' => $asset->id] + (is_string($returnTo) && $returnTo !== '' ? ['returnTo' => $returnTo] : [])) }}">
                                 <i class="bi bi-person-check me-1" aria-hidden="true"></i>Asignar
                             </a>
                         @endif
                         @if (\App\Support\Assets\AssetStatusTransitions::canLoan($asset->status))
-                            <a class="btn btn-sm btn-info text-dark" href="{{ route('inventory.products.assets.loan', ['product' => $product->id, 'asset' => $asset->id]) }}">
+                            <a class="btn btn-sm btn-info text-dark" href="{{ route('inventory.products.assets.loan', ['product' => $product->id, 'asset' => $asset->id] + (is_string($returnTo) && $returnTo !== '' ? ['returnTo' => $returnTo] : [])) }}">
                                 <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>Prestar
                             </a>
                         @endif

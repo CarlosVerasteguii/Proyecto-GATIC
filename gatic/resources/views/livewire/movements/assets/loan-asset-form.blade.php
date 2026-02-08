@@ -5,7 +5,7 @@
         <div class="col-12 col-lg-8">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0">Prestar Activo</h4>
-                <a href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
+                <a href="{{ $returnTo ?: route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
                     Cancelar
                 </a>
             </div>
@@ -94,7 +94,7 @@
                         </div>
 
                         <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
+                            <a href="{{ $returnTo ?: route('inventory.products.assets.show', ['product' => $product->id, 'asset' => $asset->id]) }}" class="btn btn-outline-secondary">
                                 Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">

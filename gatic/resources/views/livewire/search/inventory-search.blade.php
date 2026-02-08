@@ -89,6 +89,18 @@
                                 Activos
                                 <span class="badge bg-secondary">{{ $this->assets->count() }}</span>
                             </h5>
+                            @php
+                                $returnToParams = array_filter([
+                                    'q' => $this->search,
+                                ], static fn ($value): bool => $value !== null && $value !== '');
+
+                                $returnToUrl = route('inventory.search', $returnToParams);
+                                $returnToPath = parse_url($returnToUrl, PHP_URL_PATH) ?: '/inventory/search';
+                                $returnToQuery = parse_url($returnToUrl, PHP_URL_QUERY);
+                                $returnTo = is_string($returnToQuery) && $returnToQuery !== ''
+                                    ? "{$returnToPath}?{$returnToQuery}"
+                                    : $returnToPath;
+                            @endphp
                             <div class="table-responsive">
                                 <table class="table table-sm table-striped align-middle mb-0">
                                     <thead>
@@ -127,12 +139,20 @@
                                                 </td>
                                                 <td>{{ $asset->location?->name ?? '-' }}</td>
                                                 <td class="text-end">
-                                                    <a
-                                                        class="btn btn-sm btn-outline-primary"
-                                                        href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id]) }}"
-                                                    >
-                                                        Ver detalle
-                                                    </a>
+                                                    <div class="d-flex gap-2 justify-content-end align-items-center">
+                                                        <x-ui.quick-action-dropdown
+                                                            :asset="$asset"
+                                                            :productId="$asset->product_id"
+                                                            :returnTo="$returnTo"
+                                                        />
+
+                                                        <a
+                                                            class="btn btn-sm btn-outline-primary"
+                                                            href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id, 'returnTo' => $returnTo]) }}"
+                                                        >
+                                                            Ver detalle
+                                                        </a>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @endforeach

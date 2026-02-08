@@ -60,7 +60,7 @@ class TimelineChronologyTest extends TestCase
     public function test_product_timeline_mixes_movements_and_notes_chronologically(): void
     {
         // Create a note first (older)
-        $note = Note::create([
+        $note = Note::forceCreate([
             'noteable_type' => Product::class,
             'noteable_id' => $this->product->id,
             'author_user_id' => $this->admin->id,
@@ -189,7 +189,7 @@ class TimelineChronologyTest extends TestCase
         $ts = Carbon::parse('2026-01-01 10:00:00');
 
         for ($i = 0; $i < 30; $i++) {
-            Note::create([
+            Note::forceCreate([
                 'noteable_type' => Product::class,
                 'noteable_id' => $this->product->id,
                 'author_user_id' => $this->admin->id,
@@ -222,7 +222,7 @@ class TimelineChronologyTest extends TestCase
     public function test_filter_toggle_limits_event_types(): void
     {
         // Create a note
-        Note::create([
+        Note::forceCreate([
             'noteable_type' => Product::class,
             'noteable_id' => $this->product->id,
             'author_user_id' => $this->admin->id,
@@ -261,7 +261,7 @@ class TimelineChronologyTest extends TestCase
 
     public function test_notes_use_plain_text_escape(): void
     {
-        Note::create([
+        Note::forceCreate([
             'noteable_type' => Product::class,
             'noteable_id' => $this->product->id,
             'author_user_id' => $this->admin->id,

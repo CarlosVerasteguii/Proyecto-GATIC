@@ -63,10 +63,13 @@ class ReturnAssetForm extends Component
 
         if (! AssetStatusTransitions::canReturn($this->assetModel->status)) {
             session()->flash('error', AssetStatusTransitions::getBlockingReason($this->assetModel->status, 'return'));
+
+            $returnTo = $this->sanitizeReturnTo($this->returnTo);
+
             $this->redirectRoute('inventory.products.assets.show', [
                 'product' => $this->productId,
                 'asset' => $this->assetId,
-            ], navigate: true);
+            ] + ($returnTo !== null ? ['returnTo' => $returnTo] : []), navigate: true);
 
             return;
         }
@@ -172,10 +175,12 @@ class ReturnAssetForm extends Component
                     message: $e->errors()['asset_id'][0],
                 );
 
+                $returnTo = $this->sanitizeReturnTo($this->returnTo);
+
                 $this->redirectRoute('inventory.products.assets.show', [
                     'product' => $this->productId,
                     'asset' => $this->assetId,
-                ], navigate: true);
+                ] + ($returnTo !== null ? ['returnTo' => $returnTo] : []), navigate: true);
 
                 return;
             }

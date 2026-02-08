@@ -24,8 +24,8 @@ use App\Livewire\Inventory\Adjustments\AdjustmentsIndex as InventoryAdjustmentsI
 use App\Livewire\Inventory\Adjustments\AssetAdjustmentForm as InventoryAssetAdjustmentForm;
 use App\Livewire\Inventory\Adjustments\ProductAdjustmentForm as InventoryProductAdjustmentForm;
 use App\Livewire\Inventory\Assets\AssetForm as InventoryAssetForm;
-use App\Livewire\Inventory\Assets\AssetShow as InventoryAssetShow;
 use App\Livewire\Inventory\Assets\AssetsGlobalIndex as InventoryAssetsGlobalIndex;
+use App\Livewire\Inventory\Assets\AssetShow as InventoryAssetShow;
 use App\Livewire\Inventory\Assets\AssetsIndex as InventoryAssetsIndex;
 use App\Livewire\Inventory\Contracts\ContractForm as InventoryContractForm;
 use App\Livewire\Inventory\Contracts\ContractShow as InventoryContractShow;

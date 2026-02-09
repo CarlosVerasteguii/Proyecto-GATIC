@@ -103,6 +103,20 @@ class PendingTask extends Model
 
     public function isQuickCaptureTask(): bool
     {
+        if (! $this->hasQuickCapturePayload()) {
+            return false;
+        }
+
+        $convertedAt = $this->payload['converted_at'] ?? null;
+        if (is_string($convertedAt) && trim($convertedAt) !== '') {
+            return false;
+        }
+
+        return $convertedAt === null;
+    }
+
+    public function hasQuickCapturePayload(): bool
+    {
         return is_array($this->payload)
             && ($this->payload['schema'] ?? null) === self::QUICK_CAPTURE_SCHEMA;
     }

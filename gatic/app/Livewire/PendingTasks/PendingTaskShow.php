@@ -12,6 +12,7 @@ use App\Actions\PendingTasks\ForceClaimPendingTaskLock;
 use App\Actions\PendingTasks\ForceReleasePendingTaskLock;
 use App\Actions\PendingTasks\HeartbeatPendingTaskLock;
 use App\Actions\PendingTasks\MarkTaskAsReady;
+use App\Actions\PendingTasks\ProcessQuickCapturePendingTask;
 use App\Actions\PendingTasks\ReleasePendingTaskLock;
 use App\Actions\PendingTasks\RemoveLineFromTask;
 use App\Actions\PendingTasks\UpdateTaskLine;
@@ -20,6 +21,7 @@ use App\Enums\PendingTaskLineStatus;
 use App\Enums\PendingTaskLineType;
 use App\Enums\PendingTaskStatus;
 use App\Enums\UserRole;
+use App\Models\Location;
 use App\Models\PendingTask;
 use App\Models\PendingTaskLine;
 use App\Models\Product;
@@ -120,6 +122,20 @@ class PendingTaskShow extends Component
 
     public string $processLineNote = '';
 
+    // Quick Capture processing (FP-03 follow-up)
+    public bool $showQuickProcessModal = false;
+
+    public ?int $quickProcessEmployeeId = null;
+
+    public ?int $quickProcessProductId = null;
+
+    public ?int $quickProcessLocationId = null;
+
+    public string $quickProcessNote = '';
+
+    /** @var array<int, array{id:int, name:string}> */
+    public array $locations = [];
+
     public function mount(int $pendingTask): void
     {
         Gate::authorize('inventory.manage');
@@ -129,6 +145,7 @@ class PendingTaskShow extends Component
         $this->loadTask();
         $this->resumeProcessModeIfOwnLock();
         $this->loadProducts();
+        $this->loadLocations();
     }
 
     private function isQuickCaptureTask(): bool
@@ -211,6 +228,19 @@ class PendingTaskShow extends Component
             ->toArray();
     }
 
+    private function loadLocations(): void
+    {
+        $this->locations = Location::query()
+            ->whereNull('deleted_at')
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(static fn (Location $location): array => [
+                'id' => (int) $location->id,
+                'name' => (string) $location->name,
+            ])
+            ->all();
+    }
+
     public function openAddLineModal(): void
     {
         if ($this->abortIfQuickCapture('agregar renglones')) {
@@ -282,6 +312,122 @@ class PendingTaskShow extends Component
     public function onEmployeeSelected(?int $employeeId): void
     {
         $this->employeeId = $employeeId;
+    }
+
+    #[On('quick-process-employee-selected')]
+    public function onQuickProcessEmployeeSelected(?int $employeeId): void
+    {
+        $this->quickProcessEmployeeId = $employeeId;
+    }
+
+    public function openQuickProcessModal(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        if (! $this->task || ! $this->task->isQuickCaptureTask()) {
+            return;
+        }
+
+        $payload = is_array($this->task->payload) ? $this->task->payload : [];
+        $product = is_array($payload['product'] ?? null) ? $payload['product'] : null;
+        $kind = is_string($payload['kind'] ?? null) ? (string) $payload['kind'] : '';
+        $reason = is_string($payload['reason'] ?? null) ? trim((string) $payload['reason']) : '';
+        $note = is_string($payload['note'] ?? null) ? trim((string) $payload['note']) : '';
+
+        $this->quickProcessEmployeeId = null;
+        $this->quickProcessProductId = is_array($product) && is_int($product['id'] ?? null) ? (int) $product['id'] : null;
+        $this->quickProcessLocationId = null;
+
+        $this->quickProcessNote = $note !== '' ? $note : 'Procesado desde captura rapida';
+        if ($kind === 'quick_retirement' && $reason !== '') {
+            $this->quickProcessNote = "Motivo: {$reason}".($note !== '' ? ". {$note}" : '');
+        }
+
+        $this->showQuickProcessModal = true;
+        $this->resetErrorBag();
+    }
+
+    public function closeQuickProcessModal(): void
+    {
+        $this->showQuickProcessModal = false;
+        $this->resetQuickProcessForm();
+    }
+
+    private function resetQuickProcessForm(): void
+    {
+        $this->quickProcessEmployeeId = null;
+        $this->quickProcessProductId = null;
+        $this->quickProcessLocationId = null;
+        $this->quickProcessNote = '';
+        $this->resetErrorBag();
+    }
+
+    public function processQuickCapture(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        if (! $this->task || ! $this->task->isQuickCaptureTask()) {
+            session()->flash('toast', [
+                'type' => 'error',
+                'message' => 'Esta captura rapida no esta disponible para procesarse.',
+            ]);
+
+            return;
+        }
+
+        /** @var int $actorUserId */
+        $actorUserId = (int) Auth::id();
+
+        $payload = is_array($this->task->payload) ? $this->task->payload : [];
+        $product = is_array($payload['product'] ?? null) ? $payload['product'] : null;
+        $items = is_array($payload['items'] ?? null) ? $payload['items'] : null;
+        $itemsType = is_array($items) && is_string($items['type'] ?? null) ? (string) $items['type'] : '';
+
+        $resolvedProductId = null;
+        if (! (is_array($product) && is_int($product['id'] ?? null))) {
+            $resolvedProductId = $this->quickProcessProductId;
+        }
+
+        $employeeId = $itemsType === 'quantity' ? $this->quickProcessEmployeeId : null;
+        $locationId = $itemsType === 'serialized' ? $this->quickProcessLocationId : null;
+
+        $note = trim($this->quickProcessNote);
+
+        try {
+            $result = (new ProcessQuickCapturePendingTask)->execute([
+                'task_id' => $this->task->id,
+                'actor_user_id' => $actorUserId,
+                'employee_id' => $employeeId,
+                'resolved_product_id' => $resolvedProductId,
+                'location_id' => $locationId,
+                'note' => $note !== '' ? $note : null,
+            ]);
+        } catch (ValidationException $e) {
+            $this->setErrorBag($e->errors());
+
+            return;
+        }
+
+        $this->closeQuickProcessModal();
+        $this->loadTask();
+        $this->dispatch('pending-tasks:refresh');
+
+        $message = match ($result['mode'] ?? null) {
+            'lines' => 'Se genero el renglon. Ya puedes marcar la tarea como Lista y procesarla.',
+            'assets_stock_in' => 'Se crearon activos desde la captura rapida.',
+            'assets_retirement' => 'Se marcaron activos como Pendiente de Retiro.',
+            default => 'Captura rapida procesada.',
+        };
+
+        $hasErrors = is_array($result['errors'] ?? null) && count($result['errors']) > 0;
+        if ($hasErrors) {
+            $message .= ' (con alertas)';
+        }
+
+        session()->flash('toast', [
+            'type' => $hasErrors ? 'warning' : 'success',
+            'message' => $message,
+        ]);
     }
 
     public function updatedProductId(): void

@@ -8,8 +8,10 @@ use App\Enums\PendingTaskType;
 use App\Livewire\PendingTasks\PendingTaskShow;
 use App\Livewire\PendingTasks\QuickRetirement;
 use App\Livewire\PendingTasks\QuickStockIn;
+use App\Models\Asset;
 use App\Models\Category;
 use App\Models\Employee;
+use App\Models\Location;
 use App\Models\PendingTask;
 use App\Models\PendingTaskLine;
 use App\Models\Product;
@@ -309,5 +311,168 @@ class Fp03QuickCaptureTest extends TestCase
         $this->actingAs($editor)
             ->get(route('pending-tasks.show', $normalTask).'/edit')
             ->assertRedirect(route('pending-tasks.show', $normalTask));
+    }
+
+    public function test_quick_stock_in_quantity_can_be_converted_to_lines_and_marked_ready(): void
+    {
+        $editor = User::factory()->create(['role' => 'Editor']);
+        $employee = Employee::factory()->create();
+        $category = Category::factory()->create(['is_serialized' => false]);
+        $product = Product::factory()->create(['category_id' => $category->id, 'qty_total' => 10]);
+
+        $task = PendingTask::factory()->create([
+            'type' => PendingTaskType::StockIn,
+            'status' => PendingTaskStatus::Draft,
+            'creator_user_id' => $editor->id,
+            'payload' => [
+                'schema' => 'fp03.quick_capture',
+                'version' => 1,
+                'kind' => 'quick_stock_in',
+                'product' => [
+                    'mode' => 'existing',
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'is_serialized' => false,
+                ],
+                'items' => [
+                    'type' => 'quantity',
+                    'quantity' => 3,
+                ],
+                'note' => 'Entrada capturada',
+            ],
+        ]);
+
+        Livewire::actingAs($editor)
+            ->test(PendingTaskShow::class, ['pendingTask' => $task->id])
+            ->set('quickProcessEmployeeId', $employee->id)
+            ->set('quickProcessNote', 'Entrada capturada por quick capture')
+            ->call('processQuickCapture')
+            ->call('markAsReady');
+
+        $this->assertDatabaseHas('pending_task_lines', [
+            'pending_task_id' => $task->id,
+            'product_id' => $product->id,
+            'quantity' => 3,
+            'employee_id' => $employee->id,
+        ]);
+
+        $task->refresh();
+        $this->assertFalse($task->isQuickCaptureTask());
+        $this->assertTrue($task->hasQuickCapturePayload());
+        $this->assertEquals(PendingTaskStatus::Ready, $task->status);
+    }
+
+    public function test_quick_stock_in_serialized_can_create_assets_and_complete_task(): void
+    {
+        $editor = User::factory()->create(['role' => 'Editor']);
+        $category = Category::factory()->create(['is_serialized' => true, 'requires_asset_tag' => false]);
+        $product = Product::factory()->create(['category_id' => $category->id, 'qty_total' => null]);
+        $location = Location::factory()->create();
+
+        $task = PendingTask::factory()->create([
+            'type' => PendingTaskType::StockIn,
+            'status' => PendingTaskStatus::Draft,
+            'creator_user_id' => $editor->id,
+            'payload' => [
+                'schema' => 'fp03.quick_capture',
+                'version' => 1,
+                'kind' => 'quick_stock_in',
+                'product' => [
+                    'mode' => 'existing',
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'is_serialized' => true,
+                ],
+                'items' => [
+                    'type' => 'serialized',
+                    'serials' => ['SN-NEW-001', 'SN-NEW-002'],
+                ],
+                'note' => 'Ingreso rapido',
+            ],
+        ]);
+
+        Livewire::actingAs($editor)
+            ->test(PendingTaskShow::class, ['pendingTask' => $task->id])
+            ->set('quickProcessLocationId', $location->id)
+            ->set('quickProcessNote', 'Ingreso rapido por quick capture')
+            ->call('processQuickCapture');
+
+        $this->assertDatabaseHas('assets', [
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SN-NEW-001',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+        $this->assertDatabaseHas('assets', [
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SN-NEW-002',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+
+        $task->refresh();
+        $this->assertEquals(PendingTaskStatus::Completed, $task->status);
+        $this->assertFalse($task->isQuickCaptureTask());
+        $this->assertTrue($task->hasQuickCapturePayload());
+    }
+
+    public function test_quick_retirement_serials_marks_assets_as_pending_retirement(): void
+    {
+        $editor = User::factory()->create(['role' => 'Editor']);
+        $category = Category::factory()->create(['is_serialized' => true, 'requires_asset_tag' => false]);
+        $product = Product::factory()->create(['category_id' => $category->id, 'qty_total' => null]);
+        $location = Location::factory()->create();
+
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'RET-001',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+        Asset::factory()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'RET-002',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+
+        $task = PendingTask::factory()->create([
+            'type' => PendingTaskType::Retirement,
+            'status' => PendingTaskStatus::Draft,
+            'creator_user_id' => $editor->id,
+            'payload' => [
+                'schema' => 'fp03.quick_capture',
+                'version' => 1,
+                'kind' => 'quick_retirement',
+                'product' => null,
+                'items' => [
+                    'type' => 'serialized',
+                    'serials' => ['RET-001', 'RET-002'],
+                ],
+                'reason' => 'Obsoleto',
+                'note' => 'Se retira hoy',
+            ],
+        ]);
+
+        Livewire::actingAs($editor)
+            ->test(PendingTaskShow::class, ['pendingTask' => $task->id])
+            ->set('quickProcessNote', 'Motivo: Obsoleto. Se retira hoy')
+            ->call('processQuickCapture');
+
+        $this->assertDatabaseHas('assets', [
+            'product_id' => $product->id,
+            'serial' => 'RET-001',
+            'status' => Asset::STATUS_PENDING_RETIREMENT,
+        ]);
+        $this->assertDatabaseHas('assets', [
+            'product_id' => $product->id,
+            'serial' => 'RET-002',
+            'status' => Asset::STATUS_PENDING_RETIREMENT,
+        ]);
+
+        $task->refresh();
+        $this->assertEquals(PendingTaskStatus::Completed, $task->status);
+        $this->assertFalse($task->isQuickCaptureTask());
+        $this->assertTrue($task->hasQuickCapturePayload());
     }
 }

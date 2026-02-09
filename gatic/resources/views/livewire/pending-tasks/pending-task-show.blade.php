@@ -1,13 +1,14 @@
 <div class="container position-relative">
-    <x-ui.long-request target="finalizeTask,enterProcessMode,initProcessModeUi" />
+    <x-ui.long-request target="finalizeTask,enterProcessMode,initProcessModeUi,processQuickCapture" />
 
     @if ($task)
     @php
         $quick = is_array($task->payload) ? $task->payload : null;
-        $isQuickCapture = is_array($quick) && ($quick['schema'] ?? null) === 'fp03.quick_capture';
-        $quickKind = $isQuickCapture ? (string) ($quick['kind'] ?? '') : '';
-        $quickProduct = $isQuickCapture && is_array($quick['product'] ?? null) ? $quick['product'] : null;
-        $quickItems = $isQuickCapture && is_array($quick['items'] ?? null) ? $quick['items'] : null;
+        $hasQuickCapture = $task->hasQuickCapturePayload();
+        $isQuickCapturePending = $task->isQuickCaptureTask();
+        $quickKind = $hasQuickCapture && is_array($quick) ? (string) ($quick['kind'] ?? '') : '';
+        $quickProduct = $hasQuickCapture && is_array($quick) && is_array($quick['product'] ?? null) ? $quick['product'] : null;
+        $quickItems = $hasQuickCapture && is_array($quick) && is_array($quick['items'] ?? null) ? $quick['items'] : null;
     @endphp
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
@@ -58,7 +59,7 @@
                 </div>
             </div>
 
-            @if ($isQuickCapture)
+            @if ($hasQuickCapture)
                 @php
                     $quickTitle = $quickKind === 'quick_stock_in'
                         ? 'Carga rápida'
@@ -76,6 +77,11 @@
 
                     $productName = is_array($quickProduct) && is_string($quickProduct['name'] ?? null) ? $quickProduct['name'] : null;
                     $productId = is_array($quickProduct) && is_int($quickProduct['id'] ?? null) ? $quickProduct['id'] : null;
+
+                    $convertedAt = is_array($quick) && is_string($quick['converted_at'] ?? null) ? $quick['converted_at'] : null;
+                    $conversion = is_array($quick) && is_array($quick['conversion'] ?? null) ? $quick['conversion'] : null;
+                    $conversionMode = is_array($conversion) && is_string($conversion['mode'] ?? null) ? $conversion['mode'] : null;
+                    $conversionErrors = is_array($conversion) && is_array($conversion['errors'] ?? null) ? $conversion['errors'] : [];
                 @endphp
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -83,9 +89,23 @@
                         <span class="badge bg-light text-dark border">{{ $quickTitle }}</span>
                     </div>
                     <div class="card-body">
-                        <div class="alert alert-info mb-3">
-                            Esta tarea fue creada como captura rápida. El procesamiento completo se realizará en una fase posterior.
-                        </div>
+                        @if ($isQuickCapturePending)
+                            <div class="alert alert-info mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    Esta tarea fue creada como captura rápida. Para convertirla a un flujo ejecutable, procesa la captura.
+                                </div>
+                                <button type="button" class="btn btn-sm btn-primary" wire:click="openQuickProcessModal">
+                                    Procesar captura rápida
+                                </button>
+                            </div>
+                        @else
+                            <div class="alert alert-success mb-3">
+                                Captura rápida procesada.
+                                @if (is_string($convertedAt) && trim($convertedAt) !== '')
+                                    <span class="text-muted ms-1 small">({{ $convertedAt }})</span>
+                                @endif
+                            </div>
+                        @endif
 
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
@@ -140,6 +160,17 @@
                             <div class="mt-3">
                                 <strong>Nota:</strong>
                                 <p class="mb-0 text-muted">{{ $noteText }}</p>
+                            </div>
+                        @endif
+
+                        @if (is_array($conversionErrors) && count($conversionErrors) > 0)
+                            <div class="mt-3">
+                                <strong>Alertas:</strong>
+                                <ul class="mb-0">
+                                    @foreach ($conversionErrors as $error)
+                                        <li class="text-muted">{{ is_string($error) ? $error : 'Error desconocido' }}</li>
+                                    @endforeach
+                                </ul>
                             </div>
                         @endif
                     </div>
@@ -309,7 +340,7 @@
 
                     {{-- Action buttons --}}
                     <div class="d-flex gap-2 flex-wrap">
-                        @if ($task->isDraft() && ! $isQuickCapture)
+                        @if ($task->isDraft() && ! $isQuickCapturePending)
                             <button
                                 type="button"
                                 class="btn btn-sm btn-primary"
@@ -327,7 +358,7 @@
                                     Marcar como lista
                                 </button>
                             @endif
-                        @elseif ($isQuickCapture)
+                        @elseif ($isQuickCapturePending)
                             <span class="badge bg-light text-dark border align-self-center">Solo captura</span>
                         @elseif ($this->canProcess() && !$isProcessMode)
                             @php
@@ -515,8 +546,8 @@
                         @endif
                     @else
                         <p class="text-muted mb-0">
-                            @if ($isQuickCapture)
-                                Esta tarea es una captura rápida. No genera renglones automáticamente en esta versión.
+                            @if ($isQuickCapturePending)
+                                Esta tarea es una captura rápida. Procesa la captura para generar renglones o aplicar cambios.
                             @elseif ($task->isDraft())
                                 No hay renglones. Haz clic en "Agregar renglón" para comenzar.
                             @else
@@ -534,6 +565,147 @@
                 :entity-id="$task->id"
             />
     </div>
+
+    {{-- Line Modal (Draft mode) --}}
+    {{-- Quick Capture Process Modal --}}
+    @if ($showQuickProcessModal && $task && $task->isQuickCaptureTask())
+        @php
+            $itemsType = is_array($quickItems) ? ($quickItems['type'] ?? null) : null;
+            $needsEmployee = $itemsType === 'quantity';
+            $needsProductResolution = $quickKind === 'quick_stock_in' && ! (is_array($quickProduct) && is_int($quickProduct['id'] ?? null));
+            $expectedSerialized = is_array($quickProduct) ? (bool) ($quickProduct['is_serialized'] ?? false) : null;
+            $needsLocation = $quickKind === 'quick_stock_in' && $itemsType === 'serialized';
+        @endphp
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Procesar captura rápida</h5>
+                        <button type="button" class="btn-close" wire:click="closeQuickProcessModal"></button>
+                    </div>
+                    <form wire:submit="processQuickCapture">
+                        <div class="modal-body">
+                            <div class="alert alert-secondary py-2">
+                                <strong>Resumen:</strong>
+                                @if ($quickKind === 'quick_stock_in')
+                                    Carga rápida
+                                @elseif ($quickKind === 'quick_retirement')
+                                    Retiro rápido
+                                @else
+                                    Captura rápida
+                                @endif
+                                <span class="text-muted ms-1">
+                                    ({{ $itemsType === 'serialized' ? 'Serializado' : ($itemsType === 'quantity' ? 'Por cantidad' : '—') }})
+                                </span>
+                            </div>
+
+                            @if ($needsProductResolution)
+                                <div class="mb-3">
+                                    <label for="quickProcessProductId" class="form-label">
+                                        Producto a usar <span class="text-danger">*</span>
+                                    </label>
+                                    <select
+                                        id="quickProcessProductId"
+                                        class="form-select @error('resolved_product_id') is-invalid @enderror"
+                                        wire:model.live="quickProcessProductId"
+                                        required
+                                    >
+                                        <option value="">Seleccionar...</option>
+                                        @foreach ($products as $product)
+                                            @if ($expectedSerialized === null || (bool) ($product['is_serialized'] ?? false) === $expectedSerialized)
+                                                <option value="{{ $product['id'] }}">
+                                                    {{ $product['name'] }}
+                                                </option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                    @error('resolved_product_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div class="form-text">
+                                        Esta captura usa un producto placeholder. Selecciona el producto real (o crealo y vuelve).
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if ($needsLocation)
+                                <div class="mb-3">
+                                    <label for="quickProcessLocationId" class="form-label">
+                                        Ubicación para crear activos <span class="text-danger">*</span>
+                                    </label>
+                                    <select
+                                        id="quickProcessLocationId"
+                                        class="form-select @error('location_id') is-invalid @enderror"
+                                        wire:model.live="quickProcessLocationId"
+                                        required
+                                    >
+                                        <option value="">Seleccionar...</option>
+                                        @foreach ($locations as $location)
+                                            <option value="{{ $location['id'] }}">{{ $location['name'] }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('location_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            @endif
+
+                            @if ($needsEmployee)
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Empleado <span class="text-danger">*</span>
+                                    </label>
+                                    <livewire:ui.employee-combobox
+                                        :selected-employee-id="$quickProcessEmployeeId"
+                                        event-name="quick-process-employee-selected"
+                                        :key="'quick-process-employee-' . $task->id"
+                                    />
+                                    @error('employee_id')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            @endif
+
+                            <div class="mb-3">
+                                <label for="quickProcessNote" class="form-label">
+                                    Nota @if ($needsEmployee) <span class="text-danger">*</span> @endif
+                                </label>
+                                <textarea
+                                    id="quickProcessNote"
+                                    class="form-control @error('note') is-invalid @enderror"
+                                    wire:model="quickProcessNote"
+                                    rows="3"
+                                    @if ($needsEmployee) required @endif
+                                    placeholder="Motivo o descripcion del movimiento..."
+                                ></textarea>
+                                @error('note')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            @error('status')
+                                <div class="alert alert-danger py-2">{{ $message }}</div>
+                            @enderror
+                            @error('payload')
+                                <div class="alert alert-danger py-2">{{ $message }}</div>
+                            @enderror
+                            @error('lines')
+                                <div class="alert alert-danger py-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" wire:click="closeQuickProcessModal">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                Procesar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- Line Modal (Draft mode) --}}
     @if ($showLineModal)

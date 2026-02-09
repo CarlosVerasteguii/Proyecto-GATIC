@@ -131,6 +131,25 @@ class PendingTaskShow extends Component
         $this->loadProducts();
     }
 
+    private function isQuickCaptureTask(): bool
+    {
+        return $this->task?->isQuickCaptureTask() ?? false;
+    }
+
+    private function abortIfQuickCapture(string $action): bool
+    {
+        if (! $this->isQuickCaptureTask()) {
+            return false;
+        }
+
+        session()->flash('toast', [
+            'type' => 'error',
+            'message' => "Esta tarea fue creada como captura rápida y no permite {$action}.",
+        ]);
+
+        return true;
+    }
+
     private function resumeProcessModeIfOwnLock(): void
     {
         if (! $this->task) {
@@ -194,6 +213,10 @@ class PendingTaskShow extends Component
 
     public function openAddLineModal(): void
     {
+        if ($this->abortIfQuickCapture('agregar renglones')) {
+            return;
+        }
+
         if (! $this->task?->isDraft()) {
             return;
         }
@@ -205,6 +228,10 @@ class PendingTaskShow extends Component
 
     public function openEditLineModal(int $lineId): void
     {
+        if ($this->abortIfQuickCapture('editar renglones')) {
+            return;
+        }
+
         if (! $this->task?->isDraft()) {
             return;
         }
@@ -289,6 +316,10 @@ class PendingTaskShow extends Component
     public function saveLine(): void
     {
         Gate::authorize('inventory.manage');
+
+        if ($this->abortIfQuickCapture('guardar renglones')) {
+            return;
+        }
 
         if (! $this->task?->isDraft()) {
             session()->flash('toast', [
@@ -394,6 +425,10 @@ class PendingTaskShow extends Component
     {
         Gate::authorize('inventory.manage');
 
+        if ($this->abortIfQuickCapture('eliminar renglones')) {
+            return;
+        }
+
         if (! $this->task?->isDraft()) {
             session()->flash('toast', [
                 'type' => 'error',
@@ -424,6 +459,10 @@ class PendingTaskShow extends Component
     public function markAsReady(): void
     {
         Gate::authorize('inventory.manage');
+
+        if ($this->abortIfQuickCapture('marcarla como lista')) {
+            return;
+        }
 
         try {
             $action = new MarkTaskAsReady;
@@ -467,6 +506,10 @@ class PendingTaskShow extends Component
             return false;
         }
 
+        if ($this->isQuickCaptureTask()) {
+            return false;
+        }
+
         return in_array($this->task->status, [
             PendingTaskStatus::Ready,
             PendingTaskStatus::Processing,
@@ -480,6 +523,10 @@ class PendingTaskShow extends Component
     public function enterProcessMode(): void
     {
         Gate::authorize('inventory.manage');
+
+        if ($this->abortIfQuickCapture('procesarla')) {
+            return;
+        }
 
         if (! $this->canProcess()) {
             session()->flash('toast', [
@@ -579,6 +626,10 @@ class PendingTaskShow extends Component
     {
         Gate::authorize('inventory.manage');
 
+        if ($this->abortIfQuickCapture('procesarla')) {
+            return;
+        }
+
         if (! $this->isProcessMode) {
             return;
         }
@@ -623,6 +674,10 @@ class PendingTaskShow extends Component
     {
         Gate::authorize('inventory.manage');
 
+        if ($this->abortIfQuickCapture('procesarla')) {
+            return;
+        }
+
         /** @var int $userId */
         $userId = Auth::id();
 
@@ -661,6 +716,10 @@ class PendingTaskShow extends Component
     {
         Gate::authorize('inventory.manage');
 
+        if ($this->isQuickCaptureTask()) {
+            return;
+        }
+
         if (! $this->isProcessMode || ! $this->hasLock) {
             return;
         }
@@ -693,6 +752,10 @@ class PendingTaskShow extends Component
     public function validateLine(int $lineId): void
     {
         Gate::authorize('inventory.manage');
+
+        if ($this->abortIfQuickCapture('validar renglones')) {
+            return;
+        }
 
         // Require lock for process mode actions
         if ($this->isProcessMode && ! $this->requireActiveLock()) {
@@ -728,6 +791,10 @@ class PendingTaskShow extends Component
     {
         Gate::authorize('inventory.manage');
 
+        if ($this->abortIfQuickCapture('modificar renglones')) {
+            return;
+        }
+
         // Require lock for process mode actions
         if ($this->isProcessMode && ! $this->requireActiveLock()) {
             return;
@@ -757,6 +824,10 @@ class PendingTaskShow extends Component
     public function openProcessLineModal(int $lineId): void
     {
         Gate::authorize('inventory.manage');
+
+        if ($this->abortIfQuickCapture('editar renglones')) {
+            return;
+        }
 
         // Require lock for process mode actions
         if (! $this->requireActiveLock()) {
@@ -814,6 +885,12 @@ class PendingTaskShow extends Component
     public function saveProcessLine(): void
     {
         Gate::authorize('inventory.manage');
+
+        if ($this->abortIfQuickCapture('guardar cambios')) {
+            $this->closeProcessLineModal();
+
+            return;
+        }
 
         // Require lock for process mode actions
         if (! $this->requireActiveLock()) {
@@ -893,6 +970,10 @@ class PendingTaskShow extends Component
     {
         Gate::authorize('inventory.manage');
 
+        if ($this->abortIfQuickCapture('finalizarla')) {
+            return;
+        }
+
         $this->showFinalizeConfirmModal = true;
     }
 
@@ -910,6 +991,12 @@ class PendingTaskShow extends Component
     public function finalizeTask(): void
     {
         Gate::authorize('inventory.manage');
+
+        if ($this->abortIfQuickCapture('finalizarla')) {
+            $this->hideFinalizeConfirm();
+
+            return;
+        }
 
         $this->hideFinalizeConfirm();
 
@@ -1082,6 +1169,10 @@ class PendingTaskShow extends Component
     public function forceClaimLock(): void
     {
         Gate::authorize('admin-only');
+
+        if ($this->abortIfQuickCapture('procesarla')) {
+            return;
+        }
 
         if (! $this->task) {
             return;

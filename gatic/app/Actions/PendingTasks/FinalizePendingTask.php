@@ -54,6 +54,12 @@ class FinalizePendingTask
     {
         $task = PendingTask::with('lines')->findOrFail($taskId);
 
+        if ($task->isQuickCaptureTask()) {
+            throw ValidationException::withMessages([
+                'status' => ['Esta tarea fue creada como captura rápida y no se puede finalizar en esta versión.'],
+            ]);
+        }
+
         $this->validateTaskCanBeFinalized($task);
 
         $this->result = [

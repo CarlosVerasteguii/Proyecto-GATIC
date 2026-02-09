@@ -25,6 +25,8 @@ Version BMAD (copia): `_bmad-output/project-context.md`.
   - `C:\\Users\\carlo\\.tools\\php84\\php.exe`: **PHP 8.4.x** (usar para correr `artisan`, `phpunit`, etc.).
 - Composer no est&aacute; en PATH; est&aacute; como PHAR en: `C:\\Users\\carlo\\.tools\\composer\\composer.phar` (ejecutar con el PHP 8.4).
 - Comandos recomendados (PowerShell, desde `gatic/`):
+  - Levantar entorno (recomendado): `docker compose -f compose.yaml up -d`
+  - Apagar entorno: `docker compose -f compose.yaml down`
   - Tests (recomendado): `vendor\\bin\\sail artisan test` (requiere Docker Desktop corriendo; `compose.yaml` usa runtime Sail **8.4** + MySQL **8.0**)
   - Tests (sin Docker): solo si tu PHP local tiene `pdo_mysql` + una DB accesible (por defecto los tests apuntan a `mysql` via Sail)
   - Composer: `C:\\Users\\carlo\\.tools\\php84\\php.exe C:\\Users\\carlo\\.tools\\composer\\composer.phar install`

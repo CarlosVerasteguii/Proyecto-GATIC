@@ -8,6 +8,7 @@ use App\Models\PendingTask;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -26,6 +27,12 @@ class PendingTasksIndex extends Component
     public function mount(): void
     {
         Gate::authorize('inventory.manage');
+    }
+
+    #[On('pending-tasks:refresh')]
+    public function refreshList(): void
+    {
+        $this->resetPage();
     }
 
     public function updatedStatusFilter(): void

@@ -17,6 +17,12 @@ class MarkTaskAsReady
     {
         $task = PendingTask::findOrFail($taskId);
 
+        if ($task->isQuickCaptureTask()) {
+            throw ValidationException::withMessages([
+                'status' => ['Esta tarea fue creada como captura rápida y no se puede marcar como lista.'],
+            ]);
+        }
+
         // Task must be in draft status
         if ($task->status !== PendingTaskStatus::Draft) {
             throw ValidationException::withMessages([

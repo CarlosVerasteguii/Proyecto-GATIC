@@ -40,6 +40,7 @@ use App\Livewire\Movements\Assets\ReturnAssetForm as MovementsReturnAssetForm;
 use App\Livewire\Movements\Assets\UnassignAssetForm as MovementsUnassignAssetForm;
 use App\Livewire\Movements\Products\QuantityMovementForm as MovementsQuantityMovementForm;
 use App\Livewire\Search\InventorySearch;
+use App\Models\PendingTask;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -185,6 +186,34 @@ Route::middleware(['auth', 'active', 'can:inventory.manage'])
     ->group(function () {
         Route::get('/', \App\Livewire\PendingTasks\PendingTasksIndex::class)->name('index');
         Route::get('/create', \App\Livewire\PendingTasks\CreatePendingTask::class)->name('create');
+        Route::get('/{pendingTask}/edit', function (PendingTask $pendingTask) {
+            if ($pendingTask->isQuickCaptureTask()) {
+                abort(403, 'Las tareas de captura rapida solo se pueden consultar.');
+            }
+
+            return redirect()->route('pending-tasks.show', $pendingTask->id);
+        })->whereNumber('pendingTask');
+        Route::get('/{pendingTask}/process', function (PendingTask $pendingTask) {
+            if ($pendingTask->isQuickCaptureTask()) {
+                abort(403, 'Las tareas de captura rapida solo se pueden consultar.');
+            }
+
+            return redirect()->route('pending-tasks.show', $pendingTask->id);
+        })->whereNumber('pendingTask');
+        Route::get('/{pendingTask}/lines', function (PendingTask $pendingTask) {
+            if ($pendingTask->isQuickCaptureTask()) {
+                abort(403, 'Las tareas de captura rapida solo se pueden consultar.');
+            }
+
+            return redirect()->route('pending-tasks.show', $pendingTask->id);
+        })->whereNumber('pendingTask');
+        Route::get('/{pendingTask}/lines/create', function (PendingTask $pendingTask) {
+            if ($pendingTask->isQuickCaptureTask()) {
+                abort(403, 'Las tareas de captura rapida solo se pueden consultar.');
+            }
+
+            return redirect()->route('pending-tasks.show', $pendingTask->id);
+        })->whereNumber('pendingTask');
         Route::get('/{pendingTask}', \App\Livewire\PendingTasks\PendingTaskShow::class)
             ->whereNumber('pendingTask')
             ->name('show');

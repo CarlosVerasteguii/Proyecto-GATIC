@@ -2,6 +2,13 @@
     <x-ui.long-request target="finalizeTask,enterProcessMode,initProcessModeUi" />
 
     @if ($task)
+    @php
+        $quick = is_array($task->payload) ? $task->payload : null;
+        $isQuickCapture = is_array($quick) && ($quick['schema'] ?? null) === 'fp03.quick_capture';
+        $quickKind = $isQuickCapture ? (string) ($quick['kind'] ?? '') : '';
+        $quickProduct = $isQuickCapture && is_array($quick['product'] ?? null) ? $quick['product'] : null;
+        $quickItems = $isQuickCapture && is_array($quick['items'] ?? null) ? $quick['items'] : null;
+    @endphp
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             {{-- Task Header --}}
@@ -50,6 +57,94 @@
                     @endif
                 </div>
             </div>
+
+            @if ($isQuickCapture)
+                @php
+                    $quickTitle = $quickKind === 'quick_stock_in'
+                        ? 'Carga rápida'
+                        : ($quickKind === 'quick_retirement' ? 'Retiro rápido' : 'Captura rápida');
+
+                    $itemsType = is_array($quickItems) ? ($quickItems['type'] ?? null) : null;
+                    $serials = (is_array($quickItems) && is_array($quickItems['serials'] ?? null)) ? $quickItems['serials'] : [];
+                    $serialsText = is_array($serials) ? implode("\n", array_map('strval', $serials)) : '';
+                    $quantity = is_array($quickItems) ? ($quickItems['quantity'] ?? null) : null;
+
+                    $noteText = is_array($quick) && is_string($quick['note'] ?? null) ? $quick['note'] : null;
+                    $reasonText = $quickKind === 'quick_retirement' && is_array($quick) && is_string($quick['reason'] ?? null)
+                        ? $quick['reason']
+                        : null;
+
+                    $productName = is_array($quickProduct) && is_string($quickProduct['name'] ?? null) ? $quickProduct['name'] : null;
+                    $productId = is_array($quickProduct) && is_int($quickProduct['id'] ?? null) ? $quickProduct['id'] : null;
+                @endphp
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="fw-semibold">Captura rápida</div>
+                        <span class="badge bg-light text-dark border">{{ $quickTitle }}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-3">
+                            Esta tarea fue creada como captura rápida. El procesamiento completo se realizará en una fase posterior.
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <strong>Producto:</strong>
+                                @if ($productName)
+                                    @if ($productId)
+                                        <a class="text-decoration-none" href="{{ route('inventory.products.show', ['product' => $productId]) }}">
+                                            {{ $productName }} <i class="bi bi-box-arrow-up-right small" aria-hidden="true"></i>
+                                        </a>
+                                    @else
+                                        {{ $productName }}
+                                        <span class="badge bg-secondary ms-1">Placeholder</span>
+                                    @endif
+                                @else
+                                    —
+                                @endif
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <strong>Modo:</strong>
+                                @if ($itemsType === 'serialized')
+                                    Serializado
+                                @elseif ($itemsType === 'quantity')
+                                    Por cantidad
+                                @else
+                                    —
+                                @endif
+                            </div>
+                        </div>
+
+                        @if ($itemsType === 'serialized')
+                            <div class="mt-3">
+                                <strong>Seriales:</strong>
+                                <div class="text-muted small mb-1">
+                                    Total: {{ is_array($serials) ? count($serials) : 0 }}
+                                </div>
+                                <textarea class="form-control" rows="6" readonly>{{ $serialsText }}</textarea>
+                            </div>
+                        @elseif ($itemsType === 'quantity')
+                            <div class="mt-3">
+                                <strong>Cantidad:</strong> {{ is_numeric($quantity) ? (int) $quantity : '—' }}
+                            </div>
+                        @endif
+
+                        @if ($quickKind === 'quick_retirement')
+                            <div class="mt-3">
+                                <strong>Motivo de retiro:</strong>
+                                <p class="mb-0 text-muted">{{ is_string($reasonText) && trim($reasonText) !== '' ? $reasonText : '—' }}</p>
+                            </div>
+                        @endif
+
+                        @if (is_string($noteText) && trim($noteText) !== '')
+                            <div class="mt-3">
+                                <strong>Nota:</strong>
+                                <p class="mb-0 text-muted">{{ $noteText }}</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
 
             {{-- Lock Status Banner (visible to third parties) --}}
             @if ($this->canProcess())
@@ -214,7 +309,7 @@
 
                     {{-- Action buttons --}}
                     <div class="d-flex gap-2 flex-wrap">
-                        @if ($task->isDraft())
+                        @if ($task->isDraft() && ! $isQuickCapture)
                             <button
                                 type="button"
                                 class="btn btn-sm btn-primary"
@@ -232,6 +327,8 @@
                                     Marcar como lista
                                 </button>
                             @endif
+                        @elseif ($isQuickCapture)
+                            <span class="badge bg-light text-dark border align-self-center">Solo captura</span>
                         @elseif ($this->canProcess() && !$isProcessMode)
                             @php
                                 $canStartProcess = !$task->isLockedByOther(auth()->id());
@@ -418,7 +515,9 @@
                         @endif
                     @else
                         <p class="text-muted mb-0">
-                            @if ($task->isDraft())
+                            @if ($isQuickCapture)
+                                Esta tarea es una captura rápida. No genera renglones automáticamente en esta versión.
+                            @elseif ($task->isDraft())
                                 No hay renglones. Haz clic en "Agregar renglón" para comenzar.
                             @else
                                 No hay renglones en esta tarea.

@@ -19,6 +19,11 @@
 
             <div class="d-flex align-items-center gap-3 flex-wrap">
                 <x-ui.freshness-indicator :updated-at="$lastUpdatedAtIso" />
+                @can('inventory.manage')
+                    <livewire:pending-tasks.quick-stock-in :key="'quick-stock-in-dashboard'" />
+                    <livewire:pending-tasks.quick-retirement :key="'quick-retirement-dashboard'" />
+                    <livewire:pending-tasks.pending-task-opener :key="'pending-task-opener-dashboard'" />
+                @endcan
                 <button
                     type="button"
                     class="btn btn-outline-secondary btn-sm"

@@ -47,6 +47,12 @@ class AddLineToTask
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            if ($task->isQuickCaptureTask()) {
+                throw ValidationException::withMessages([
+                    'pending_task_id' => ['Esta tarea fue creada como captura rápida y no permite añadir renglones.'],
+                ]);
+            }
+
             // Task must be in draft status
             if ($task->status !== PendingTaskStatus::Draft) {
                 throw ValidationException::withMessages([

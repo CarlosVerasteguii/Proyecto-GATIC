@@ -41,6 +41,12 @@ class AcquirePendingTaskLock
                 ]);
             }
 
+            if ($task->isQuickCaptureTask()) {
+                throw ValidationException::withMessages([
+                    'status' => ['Esta tarea fue creada como captura rápida y no se puede procesar en esta versión.'],
+                ]);
+            }
+
             // Check task is in a status that allows processing
             $allowedStatuses = [
                 PendingTaskStatus::Ready,

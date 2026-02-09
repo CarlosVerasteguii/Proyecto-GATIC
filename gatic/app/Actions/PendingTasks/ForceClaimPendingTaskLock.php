@@ -43,6 +43,12 @@ class ForceClaimPendingTaskLock
                 ]);
             }
 
+            if ($task->isQuickCaptureTask()) {
+                throw ValidationException::withMessages([
+                    'status' => ['Esta tarea fue creada como captura rápida y no se puede procesar en esta versión.'],
+                ]);
+            }
+
             // Capture previous state for audit
             $previousLockedBy = $task->locked_by_user_id;
             $previousLockedAt = $task->locked_at?->toIso8601String();

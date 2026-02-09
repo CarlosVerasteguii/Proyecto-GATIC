@@ -64,6 +64,12 @@ class AddSerializedLinesToTask
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            if ($task->isQuickCaptureTask()) {
+                throw ValidationException::withMessages([
+                    'pending_task_id' => ['Esta tarea fue creada como captura rápida y no permite añadir renglones.'],
+                ]);
+            }
+
             if ($task->status !== PendingTaskStatus::Draft) {
                 throw ValidationException::withMessages([
                     'pending_task_id' => ['La tarea no está en estado borrador. No se pueden añadir renglones.'],

@@ -13,6 +13,9 @@
                     </div>
                     <div class="d-flex gap-2 align-items-center">
                         <x-ui.column-manager table="pending-tasks" />
+                        <livewire:pending-tasks.quick-stock-in :key="'quick-stock-in-index'" />
+                        <livewire:pending-tasks.quick-retirement :key="'quick-retirement-index'" />
+                        <livewire:pending-tasks.pending-task-opener :key="'pending-task-opener-index'" />
                         <a class="btn btn-sm btn-primary" href="{{ route('pending-tasks.create') }}">Nueva tarea</a>
                     </div>
                 </div>
@@ -76,9 +79,23 @@
                             </thead>
                             <tbody>
                                 @forelse ($tasks as $task)
+                                    @php
+                                        $isQuickCapture = $task->isQuickCaptureTask();
+                                        $quickKind = is_array($task->payload ?? null) ? ($task->payload['kind'] ?? null) : null;
+                                        $quickLabel = $quickKind === 'quick_stock_in'
+                                            ? 'Carga rapida'
+                                            : ($quickKind === 'quick_retirement' ? 'Retiro rapido' : 'Captura rapida');
+                                    @endphp
                                     <tr>
                                         <td>{{ $task->id }}</td>
-                                        <td>{{ $task->type->label() }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                <span>{{ $task->type->label() }}</span>
+                                                @if ($isQuickCapture)
+                                                    <span class="badge text-bg-info">{{ $quickLabel }}</span>
+                                                @endif
+                                            </div>
+                                        </td>
                                         <td>
                                             <span class="badge {{ $task->status->badgeClass() }}">
                                                 {{ $task->status->label() }}

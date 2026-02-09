@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $id
  * @property PendingTaskType $type
  * @property string|null $description
+ * @property array<string, mixed>|null $payload
  * @property PendingTaskStatus $status
  * @property int $creator_user_id
  * @property int|null $locked_by_user_id
@@ -32,12 +33,15 @@ class PendingTask extends Model
     use HasFactory;
     use SoftDeletes;
 
+    public const QUICK_CAPTURE_SCHEMA = 'fp03.quick_capture';
+
     /**
      * @var list<string>
      */
     protected $fillable = [
         'type',
         'description',
+        'payload',
         'status',
         'creator_user_id',
     ];
@@ -50,6 +54,7 @@ class PendingTask extends Model
         return [
             'type' => PendingTaskType::class,
             'status' => PendingTaskStatus::class,
+            'payload' => 'array',
             'locked_at' => 'datetime',
             'heartbeat_at' => 'datetime',
             'expires_at' => 'datetime',
@@ -94,6 +99,12 @@ class PendingTask extends Model
     public function allowsLineEditing(): bool
     {
         return $this->status->allowsLineEditing();
+    }
+
+    public function isQuickCaptureTask(): bool
+    {
+        return is_array($this->payload)
+            && ($this->payload['schema'] ?? null) === self::QUICK_CAPTURE_SCHEMA;
     }
 
     /**

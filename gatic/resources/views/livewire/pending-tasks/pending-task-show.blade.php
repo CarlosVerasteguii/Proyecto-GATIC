@@ -656,8 +656,7 @@
                                         Empleado <span class="text-danger">*</span>
                                     </label>
                                     <livewire:ui.employee-combobox
-                                        :selected-employee-id="$quickProcessEmployeeId"
-                                        event-name="quick-process-employee-selected"
+                                        wire:model.live="quickProcessEmployeeId"
                                         :key="'quick-process-employee-' . $task->id"
                                     />
                                     @error('employee_id')
@@ -895,8 +894,7 @@
                                         Empleado <span class="text-danger">*</span>
                                     </label>
                                     <livewire:ui.employee-combobox
-                                        :selected-employee-id="$employeeId"
-                                        event-name="employee-selected"
+                                        wire:model.live="employeeId"
                                         :key="'employee-combobox-' . ($editingLineId ?? 'new')"
                                     />
                                     @error('employee_id')
@@ -1009,8 +1007,7 @@
                                         Empleado <span class="text-danger">*</span>
                                     </label>
                                     <livewire:ui.employee-combobox
-                                        :selected-employee-id="$processLineEmployeeId"
-                                        event-name="process-employee-selected"
+                                        wire:model.live="processLineEmployeeId"
                                         :key="'process-employee-combobox-' . $editingProcessLineId"
                                     />
                                     @error('processLineEmployeeId')

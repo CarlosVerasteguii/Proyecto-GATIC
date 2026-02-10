@@ -308,18 +308,6 @@ class PendingTaskShow extends Component
         $this->resetErrorBag();
     }
 
-    #[On('employee-selected')]
-    public function onEmployeeSelected(?int $employeeId): void
-    {
-        $this->employeeId = $employeeId;
-    }
-
-    #[On('quick-process-employee-selected')]
-    public function onQuickProcessEmployeeSelected(?int $employeeId): void
-    {
-        $this->quickProcessEmployeeId = $employeeId;
-    }
-
     public function openQuickProcessModal(): void
     {
         Gate::authorize('inventory.manage');
@@ -1017,12 +1005,6 @@ class PendingTaskShow extends Component
         $this->processLineEmployeeId = null;
         $this->processLineNote = '';
         $this->resetErrorBag();
-    }
-
-    #[On('process-employee-selected')]
-    public function onProcessEmployeeSelected(?int $employeeId): void
-    {
-        $this->processLineEmployeeId = $employeeId;
     }
 
     /**

@@ -21,6 +21,7 @@ use App\Enums\PendingTaskLineStatus;
 use App\Enums\PendingTaskLineType;
 use App\Enums\PendingTaskStatus;
 use App\Enums\UserRole;
+use App\Livewire\Concerns\InteractsWithToasts;
 use App\Models\Location;
 use App\Models\PendingTask;
 use App\Models\PendingTaskLine;
@@ -38,6 +39,7 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class PendingTaskShow extends Component
 {
+    use InteractsWithToasts;
     use ValidatesTaskLines;
 
     public int $pendingTask;
@@ -354,11 +356,20 @@ class PendingTaskShow extends Component
     {
         Gate::authorize('inventory.manage');
 
-        if (! $this->task || ! $this->task->isQuickCaptureTask()) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => 'Esta captura rapida no esta disponible para procesarse.',
-            ]);
+        if (! $this->task) {
+            $this->toastError('La tarea no está disponible para procesarse.');
+
+            return;
+        }
+
+        if (! $this->task->hasQuickCapturePayload()) {
+            $this->toastError('Esta tarea no es una captura rápida.');
+
+            return;
+        }
+
+        if (! $this->task->isQuickCaptureTask()) {
+            $this->toastError('Esta captura rápida ya fue procesada y no puede procesarse de nuevo.');
 
             return;
         }
@@ -412,10 +423,10 @@ class PendingTaskShow extends Component
             $message .= ' (con alertas)';
         }
 
-        session()->flash('toast', [
-            'type' => $hasErrors ? 'warning' : 'success',
-            'message' => $message,
-        ]);
+        $this->toast(
+            type: $hasErrors ? 'warning' : 'success',
+            message: $message,
+        );
     }
 
     public function updatedProductId(): void

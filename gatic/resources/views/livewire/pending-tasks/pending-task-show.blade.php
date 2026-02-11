@@ -27,6 +27,11 @@
                         <span class="badge {{ $task->status->badgeClass() }}">
                             {{ $task->status->label() }}
                         </span>
+                        @if ($hasQuickCapture)
+                            <span class="badge bg-light text-dark border">
+                                Origen: Captura rápida
+                            </span>
+                        @endif
                         @if ($isProcessMode)
                             <button
                                 type="button"
@@ -104,6 +109,40 @@
                                 @if (is_string($convertedAt) && trim($convertedAt) !== '')
                                     <span class="text-muted ms-1 small">({{ $convertedAt }})</span>
                                 @endif
+                            </div>
+                        @endif
+
+                        @if (! $isQuickCapturePending && is_array($conversion))
+                            @php
+                                $conversionModeLabel = match ($conversionMode) {
+                                    'lines' => 'Generación de renglones',
+                                    'assets_stock_in' => 'Creación de activos',
+                                    'assets_retirement' => 'Retiro de activos',
+                                    default => null,
+                                };
+
+                                $conversionCreatedLines = is_int($conversion['created_lines'] ?? null) ? $conversion['created_lines'] : null;
+                                $conversionCreatedAssets = is_int($conversion['created_assets'] ?? null) ? $conversion['created_assets'] : null;
+                                $conversionUpdatedAssets = is_int($conversion['updated_assets'] ?? null) ? $conversion['updated_assets'] : null;
+                                $conversionSkipped = is_int($conversion['skipped'] ?? null) ? $conversion['skipped'] : null;
+                            @endphp
+                            <div class="mb-3">
+                                <strong>Conversión:</strong>
+                                <span class="text-muted small">
+                                    {{ $conversionModeLabel ?? '—' }}
+                                    @if (is_int($conversionCreatedLines))
+                                        · Renglones: {{ $conversionCreatedLines }}
+                                    @endif
+                                    @if (is_int($conversionCreatedAssets))
+                                        · Activos creados: {{ $conversionCreatedAssets }}
+                                    @endif
+                                    @if (is_int($conversionUpdatedAssets))
+                                        · Activos actualizados: {{ $conversionUpdatedAssets }}
+                                    @endif
+                                    @if (is_int($conversionSkipped))
+                                        · Omitidos: {{ $conversionSkipped }}
+                                    @endif
+                                </span>
                             </div>
                         @endif
 

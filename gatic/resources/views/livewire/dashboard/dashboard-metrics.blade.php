@@ -19,11 +19,6 @@
 
             <div class="d-flex align-items-center gap-3 flex-wrap">
                 <x-ui.freshness-indicator :updated-at="$lastUpdatedAtIso" />
-                @can('inventory.manage')
-                    <livewire:pending-tasks.quick-stock-in :key="'quick-stock-in-dashboard'" />
-                    <livewire:pending-tasks.quick-retirement :key="'quick-retirement-dashboard'" />
-                    <livewire:pending-tasks.pending-task-opener :key="'pending-task-opener-dashboard'" />
-                @endcan
                 <button
                     type="button"
                     class="btn btn-outline-secondary btn-sm"
@@ -39,6 +34,62 @@
                         Actualizando...
                     </span>
                 </button>
+            </div>
+        </div>
+
+        @php
+            $canManageInventory = \Illuminate\Support\Facades\Gate::allows('inventory.manage');
+        @endphp
+
+        <div class="card mb-4" data-testid="dashboard-quick-actions">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="fw-semibold">
+                    <i class="bi bi-lightning-charge me-1" aria-hidden="true"></i>
+                    Acciones rápidas
+                </div>
+                <div class="text-muted small">Atajos a operaciones y consultas frecuentes.</div>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @can('inventory.manage')
+                        <div class="col-12 col-lg-6">
+                            <div class="text-muted small mb-2">Operación</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <livewire:pending-tasks.quick-stock-in :key="'quick-stock-in-dashboard'" />
+                                <livewire:pending-tasks.quick-retirement :key="'quick-retirement-dashboard'" />
+
+                                <a href="{{ route('pending-tasks.index') }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-list-check" aria-hidden="true"></i> Tareas pendientes
+                                </a>
+
+                                @if (\Illuminate\Support\Facades\Route::has('inventory.products.create'))
+                                    <a href="{{ route('inventory.products.create') }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-plus-circle" aria-hidden="true"></i> Crear producto
+                                    </a>
+                                @endif
+                            </div>
+
+                            <livewire:pending-tasks.pending-task-opener :key="'pending-task-opener-dashboard'" />
+                        </div>
+                    @endcan
+
+                    @can('inventory.view')
+                        <div @class(['col-12', 'col-lg-6' => $canManageInventory])>
+                            <div class="text-muted small mb-2">Consulta</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="{{ route('inventory.search') }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-search" aria-hidden="true"></i> Búsqueda
+                                </a>
+                                <a href="{{ route('inventory.assets.index') }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pc-display" aria-hidden="true"></i> Activos
+                                </a>
+                                <a href="{{ route('inventory.products.index') }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-box-seam" aria-hidden="true"></i> Productos
+                                </a>
+                            </div>
+                        </div>
+                    @endcan
+                </div>
             </div>
         </div>
 

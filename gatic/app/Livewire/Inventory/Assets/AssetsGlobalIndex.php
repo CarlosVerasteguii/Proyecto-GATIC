@@ -2,20 +2,27 @@
 
 namespace App\Livewire\Inventory\Assets;
 
+use App\Actions\Movements\Assets\BulkAssignAssetsToEmployee;
+use App\Livewire\Concerns\InteractsWithToasts;
 use App\Models\Asset;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Location;
+use App\Support\Errors\ErrorReporter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Throwable;
 
 #[Layout('layouts.app')]
 class AssetsGlobalIndex extends Component
 {
+    use InteractsWithToasts;
     use WithPagination;
 
     private const STATUS_ALL = 'all';
@@ -53,6 +60,15 @@ class AssetsGlobalIndex extends Component
 
     #[Url(as: 'dir')]
     public string $direction = 'asc';
+
+    /** @var list<int> */
+    public array $selectedAssetIds = [];
+
+    public bool $showBulkAssignModal = false;
+
+    public ?int $bulkEmployeeId = null;
+
+    public string $bulkNote = '';
 
     public function mount(): void
     {
@@ -117,6 +133,116 @@ class AssetsGlobalIndex extends Component
         }
 
         $this->resetPage();
+    }
+
+    public function updatedPaginators($page, string $pageName): void
+    {
+        $this->selectedAssetIds = [];
+    }
+
+    /**
+     * @param  list<int|string>  $ids
+     */
+    public function selectAllVisible(array $ids): void
+    {
+        Gate::authorize('inventory.manage');
+
+        $normalized = array_values(array_unique(array_filter(array_map(
+            static fn (mixed $value): int => (int) $value,
+            $ids
+        ), static fn (int $id): bool => $id > 0)));
+
+        $this->selectedAssetIds = $normalized;
+        $this->resetErrorBag('selectedAssetIds');
+    }
+
+    public function clearSelection(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        $this->selectedAssetIds = [];
+        $this->resetErrorBag('selectedAssetIds');
+    }
+
+    public function openBulkAssignModal(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        if (count($this->selectedAssetIds) < 1) {
+            $this->addError('selectedAssetIds', 'Debe seleccionar al menos un activo.');
+
+            return;
+        }
+
+        $this->bulkEmployeeId = null;
+        $this->bulkNote = '';
+        $this->resetErrorBag();
+        $this->showBulkAssignModal = true;
+    }
+
+    public function bulkAssign(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        $maxAssets = (int) config('gatic.inventory.bulk_actions.max_assets', 50);
+
+        $assetIds = array_values(array_unique(array_filter(array_map(
+            static fn (mixed $value): int => (int) $value,
+            $this->selectedAssetIds
+        ), static fn (int $id): bool => $id > 0)));
+
+        $this->selectedAssetIds = $assetIds;
+        $this->resetErrorBag();
+
+        try {
+            $this->validate([
+                'selectedAssetIds' => ['required', 'array', 'min:1', 'max:'.$maxAssets],
+                'selectedAssetIds.*' => ['required', 'integer', 'distinct'],
+                'bulkEmployeeId' => ['required', 'integer', Rule::exists('employees', 'id')],
+                'bulkNote' => ['required', 'string', 'min:5', 'max:1000'],
+            ], [
+                'selectedAssetIds.required' => 'Debe seleccionar al menos un activo.',
+                'selectedAssetIds.array' => 'La selección de activos es inválida.',
+                'selectedAssetIds.min' => 'Debe seleccionar al menos un activo.',
+                'selectedAssetIds.max' => "El máximo permitido es {$maxAssets} activos.",
+                'bulkEmployeeId.required' => 'Debes seleccionar un empleado.',
+                'bulkEmployeeId.exists' => 'El empleado seleccionado no existe.',
+                'bulkNote.required' => 'La nota es obligatoria.',
+                'bulkNote.min' => 'La nota debe tener al menos :min caracteres.',
+                'bulkNote.max' => 'La nota no puede exceder :max caracteres.',
+            ]);
+
+            $action = new BulkAssignAssetsToEmployee;
+            $movements = $action->execute([
+                'asset_ids' => $assetIds,
+                'employee_id' => $this->bulkEmployeeId,
+                'note' => $this->bulkNote,
+                'actor_user_id' => auth()->id(),
+            ]);
+
+            $count = $movements->count();
+
+            $this->selectedAssetIds = [];
+            $this->showBulkAssignModal = false;
+            $this->bulkEmployeeId = null;
+            $this->bulkNote = '';
+            $this->resetErrorBag();
+
+            $this->toastSuccess("Se asignaron {$count} activos.");
+        } catch (ValidationException $e) {
+            $this->mapBulkActionErrors($e);
+        } catch (Throwable $e) {
+            if (app()->environment(['local', 'testing'])) {
+                throw $e;
+            }
+
+            $errorId = app(ErrorReporter::class)->report($e, request());
+            $this->toastError(
+                message: 'Ocurrió un error al asignar los activos.',
+                title: 'Error inesperado',
+                errorId: $errorId,
+            );
+        }
     }
 
     public function render(): View
@@ -227,5 +353,22 @@ class AssetsGlobalIndex extends Component
     private function escapeLike(string $value): string
     {
         return addcslashes($value, '\\%_');
+    }
+
+    private function mapBulkActionErrors(ValidationException $e): void
+    {
+        $mapping = [
+            'asset_ids' => 'selectedAssetIds',
+            'employee_id' => 'bulkEmployeeId',
+            'note' => 'bulkNote',
+        ];
+
+        foreach ($e->errors() as $field => $messages) {
+            $target = $mapping[$field] ?? $field;
+
+            foreach ($messages as $message) {
+                $this->addError($target, $message);
+            }
+        }
     }
 }

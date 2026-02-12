@@ -138,10 +138,58 @@
                         : $returnToPath;
                 @endphp
 
+                @can('inventory.manage')
+                    @if (count($selectedAssetIds) > 0)
+                        <div
+                            class="alert alert-light border d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3"
+                            data-testid="assets-bulk-bar"
+                        >
+                            <div class="small text-muted">
+                                Seleccionados: <strong>{{ count($selectedAssetIds) }}</strong>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    wire:click="selectAllVisible(@json($assets->pluck('id')->values()))"
+                                    data-testid="assets-select-all-visible"
+                                >
+                                    Seleccionar todos (página)
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    wire:click="clearSelection"
+                                    data-testid="assets-clear-selection"
+                                >
+                                    Limpiar selección
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-primary"
+                                    wire:click="openBulkAssignModal"
+                                    data-testid="assets-bulk-assign-open"
+                                >
+                                    <i class="bi bi-person-check me-1" aria-hidden="true"></i>
+                                    Asignar por lote
+                                </button>
+                            </div>
+                        </div>
+                    @endif
+                @endcan
+
                 <div class="table-responsive-xl">
                     <table class="table table-sm table-striped align-middle mb-0" data-column-table="inventory-assets-global">
                         <thead>
                             <tr>
+                                @can('inventory.manage')
+                                    <th data-column-key="select" data-column-required="true" style="width: 44px;">
+                                        <span class="visually-hidden">Seleccionar</span>
+                                    </th>
+                                @endcan
                                 <th data-column-key="product" aria-sort="{{ $ariaSort('product') }}">
                                     <button type="button" class="btn btn-link p-0 text-reset text-decoration-none" wire:click="sortBy('product')">
                                         Producto
@@ -179,7 +227,21 @@
                         </thead>
                         <tbody>
                             @forelse ($assets as $asset)
-                                <tr>
+                                <tr wire:key="assets-global-{{ $asset->id }}">
+                                    @can('inventory.manage')
+                                        <td>
+                                            <div class="form-check m-0">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    value="{{ $asset->id }}"
+                                                    wire:model.live="selectedAssetIds"
+                                                    data-testid="assets-row-checkbox"
+                                                    aria-label="Seleccionar activo"
+                                                >
+                                            </div>
+                                        </td>
+                                    @endcan
                                     <td>
                                         <a
                                             href="{{ route('inventory.products.show', ['product' => $asset->product_id]) }}"
@@ -234,7 +296,11 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8">
+                                    @can('inventory.manage')
+                                        <td colspan="9">
+                                    @else
+                                        <td colspan="8">
+                                    @endcan
                                         @if ($this->hasActiveFilters())
                                             <x-ui.empty-state
                                                 variant="filter"
@@ -262,6 +328,95 @@
                 <div class="mt-3">
                     {{ $assets->links() }}
                 </div>
+
+                @can('inventory.manage')
+                    @if ($showBulkAssignModal)
+                        <div
+                            class="modal fade show d-block"
+                            tabindex="-1"
+                            style="background: rgba(0,0,0,0.5);"
+                            data-testid="assets-bulk-assign-modal"
+                        >
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Asignar por lote</h5>
+                                        <button
+                                            type="button"
+                                            class="btn-close"
+                                            wire:click="$set('showBulkAssignModal', false)"
+                                            aria-label="Cerrar"
+                                        ></button>
+                                    </div>
+
+                                    <form wire:submit="bulkAssign">
+                                        <div class="modal-body">
+                                            @error('selectedAssetIds')
+                                                <div class="alert alert-danger py-2">
+                                                    <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+
+                                            <div class="mb-3">
+                                                <label class="form-label">
+                                                    Empleado <span class="text-danger">*</span>
+                                                </label>
+                                                <livewire:ui.employee-combobox wire:model.live="bulkEmployeeId" />
+                                                @error('bulkEmployeeId')
+                                                    <div class="invalid-feedback d-block mt-1">
+                                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                                    </div>
+                                                @enderror
+                                            </div>
+
+                                            <div class="mb-0">
+                                                <label for="assets-bulk-note" class="form-label">
+                                                    Nota <span class="text-danger">*</span>
+                                                </label>
+                                                <textarea
+                                                    id="assets-bulk-note"
+                                                    class="form-control @error('bulkNote') is-invalid @enderror"
+                                                    wire:model.live="bulkNote"
+                                                    rows="3"
+                                                    placeholder="Motivo de la asignación (mínimo 5 caracteres)"
+                                                    maxlength="1000"
+                                                ></textarea>
+                                                @error('bulkNote')
+                                                    <div class="invalid-feedback">
+                                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                                    </div>
+                                                @enderror
+                                            </div>
+                                        </div>
+
+                                        <div class="modal-footer">
+                                            <button
+                                                type="button"
+                                                class="btn btn-outline-secondary"
+                                                wire:click="$set('showBulkAssignModal', false)"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                class="btn btn-primary"
+                                                wire:loading.attr="disabled"
+                                                wire:target="bulkAssign"
+                                            >
+                                                <span wire:loading.remove wire:target="bulkAssign">Asignar</span>
+                                                <span wire:loading.inline wire:target="bulkAssign">
+                                                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                                    Asignando...
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @endcan
             </x-ui.toolbar>
         </div>
     </div>

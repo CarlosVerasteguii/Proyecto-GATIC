@@ -64,6 +64,9 @@ return [
             'allowed_currencies' => ['MXN'],
             'default_currency' => 'MXN',
         ],
+        'bulk_actions' => [
+            'max_assets' => 50,
+        ],
     ],
     'dashboard' => [
         'value' => [

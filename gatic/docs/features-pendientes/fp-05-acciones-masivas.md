@@ -36,6 +36,7 @@ MVP: seleccionar múltiples activos y ejecutar **“Asignar por lote”** a **un
 
 - Config: `gatic.inventory.bulk_actions.max_assets` (default: 50) en `config/gatic.php`.
 - Validación: `asset_ids` debe ser `>= 1` y `<= max_assets` con error claro.
+- Override para QA local: variable de entorno `GATIC_INVENTORY_BULK_MAX_ASSETS` (ej. `1`) para validar el límite con pocos datos.
 
 ## Comportamiento backend (all-or-nothing)
 
@@ -58,7 +59,7 @@ MVP: seleccionar múltiples activos y ejecutar **“Asignar por lote”** a **un
 - [x] F3 - UI Blade + modal + `data-testid`
 - [x] F4 - Tests automatizados (success, rollback, RBAC)
 - [x] F5 - Verificación técnica con Docker Compose (php -v, pint, tests)
-- [!] F6 - Commit local (sin push)
+- [x] F6 - Commit local (sin push)
 
 ## Validación UI manual
 

@@ -65,7 +65,7 @@ return [
             'default_currency' => 'MXN',
         ],
         'bulk_actions' => [
-            'max_assets' => 50,
+            'max_assets' => (int) env('GATIC_INVENTORY_BULK_MAX_ASSETS', 50),
         ],
     ],
     'dashboard' => [

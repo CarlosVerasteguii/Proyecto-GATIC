@@ -4,6 +4,7 @@
 
 - El contenedor global vive en `resources/views/layouts/*.blade.php` via `<x-ui.toast-container />`.
 - El JS escucha eventos de Livewire `ui:toast` y también convierte flashes de sesión a toasts.
+- Los “flash toasts” se consumen en `DOMContentLoaded` **y** en `livewire:navigated` (para flujos con `navigate: true`).
 
 ### Livewire -> Toast
 
@@ -16,6 +17,27 @@ Ejemplo (conceptual):
 
 ```php
 $this->toastSuccess('Guardado correctamente.');
+```
+
+### Toast flash (post-redirect / navigate)
+
+Si necesitas que un toast sobreviva `redirectRoute(..., navigate: true)` (o un reload), usa `session('ui_toasts')`.
+
+`session('ui_toasts')` es una **lista** de payloads completos (incluye `action` si aplica). Ejemplo:
+
+```php
+session()->flash('ui_toasts', [
+    [
+        'type' => 'success',
+        'title' => 'Movimiento registrado',
+        'message' => 'Se registró el movimiento correctamente.',
+        'action' => [
+            'label' => 'Deshacer',
+            'event' => 'ui:undo-movement',
+            'params' => ['token' => $token],
+        ],
+    ],
+]);
 ```
 
 ### Toast con acción ("Deshacer")

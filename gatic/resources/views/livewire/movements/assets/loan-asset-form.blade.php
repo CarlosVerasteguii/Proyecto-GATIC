@@ -1,6 +1,4 @@
 <div class="container">
-    <x-ui.toast-container />
-
     <div class="row justify-content-center">
         <div class="col-12 col-lg-8">
             <div class="d-flex justify-content-between align-items-center mb-3">

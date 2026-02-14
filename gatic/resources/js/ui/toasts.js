@@ -148,6 +148,8 @@ function showFlashToasts() {
         flash = [];
     }
 
+    container.dataset.flashToasts = '[]';
+
     if (!Array.isArray(flash) || flash.length === 0) return;
 
     flash.forEach((payload) => showToast(payload));
@@ -170,6 +172,10 @@ export function registerToasts() {
     window.GaticToasts.show = showToast;
 
     document.addEventListener('DOMContentLoaded', () => {
+        if (window.bootstrap?.Toast) showFlashToasts();
+    });
+
+    document.addEventListener('livewire:navigated', () => {
         if (window.bootstrap?.Toast) showFlashToasts();
     });
 

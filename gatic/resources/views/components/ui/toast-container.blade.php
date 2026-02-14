@@ -1,6 +1,19 @@
 @php
     $flashToasts = [];
 
+    $uiToasts = session('ui_toasts');
+    if (is_array($uiToasts)) {
+        if (array_is_list($uiToasts)) {
+            foreach ($uiToasts as $toast) {
+                if (is_array($toast)) {
+                    $flashToasts[] = $toast;
+                }
+            }
+        } else {
+            $flashToasts[] = $uiToasts;
+        }
+    }
+
     $status = session('status');
     $error = session('error');
     $success = session('success');

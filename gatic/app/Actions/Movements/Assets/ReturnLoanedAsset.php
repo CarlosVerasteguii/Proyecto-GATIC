@@ -65,6 +65,8 @@ class ReturnLoanedAsset
                 ]);
             }
 
+            $previousLoanDueDate = $asset->loan_due_date;
+
             $asset->status = Asset::STATUS_AVAILABLE;
             $asset->current_employee_id = null;
             $asset->loan_due_date = null;
@@ -75,6 +77,7 @@ class ReturnLoanedAsset
                 'employee_id' => $employeeId,
                 'actor_user_id' => $data['actor_user_id'],
                 'type' => AssetMovement::TYPE_RETURN,
+                'loan_due_date' => $previousLoanDueDate?->toDateString(),
                 'note' => $data['note'],
             ]);
 

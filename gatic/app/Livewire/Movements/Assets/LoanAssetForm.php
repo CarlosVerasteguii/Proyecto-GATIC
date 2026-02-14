@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Livewire\Movements\Assets;
 
 use App\Actions\Movements\Assets\LoanAssetToEmployee;
+use App\Actions\Movements\Undo\CreateUndoToken;
 use App\Models\Asset;
 use App\Models\Product;
+use App\Models\UndoToken;
 use App\Support\Assets\AssetStatusTransitions;
+use App\Support\Ui\FlashToasts;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -126,7 +129,7 @@ class LoanAssetForm extends Component
             }
 
             $action = new LoanAssetToEmployee;
-            $action->execute([
+            $movement = $action->execute([
                 'asset_id' => $this->assetId,
                 'employee_id' => $this->employeeId,
                 'note' => $this->note,
@@ -134,12 +137,32 @@ class LoanAssetForm extends Component
                 'actor_user_id' => (int) $actorUserId,
             ]);
 
-            $this->dispatch(
-                'ui:toast',
-                type: 'success',
-                title: 'Préstamo exitoso',
-                message: 'El activo ha sido prestado correctamente.',
-            );
+            $undoTokenId = null;
+            try {
+                $undoTokenId = (new CreateUndoToken)->execute([
+                    'actor_user_id' => (int) $actorUserId,
+                    'movement_kind' => UndoToken::KIND_ASSET_MOVEMENT,
+                    'movement_id' => $movement->id,
+                ])->id;
+            } catch (Throwable) {
+                $undoTokenId = null;
+            }
+
+            $toast = [
+                'type' => 'success',
+                'title' => 'Préstamo exitoso',
+                'message' => 'El activo ha sido prestado correctamente.',
+            ];
+
+            if (is_string($undoTokenId) && $undoTokenId !== '') {
+                $toast['action'] = [
+                    'label' => 'Deshacer',
+                    'event' => 'ui:undo-movement',
+                    'params' => ['token' => $undoTokenId],
+                ];
+            }
+
+            FlashToasts::flash($toast);
 
             $returnTo = $this->sanitizeReturnTo($this->returnTo);
             if ($returnTo !== null) {

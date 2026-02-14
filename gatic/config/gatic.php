@@ -64,6 +64,12 @@ return [
             'allowed_currencies' => ['MXN'],
             'default_currency' => 'MXN',
         ],
+        'undo' => [
+            // How long an Undo token is valid after the movement (seconds).
+            'window_s' => (int) env('GATIC_INVENTORY_UNDO_WINDOW_S', 10),
+            // How long to keep used/expired tokens before pruning (days).
+            'token_retention_days' => (int) env('GATIC_INVENTORY_UNDO_TOKEN_RETENTION_DAYS', 7),
+        ],
         'bulk_actions' => [
             'max_assets' => (int) env('GATIC_INVENTORY_BULK_MAX_ASSETS', 50),
         ],

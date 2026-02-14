@@ -13,6 +13,7 @@ use App\Support\Audit\AuditRecorder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -20,11 +21,11 @@ class BulkAssignAssetsToEmployee
 {
     /**
      * @param  array{asset_ids: list<int>, employee_id: int, note: string, actor_user_id: int}  $data
-     * @return Collection<int, AssetMovement>
+     * @return array{batch_uuid: string, movements: Collection<int, AssetMovement>}
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function execute(array $data): Collection
+    public function execute(array $data): array
     {
         $maxAssets = (int) config('gatic.inventory.bulk_actions.max_assets', 50);
 
@@ -53,7 +54,7 @@ class BulkAssignAssetsToEmployee
         /** @var list<int> $assetIds */
         $assetIds = array_values($data['asset_ids']);
 
-        return DB::transaction(function () use ($assetIds, $data): Collection {
+        return DB::transaction(function () use ($assetIds, $data): array {
             $assets = Asset::query()
                 ->whereIn('id', $assetIds)
                 ->whereNull('deleted_at')
@@ -79,6 +80,7 @@ class BulkAssignAssetsToEmployee
                 }
             }
 
+            $batchUuid = (string) Str::uuid();
             $movements = collect();
 
             foreach ($assets as $asset) {
@@ -90,6 +92,7 @@ class BulkAssignAssetsToEmployee
                     'asset_id' => $asset->id,
                     'employee_id' => $data['employee_id'],
                     'actor_user_id' => $data['actor_user_id'],
+                    'batch_uuid' => $batchUuid,
                     'type' => AssetMovement::TYPE_ASSIGN,
                     'note' => $data['note'],
                 ]);
@@ -109,7 +112,10 @@ class BulkAssignAssetsToEmployee
                 $movements->push($movement);
             }
 
-            return $movements;
+            return [
+                'batch_uuid' => $batchUuid,
+                'movements' => $movements,
+            ];
         });
     }
 }

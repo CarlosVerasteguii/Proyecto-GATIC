@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Movements\Products;
 
 use App\Actions\Movements\Products\RegisterProductQuantityMovement;
+use App\Actions\Movements\Undo\CreateUndoToken;
 use App\Models\Product;
 use App\Models\ProductQuantityMovement;
+use App\Models\UndoToken;
+use App\Support\Ui\FlashToasts;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
@@ -100,6 +103,11 @@ class QuantityMovementForm extends Component
         $this->validate();
 
         try {
+            $actorUserId = auth()->id();
+            if ($actorUserId === null) {
+                abort(403);
+            }
+
             $action = new RegisterProductQuantityMovement;
             $movement = $action->execute([
                 'product_id' => $this->productId,
@@ -107,19 +115,39 @@ class QuantityMovementForm extends Component
                 'direction' => $this->direction,
                 'qty' => (int) $this->qty,
                 'note' => $this->note,
-                'actor_user_id' => auth()->id(),
+                'actor_user_id' => (int) $actorUserId,
             ]);
 
             $directionLabel = $movement->direction === ProductQuantityMovement::DIRECTION_OUT
                 ? 'Salida'
                 : 'Entrada';
 
-            $this->dispatch(
-                'ui:toast',
-                type: 'success',
-                title: "{$directionLabel} registrada",
-                message: "Stock actualizado: {$movement->qty_before} → {$movement->qty_after}",
-            );
+            $undoTokenId = null;
+            try {
+                $undoTokenId = (new CreateUndoToken)->execute([
+                    'actor_user_id' => (int) $actorUserId,
+                    'movement_kind' => UndoToken::KIND_PRODUCT_QTY_MOVEMENT,
+                    'movement_id' => $movement->id,
+                ])->id;
+            } catch (Throwable) {
+                $undoTokenId = null;
+            }
+
+            $toast = [
+                'type' => 'success',
+                'title' => "{$directionLabel} registrada",
+                'message' => "Stock actualizado: {$movement->qty_before} → {$movement->qty_after}",
+            ];
+
+            if (is_string($undoTokenId) && $undoTokenId !== '') {
+                $toast['action'] = [
+                    'label' => 'Deshacer',
+                    'event' => 'ui:undo-movement',
+                    'params' => ['token' => $undoTokenId],
+                ];
+            }
+
+            FlashToasts::flash($toast);
 
             $this->redirectRoute('inventory.products.show', [
                 'product' => $this->productId,

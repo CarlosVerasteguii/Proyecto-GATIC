@@ -3,17 +3,20 @@
 namespace App\Livewire\Inventory\Assets;
 
 use App\Actions\Movements\Assets\BulkAssignAssetsToEmployee;
+use App\Actions\Movements\Undo\CreateUndoToken;
 use App\Livewire\Concerns\InteractsWithToasts;
 use App\Models\Asset;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Location;
+use App\Models\UndoToken;
 use App\Support\Errors\ErrorReporter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -69,6 +72,16 @@ class AssetsGlobalIndex extends Component
     public ?int $bulkEmployeeId = null;
 
     public string $bulkNote = '';
+
+    #[On('inventory:assets-batch-changed')]
+    public function onAssetsBatchChanged(string $batchUuid, array $assetIds = []): void
+    {
+        Gate::authorize('inventory.manage');
+
+        $this->selectedAssetIds = [];
+        $this->resetErrorBag('selectedAssetIds');
+        $this->resetPage();
+    }
 
     public function mount(): void
     {
@@ -212,15 +225,21 @@ class AssetsGlobalIndex extends Component
                 'bulkNote.max' => 'La nota no puede exceder :max caracteres.',
             ]);
 
+            $actorUserId = auth()->id();
+            if ($actorUserId === null) {
+                abort(403);
+            }
+
             $action = new BulkAssignAssetsToEmployee;
-            $movements = $action->execute([
+            $result = $action->execute([
                 'asset_ids' => $assetIds,
                 'employee_id' => $this->bulkEmployeeId,
                 'note' => $this->bulkNote,
-                'actor_user_id' => auth()->id(),
+                'actor_user_id' => (int) $actorUserId,
             ]);
 
-            $count = $movements->count();
+            $count = $result['movements']->count();
+            $batchUuid = (string) $result['batch_uuid'];
 
             $this->selectedAssetIds = [];
             $this->showBulkAssignModal = false;
@@ -228,7 +247,32 @@ class AssetsGlobalIndex extends Component
             $this->bulkNote = '';
             $this->resetErrorBag();
 
-            $this->toastSuccess("Se asignaron {$count} activos.");
+            $undoTokenId = null;
+            try {
+                $undoTokenId = (new CreateUndoToken)->execute([
+                    'actor_user_id' => (int) $actorUserId,
+                    'movement_kind' => UndoToken::KIND_ASSET_MOVEMENT,
+                    'batch_uuid' => $batchUuid,
+                ])->id;
+            } catch (Throwable) {
+                $undoTokenId = null;
+            }
+
+            $actionPayload = null;
+            if (is_string($undoTokenId) && $undoTokenId !== '') {
+                $actionPayload = [
+                    'label' => 'Deshacer',
+                    'event' => 'ui:undo-movement',
+                    'params' => ['token' => $undoTokenId],
+                ];
+            }
+
+            $this->toast(
+                type: 'success',
+                title: 'Asignación masiva',
+                message: "Se asignaron {$count} activos.",
+                action: $actionPayload,
+            );
         } catch (ValidationException $e) {
             $this->mapBulkActionErrors($e);
         } catch (Throwable $e) {

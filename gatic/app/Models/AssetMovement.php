@@ -11,8 +11,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $asset_id
  * @property int $employee_id
  * @property int $actor_user_id
+ * @property string|null $batch_uuid
  * @property string $type
  * @property string $note
+ * @property \Illuminate\Support\CarbonImmutable|null $loan_due_date
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  */
@@ -45,9 +47,21 @@ class AssetMovement extends Model
         'asset_id',
         'employee_id',
         'actor_user_id',
+        'batch_uuid',
         'type',
+        'loan_due_date',
         'note',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'loan_due_date' => 'immutable_date',
+        ];
+    }
 
     /**
      * @return BelongsTo<Asset, $this>

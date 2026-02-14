@@ -63,6 +63,7 @@ class LoanAssetToEmployee
                 'employee_id' => $data['employee_id'],
                 'actor_user_id' => $data['actor_user_id'],
                 'type' => AssetMovement::TYPE_LOAN,
+                'loan_due_date' => $data['loan_due_date'] ?? null,
                 'note' => $data['note'],
             ]);
 

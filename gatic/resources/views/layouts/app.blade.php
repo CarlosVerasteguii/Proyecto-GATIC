@@ -87,6 +87,7 @@
     </div>
 
     <x-ui.toast-container />
+    <livewire:movements.undo-manager :key="'undo-manager'" />
     <x-ui.hotkeys-help />
     <livewire:ui.command-palette />
 

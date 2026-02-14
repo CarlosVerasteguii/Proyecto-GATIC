@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
@@ -40,6 +41,19 @@ class AssetShow extends Component
 
         if (! $this->productModel->category?->is_serialized) {
             abort(404);
+        }
+
+        $this->assetModel = Asset::query()
+            ->with(['location', 'currentEmployee', 'contract.supplier', 'warrantySupplier'])
+            ->where('product_id', $this->productId)
+            ->findOrFail($this->assetId);
+    }
+
+    #[On('inventory:asset-changed')]
+    public function onAssetChanged(int $assetId): void
+    {
+        if ($assetId !== $this->assetId) {
+            return;
         }
 
         $this->assetModel = Asset::query()

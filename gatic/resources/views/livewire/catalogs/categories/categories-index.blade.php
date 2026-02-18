@@ -94,16 +94,12 @@
                                     <td class="text-center">
                                         @if ($category->is_serialized)
                                             <span class="catalogs-indicator catalogs-indicator--yes">
-                                                <span class="catalogs-indicator-icon" aria-hidden="true">
-                                                    <i class="bi bi-check-lg"></i>
-                                                </span>
+                                                <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
                                                 <span>Sí</span>
                                             </span>
                                         @else
                                             <span class="catalogs-indicator catalogs-indicator--no">
-                                                <span class="catalogs-indicator-icon" aria-hidden="true">
-                                                    <i class="bi bi-dash-lg"></i>
-                                                </span>
+                                                <i class="bi bi-dash-circle-fill" aria-hidden="true"></i>
                                                 <span>No</span>
                                             </span>
                                         @endif
@@ -111,16 +107,12 @@
                                     <td class="text-center">
                                         @if ($category->requires_asset_tag)
                                             <span class="catalogs-indicator catalogs-indicator--yes">
-                                                <span class="catalogs-indicator-icon" aria-hidden="true">
-                                                    <i class="bi bi-check-lg"></i>
-                                                </span>
+                                                <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
                                                 <span>Sí</span>
                                             </span>
                                         @else
                                             <span class="catalogs-indicator catalogs-indicator--no">
-                                                <span class="catalogs-indicator-icon" aria-hidden="true">
-                                                    <i class="bi bi-dash-lg"></i>
-                                                </span>
+                                                <i class="bi bi-dash-circle-fill" aria-hidden="true"></i>
                                                 <span>No</span>
                                             </span>
                                         @endif

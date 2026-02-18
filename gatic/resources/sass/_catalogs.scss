@@ -64,36 +64,28 @@
     font-weight: 700;
     font-size: 0.8125rem;
     line-height: 1.1;
-    color: var(--bs-body-color);
     white-space: nowrap;
   }
 
-  .catalogs-indicator-icon {
-    flex: 0 0 auto;
-    width: 1.35rem;
-    height: 1.35rem;
-    display: grid;
-    place-items: center;
-    border-radius: var(--radius-full);
-    border: 1px solid transparent;
-    background: var(--bs-tertiary-bg);
+  .catalogs-indicator i {
+    font-size: 1rem;
     color: var(--bs-secondary-color);
   }
 
-  .catalogs-indicator--yes .catalogs-indicator-icon {
-    background: var(--color-success-bg);
-    border-color: rgba(25, 135, 84, 0.25);
-    color: var(--color-success);
+  .catalogs-indicator--yes {
+    color: var(--bs-body-color);
   }
 
-  .catalogs-indicator--no .catalogs-indicator-icon {
-    background: var(--color-secondary-bg);
-    border-color: rgba(108, 117, 125, 0.25);
-    color: var(--color-secondary);
+  .catalogs-indicator--yes i {
+    color: var(--color-success);
   }
 
   .catalogs-indicator--no {
     color: var(--bs-secondary-color);
+  }
+
+  .catalogs-indicator--no i {
+    color: var(--color-secondary);
   }
 
 }
@@ -112,15 +104,5 @@
   .catalogs-row-editing {
     --bs-table-bg: rgba(0, 179, 111, 0.18);
     box-shadow: inset 0.25rem 0 0 rgba(0, 179, 111, 0.7);
-  }
-
-  .catalogs-indicator--yes .catalogs-indicator-icon {
-    background: rgba(25, 135, 84, 0.22);
-    border-color: rgba(25, 135, 84, 0.35);
-  }
-
-  .catalogs-indicator--no .catalogs-indicator-icon {
-    background: rgba(108, 117, 125, 0.22);
-    border-color: rgba(108, 117, 125, 0.35);
   }
 }

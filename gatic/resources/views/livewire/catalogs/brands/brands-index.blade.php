@@ -1,4 +1,20 @@
-<div class="container position-relative catalogs-page catalogs-brands-page">
+<div
+    class="container position-relative catalogs-page catalogs-brands-page"
+    x-data="{}"
+    x-on:focus-field.window="
+        if ($event.detail.field !== 'brand-name') {
+            return;
+        }
+        const el = document.getElementById('brand-name');
+        if (el) {
+            el.focus();
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (el.select) {
+                el.select();
+            }
+        }
+    "
+>
     <x-ui.long-request target="save,delete" />
 
     @php
@@ -59,15 +75,37 @@
                 </x-slot:search>
 
                 <x-slot:filters>
-                    <div class="col-12 col-md-6">
-                        <div class="catalogs-inline-editor">
-                            <label for="brand-name" class="form-label">
-                                {{ $isEditing ? 'Editar marca' : 'Nueva marca' }}
-                            </label>
+                    <div class="col-12 col-md-9">
+                        <div @class([
+                            'catalogs-inline-editor',
+                            'catalogs-inline-editor--editing' => $isEditingThisPage,
+                        ])>
+                            <div class="d-flex align-items-start justify-content-between gap-3">
+                                <div class="min-w-0">
+                                    <label for="brand-name" class="catalogs-inline-editor__heading">
+                                        <i class="bi bi-badge-tm" aria-hidden="true"></i>
+                                        {{ $isEditingThisPage ? 'Editar marca' : 'Nueva marca' }}
+                                    </label>
+
+                                    <div class="catalogs-inline-editor__subtext">
+                                        @if ($isEditingThisPage)
+                                            Actualiza el nombre de la marca seleccionada.
+                                        @else
+                                            Agrega marcas para usarlas en productos y activos.
+                                        @endif
+                                    </div>
+                                </div>
+
+                                @if ($isEditingThisPage)
+                                    <span class="catalogs-inline-editor__meta">
+                                        ID {{ $this->brandId }}
+                                    </span>
+                                @endif
+                            </div>
 
                             <div class="input-group">
                                 <span class="input-group-text bg-body">
-                                    <i class="bi bi-badge-tm" aria-hidden="true"></i>
+                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
                                 </span>
                                 <input
                                     id="brand-name"
@@ -76,43 +114,61 @@
                                     placeholder="Nombre de la marca…"
                                     wire:model.defer="name"
                                     wire:keydown.enter.prevent="save"
+                                    @if ($isEditingThisPage) wire:keydown.escape.prevent="cancelEdit" @endif
                                     autocomplete="off"
                                     maxlength="255"
+                                    aria-label="Nombre de la marca"
+                                    aria-describedby="brand-name-shortcuts"
                                 />
-
-                                <button
-                                    type="button"
-                                    class="btn btn-primary"
-                                    wire:click="save"
-                                    wire:loading.attr="disabled"
-                                    wire:target="save"
-                                    aria-label="{{ $isEditing ? 'Guardar cambios de marca' : 'Guardar nueva marca' }}"
-                                >
-                                    <span wire:loading.remove wire:target="save">Guardar</span>
-                                    <span wire:loading.inline wire:target="save">
-                                        <span class="d-inline-flex align-items-center gap-2">
-                                            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                                            Guardando…
-                                        </span>
-                                    </span>
-                                </button>
-
-                                @if ($isEditing)
-                                    <button
-                                        type="button"
-                                        class="btn btn-outline-secondary"
-                                        wire:click="cancelEdit"
-                                        wire:loading.attr="disabled"
-                                        wire:target="cancelEdit"
-                                    >
-                                        Cancelar
-                                    </button>
-                                @endif
                             </div>
 
                             @error('name')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
+
+                            <div class="catalogs-inline-editor__footer">
+                                <div id="brand-name-shortcuts" class="catalogs-inline-editor__keys">
+                                    <span><kbd>Enter</kbd> Guardar</span>
+                                    @if ($isEditingThisPage)
+                                        <span><kbd>Esc</kbd> Cancelar</span>
+                                    @endif
+                                </div>
+
+                                <div class="d-flex flex-wrap justify-content-end gap-2">
+                                    <button
+                                        type="button"
+                                        class="btn btn-primary"
+                                        wire:click="save"
+                                        wire:loading.attr="disabled"
+                                        wire:target="save"
+                                        aria-label="{{ $isEditingThisPage ? 'Guardar cambios de marca' : 'Guardar nueva marca' }}"
+                                    >
+                                        <span wire:loading.remove wire:target="save">
+                                            <i class="bi bi-check2-circle me-1" aria-hidden="true"></i>
+                                            {{ $isEditingThisPage ? 'Guardar cambios' : 'Guardar' }}
+                                        </span>
+                                        <span wire:loading.inline wire:target="save">
+                                            <span class="d-inline-flex align-items-center gap-2">
+                                                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                                Guardando…
+                                            </span>
+                                        </span>
+                                    </button>
+
+                                    @if ($isEditingThisPage)
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-secondary"
+                                            wire:click="cancelEdit"
+                                            wire:loading.attr="disabled"
+                                            wire:target="cancelEdit"
+                                        >
+                                            <i class="bi bi-x-lg me-1" aria-hidden="true"></i>
+                                            Cancelar
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </x-slot:filters>
@@ -154,24 +210,31 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="d-inline-flex flex-wrap justify-content-end gap-2">
-                                            <button
-                                                type="button"
-                                                class="btn btn-sm btn-outline-primary"
-                                                wire:click="edit({{ $brand->id }})"
-                                                wire:loading.attr="disabled"
-                                                wire:target="edit"
-                                                aria-label="Editar marca {{ $brand->name }}"
-                                            >
-                                                <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
-                                                Editar
-                                            </button>
+                                            @if ($isRowEditing)
+                                                <button type="button" class="btn btn-sm btn-primary" disabled>
+                                                    <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
+                                                    Editando
+                                                </button>
+                                            @else
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-primary"
+                                                    wire:click="edit({{ $brand->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="edit({{ $brand->id }})"
+                                                    aria-label="Editar marca {{ $brand->name }}"
+                                                >
+                                                    <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
+                                                    Editar
+                                                </button>
+                                            @endif
                                             <button
                                                 type="button"
                                                 class="btn btn-sm btn-outline-danger"
                                                 wire:click="delete({{ $brand->id }})"
                                                 wire:confirm="¿Confirmas que deseas eliminar esta marca?"
                                                 wire:loading.attr="disabled"
-                                                wire:target="delete"
+                                                wire:target="delete({{ $brand->id }})"
                                                 aria-label="Eliminar marca {{ $brand->name }}"
                                             >
                                                 <i class="bi bi-trash me-1" aria-hidden="true"></i>

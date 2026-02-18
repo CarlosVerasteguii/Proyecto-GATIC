@@ -47,6 +47,8 @@ class BrandsIndex extends Component
 
         $this->brandId = $brand->id;
         $this->name = $brand->name;
+
+        $this->dispatch('focus-field', field: 'brand-name');
     }
 
     public function cancelEdit(): void

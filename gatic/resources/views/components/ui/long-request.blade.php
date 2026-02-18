@@ -4,6 +4,7 @@
 
 <div
     class="gatic-long-request d-none position-absolute top-0 start-0 w-100 h-100 p-3 bg-white bg-opacity-75"
+    style="z-index: 1040;"
     data-gatic-long-request
     @if (is_string($target) && $target !== '')
         data-gatic-long-request-target="{{ $target }}"

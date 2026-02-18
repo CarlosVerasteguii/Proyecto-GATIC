@@ -210,6 +210,21 @@
     border-style: dashed;
   }
 
+  .admin-user-password-group .form-control.is-invalid {
+    z-index: 2;
+  }
+
+  .admin-user-password-btn {
+    min-width: 2.6rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .admin-user-password-btn .bi {
+    font-size: 1rem;
+  }
+
   .admin-user-form-actions {
     margin-top: var(--space-3);
     padding-top: var(--space-3);

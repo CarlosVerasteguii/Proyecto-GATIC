@@ -180,6 +180,11 @@
 // Utility Classes
 // =============================================================================
 
+// Flex children need min-width:0 to allow text truncation
+.min-w-0 {
+  min-width: 0 !important;
+}
+
 // Display contents at md breakpoint (for toolbar filters)
 // This allows child elements to participate in parent grid layout
 @media (min-width: 768px) {

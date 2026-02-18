@@ -236,7 +236,40 @@
                                     @endif
                                 </section>
 
-                                <section class="admin-user-form-section">
+                                <section
+                                    class="admin-user-form-section"
+                                    x-data="{
+                                        showPassword: false,
+                                        showPasswordConfirmation: false,
+                                        copiedField: null,
+                                        async copyFromRef(refName) {
+                                            const input = this.$refs[refName];
+                                            if (!input || !input.value) {
+                                                return;
+                                            }
+
+                                            try {
+                                                if (navigator.clipboard && navigator.clipboard.writeText) {
+                                                    await navigator.clipboard.writeText(input.value);
+                                                } else {
+                                                    input.focus();
+                                                    input.select();
+                                                    document.execCommand('copy');
+                                                    input.setSelectionRange(input.value.length, input.value.length);
+                                                }
+
+                                                this.copiedField = refName;
+                                                setTimeout(() => {
+                                                    if (this.copiedField === refName) {
+                                                        this.copiedField = null;
+                                                    }
+                                                }, 1500);
+                                            } catch (_) {
+                                                // no-op
+                                            }
+                                        }
+                                    }"
+                                >
                                     <h2 class="admin-user-form-section__title">
                                         <i class="bi bi-key" aria-hidden="true"></i>
                                         Seguridad
@@ -245,35 +278,78 @@
                                     <div class="row g-3">
                                         <div class="col-12">
                                             <label for="password" class="form-label">{{ $isEdit ? 'Nueva contraseña (opcional)' : 'Contraseña' }}</label>
-                                            <input
-                                                id="password"
-                                                name="password"
-                                                type="password"
-                                                class="form-control @error('password') is-invalid @enderror"
-                                                wire:model.blur="password"
-                                                placeholder="{{ $isEdit ? 'Escribe una nueva contraseña para actualizarla…' : 'Escribe una contraseña segura…' }}"
-                                                autocomplete="new-password"
-                                                spellcheck="false"
-                                                @if (! $isEdit) required @endif
-                                            >
+                                            <div class="input-group admin-user-password-group">
+                                                <input
+                                                    id="password"
+                                                    name="password"
+                                                    x-ref="passwordInput"
+                                                    :type="showPassword ? 'text' : 'password'"
+                                                    class="form-control @error('password') is-invalid @enderror"
+                                                    wire:model.blur="password"
+                                                    placeholder="{{ $isEdit ? 'Escribe una nueva contraseña para actualizarla…' : 'Escribe una contraseña segura…' }}"
+                                                    autocomplete="new-password"
+                                                    spellcheck="false"
+                                                    @if (! $isEdit) required @endif
+                                                >
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-outline-secondary admin-user-password-btn"
+                                                    x-on:click="showPassword = !showPassword"
+                                                    x-bind:aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                                                    x-bind:title="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                                                >
+                                                    <i class="bi" x-bind:class="showPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-outline-secondary admin-user-password-btn"
+                                                    x-on:click="copyFromRef('passwordInput')"
+                                                    aria-label="Copiar contraseña"
+                                                    title="Copiar contraseña"
+                                                >
+                                                    <i class="bi" x-bind:class="copiedField === 'passwordInput' ? 'bi-check2' : 'bi-clipboard'" aria-hidden="true"></i>
+                                                </button>
+                                            </div>
                                             @error('password')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
+                                            <div class="form-text">Se permite copiar y pegar en este campo.</div>
                                         </div>
 
                                         <div class="col-12">
                                             <label for="password_confirmation" class="form-label">Confirmar contraseña</label>
-                                            <input
-                                                id="password_confirmation"
-                                                name="password_confirmation"
-                                                type="password"
-                                                class="form-control"
-                                                wire:model.blur="password_confirmation"
-                                                placeholder="Repite la contraseña para confirmar…"
-                                                autocomplete="new-password"
-                                                spellcheck="false"
-                                                @if (! $isEdit) required @endif
-                                            >
+                                            <div class="input-group admin-user-password-group">
+                                                <input
+                                                    id="password_confirmation"
+                                                    name="password_confirmation"
+                                                    x-ref="passwordConfirmationInput"
+                                                    :type="showPasswordConfirmation ? 'text' : 'password'"
+                                                    class="form-control"
+                                                    wire:model.blur="password_confirmation"
+                                                    placeholder="Repite la contraseña para confirmar…"
+                                                    autocomplete="new-password"
+                                                    spellcheck="false"
+                                                    @if (! $isEdit) required @endif
+                                                >
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-outline-secondary admin-user-password-btn"
+                                                    x-on:click="showPasswordConfirmation = !showPasswordConfirmation"
+                                                    x-bind:aria-label="showPasswordConfirmation ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'"
+                                                    x-bind:title="showPasswordConfirmation ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'"
+                                                >
+                                                    <i class="bi" x-bind:class="showPasswordConfirmation ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-outline-secondary admin-user-password-btn"
+                                                    x-on:click="copyFromRef('passwordConfirmationInput')"
+                                                    aria-label="Copiar confirmación de contraseña"
+                                                    title="Copiar confirmación de contraseña"
+                                                >
+                                                    <i class="bi" x-bind:class="copiedField === 'passwordConfirmationInput' ? 'bi-check2' : 'bi-clipboard'" aria-hidden="true"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </section>
@@ -288,7 +364,11 @@
                                         <span wire:loading.remove wire:target="save">
                                             {{ $isEdit ? 'Guardar cambios' : 'Crear usuario' }}
                                         </span>
-                                        <span wire:loading.inline wire:target="save" class="d-inline-flex align-items-center gap-2">
+                                        <span
+                                            wire:loading
+                                            wire:target="save"
+                                            class="d-inline-flex align-items-center gap-2"
+                                        >
                                             <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                                             Guardando…
                                         </span>

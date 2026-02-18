@@ -147,7 +147,7 @@
                         @if (count($searchResults) > 0)
                             <div class="table-responsive mb-3">
                                 <table class="table table-sm table-bordered mb-0">
-                                    <thead class="table-light">
+                                    <thead class="table-gatic-head">
                                         <tr>
                                             <th>Serial</th>
                                             <th>Producto</th>

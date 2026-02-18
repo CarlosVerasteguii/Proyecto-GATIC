@@ -8,6 +8,7 @@ use App\Support\Catalogs\CatalogUsage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
@@ -18,10 +19,17 @@ class CategoriesIndex extends Component
     use InteractsWithToasts;
     use WithPagination;
 
+    #[Url(as: 'q')]
     public string $search = '';
 
     public function updatedSearch(): void
     {
+        $this->resetPage();
+    }
+
+    public function clearSearch(): void
+    {
+        $this->reset('search');
         $this->resetPage();
     }
 
@@ -57,13 +65,19 @@ class CategoriesIndex extends Component
         $search = Category::normalizeName($this->search);
         $escapedSearch = $search !== null ? $this->escapeLike($search) : null;
 
+        $categories = Category::query()
+            ->when($escapedSearch, function ($query) use ($escapedSearch) {
+                $query->whereRaw("name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
+            })
+            ->orderBy('name')
+            ->paginate(config('gatic.ui.pagination.per_page', 15));
+
         return view('livewire.catalogs.categories.categories-index', [
-            'categories' => Category::query()
-                ->when($escapedSearch, function ($query) use ($escapedSearch) {
-                    $query->whereRaw("name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
-                })
-                ->orderBy('name')
-                ->paginate(15),
+            'categories' => $categories,
+            'summary' => [
+                'total' => Category::query()->count(),
+                'results' => $categories->total(),
+            ],
         ]);
     }
 

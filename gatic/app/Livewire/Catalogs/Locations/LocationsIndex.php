@@ -10,6 +10,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
@@ -20,6 +21,7 @@ class LocationsIndex extends Component
     use InteractsWithToasts;
     use WithPagination;
 
+    #[Url(as: 'q')]
     public string $search = '';
 
     public ?int $locationId = null;
@@ -28,6 +30,12 @@ class LocationsIndex extends Component
 
     public function updatedSearch(): void
     {
+        $this->resetPage();
+    }
+
+    public function clearSearch(): void
+    {
+        $this->reset('search');
         $this->resetPage();
     }
 
@@ -74,7 +82,7 @@ class LocationsIndex extends Component
     {
         return [
             'name.required' => 'El nombre es obligatorio.',
-            'name.unique' => 'La ubicacion ya existe.',
+            'name.unique' => 'La ubicación ya existe.',
         ];
     }
 
@@ -91,7 +99,7 @@ class LocationsIndex extends Component
                 Location::query()->create(['name' => $this->name]);
 
                 $this->reset('name');
-                $this->toastSuccess('Ubicacion creada.');
+                $this->toastSuccess('Ubicación creada.');
 
                 return;
             }
@@ -110,7 +118,7 @@ class LocationsIndex extends Component
         }
 
         $this->reset(['locationId', 'name']);
-        $this->toastSuccess('Ubicacion actualizada.');
+        $this->toastSuccess('Ubicación actualizada.');
     }
 
     public function delete(int $locationId): void
@@ -140,7 +148,7 @@ class LocationsIndex extends Component
             $this->reset(['locationId', 'name']);
         }
 
-        $this->toastSuccess('Ubicacion eliminada.');
+        $this->toastSuccess('Ubicación eliminada.');
     }
 
     public function render(): View
@@ -150,14 +158,20 @@ class LocationsIndex extends Component
         $search = Location::normalizeName($this->search);
         $escapedSearch = $search !== null ? $this->escapeLike($search) : null;
 
+        $locations = Location::query()
+            ->when($escapedSearch, function ($query) use ($escapedSearch) {
+                $query->whereRaw("name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
+            })
+            ->orderBy('name')
+            ->paginate(config('gatic.ui.pagination.per_page', 15));
+
         return view('livewire.catalogs.locations.locations-index', [
-            'locations' => Location::query()
-                ->when($escapedSearch, function ($query) use ($escapedSearch) {
-                    $query->whereRaw("name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
-                })
-                ->orderBy('name')
-                ->paginate(15),
+            'locations' => $locations,
             'isEditing' => (bool) $this->locationId,
+            'summary' => [
+                'total' => Location::query()->count(),
+                'results' => $locations->total(),
+            ],
         ]);
     }
 

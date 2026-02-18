@@ -17,7 +17,9 @@
         </button>
     </div>
 
-    @include('layouts.partials.sidebar-nav')
+    <div class="app-sidebar-body">
+        @include('layouts.partials.sidebar-nav')
+    </div>
 </aside>
 
 <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="appSidebarOffcanvas" aria-labelledby="appSidebarOffcanvasLabel">

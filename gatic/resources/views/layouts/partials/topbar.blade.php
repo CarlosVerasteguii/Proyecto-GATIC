@@ -42,18 +42,6 @@
         @endcan
 
         <div class="ms-auto d-flex align-items-center gap-2">
-            {{-- Density toggle --}}
-            <button
-                type="button"
-                class="btn btn-sm btn-outline-light d-none d-md-inline-flex align-items-center"
-                data-density-toggle
-                aria-pressed="false"
-                title="Cambiar a modo compacto"
-            >
-                <i class="bi bi-arrows-angle-expand" aria-hidden="true"></i>
-                <span class="density-text ms-1 d-none d-lg-inline">Compacto</span>
-            </button>
-
             {{-- Theme toggle --}}
             <button
                 type="button"
@@ -93,6 +81,20 @@
                         {{-- <a class="dropdown-item" href="{{ route('profile.edit') }}">
                             {{ __('Profile') }}
                         </a> --}}
+                        <button
+                            type="button"
+                            class="dropdown-item d-flex align-items-center gap-2"
+                            data-density-toggle
+                            aria-pressed="false"
+                            title="Cambiar a modo compacto"
+                        >
+                            <i class="bi bi-arrows-angle-expand" aria-hidden="true"></i>
+                            <span>
+                                Densidad:
+                                <span class="density-text">Compacto</span>
+                            </span>
+                        </button>
+                        <hr class="dropdown-divider" />
                         <form action="{{ route('logout') }}" method="POST" class="m-0">
                             @csrf
                             <button type="submit" class="dropdown-item">Cerrar sesi&oacute;n</button>

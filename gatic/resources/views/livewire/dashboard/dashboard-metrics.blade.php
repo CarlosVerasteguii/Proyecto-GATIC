@@ -464,7 +464,7 @@
                         >
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover mb-0" data-testid="dashboard-critical-queue">
-                                    <thead class="table-light">
+                                    <thead class="table-gatic-head">
                                         <tr>
                                             <th>Tipo</th>
                                             <th>Elemento</th>
@@ -729,7 +729,7 @@
                                 body-class="p-0"
                             >
                                 <table class="table table-sm table-hover mb-0" data-testid="dashboard-value-by-category">
-                                    <thead class="table-light">
+                                    <thead class="table-gatic-head">
                                         <tr>
                                             <th>Categoría</th>
                                             <th class="text-end">Valor ({{ $defaultCurrency }})</th>
@@ -737,7 +737,7 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($valueByCategory as $item)
-                                            <tr @class(['table-light' => $item['name'] === 'Otros'])>
+                                            <tr @class(['table-active' => $item['name'] === 'Otros'])>
                                                 <td>
                                                     @if ($item['id'] !== null)
                                                         <a href="{{ route('inventory.products.index', ['category' => $item['id']]) }}" class="text-decoration-none">
@@ -766,7 +766,7 @@
                                 body-class="p-0"
                             >
                                 <table class="table table-sm table-hover mb-0" data-testid="dashboard-value-by-brand">
-                                    <thead class="table-light">
+                                    <thead class="table-gatic-head">
                                         <tr>
                                             <th>Marca</th>
                                             <th class="text-end">Valor ({{ $defaultCurrency }})</th>
@@ -774,7 +774,7 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($valueByBrand as $item)
-                                            <tr @class(['table-light' => $item['name'] === 'Otros' || $item['name'] === 'Sin marca'])>
+                                            <tr @class(['table-active' => $item['name'] === 'Otros' || $item['name'] === 'Sin marca'])>
                                                 <td>
                                                     @if ($item['id'] !== null)
                                                         <a href="{{ route('inventory.products.index', ['brand' => $item['id']]) }}" class="text-decoration-none">
@@ -806,7 +806,7 @@
                     body-class="p-0"
                 >
                     <table class="table table-sm table-hover mb-0" data-testid="dashboard-recent-activity">
-                        <thead class="table-light">
+                        <thead class="table-gatic-head">
                             <tr>
                                 <th style="width: 2rem;"></th>
                                 <th>Evento</th>

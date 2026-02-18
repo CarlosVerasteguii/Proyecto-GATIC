@@ -10,6 +10,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
@@ -20,6 +21,7 @@ class BrandsIndex extends Component
     use InteractsWithToasts;
     use WithPagination;
 
+    #[Url(as: 'q')]
     public string $search = '';
 
     public ?int $brandId = null;
@@ -28,6 +30,12 @@ class BrandsIndex extends Component
 
     public function updatedSearch(): void
     {
+        $this->resetPage();
+    }
+
+    public function clearSearch(): void
+    {
+        $this->reset('search');
         $this->resetPage();
     }
 
@@ -150,14 +158,20 @@ class BrandsIndex extends Component
         $search = Brand::normalizeName($this->search);
         $escapedSearch = $search !== null ? $this->escapeLike($search) : null;
 
+        $brands = Brand::query()
+            ->when($escapedSearch, function ($query) use ($escapedSearch) {
+                $query->whereRaw("name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
+            })
+            ->orderBy('name')
+            ->paginate(config('gatic.ui.pagination.per_page', 15));
+
         return view('livewire.catalogs.brands.brands-index', [
-            'brands' => Brand::query()
-                ->when($escapedSearch, function ($query) use ($escapedSearch) {
-                    $query->whereRaw("name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
-                })
-                ->orderBy('name')
-                ->paginate(15),
+            'brands' => $brands,
             'isEditing' => (bool) $this->brandId,
+            'summary' => [
+                'total' => Brand::query()->count(),
+                'results' => $brands->total(),
+            ],
         ]);
     }
 

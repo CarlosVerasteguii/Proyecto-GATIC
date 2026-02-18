@@ -124,3 +124,7 @@ Usa el componente Blade `x-ui.poll` para evitar hardcodear intervalos y estandar
 Si el componente también usa `<x-ui.long-request />`, define `target="..."` para que el overlay solo aplique a métodos manuales y no al método de polling.
 
 Usa `<x-ui.freshness-indicator :updated-at="$lastUpdatedAtIso" />` y actualiza `lastUpdatedAtIso` cada vez que llegue data nueva (por ejemplo, en el método llamado por `wire:poll.visible`).
+
+## Selectores “creables” (combobox/autocomplete)
+
+Inventario + arquitectura propuesta (sin implementación): `docs/ui/creable-selectors.md`.

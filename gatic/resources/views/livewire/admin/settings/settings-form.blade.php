@@ -254,37 +254,70 @@
 
                             <div class="col-12 col-xl-4">
                                 <aside class="admin-settings-summary">
-                                    <h2 class="admin-settings-summary__title">Resumen</h2>
+                                    @php($summaryStatusClass = $hasOverrides ? 'custom' : 'default')
+                                    <div class="admin-settings-summary__header">
+                                        <h2 class="admin-settings-summary__title mb-0">Resumen</h2>
+                                        <span class="admin-settings-summary-badge admin-settings-summary-badge--{{ $summaryStatusClass }}">
+                                            <i class="bi {{ $hasOverrides ? 'bi-sliders2' : 'bi-check2-circle' }}" aria-hidden="true"></i>
+                                            {{ $settingsStatusLabel }}
+                                        </span>
+                                    </div>
 
-                                    <dl class="admin-settings-summary__meta mb-0">
-                                        <div>
-                                            <dt>Alcance</dt>
-                                            <dd>Global</dd>
+                                    <div class="admin-settings-summary__metrics">
+                                        <article class="admin-settings-summary-metric">
+                                            <span class="admin-settings-summary-metric__icon" aria-hidden="true">
+                                                <i class="bi bi-diagram-3"></i>
+                                            </span>
+                                            <div>
+                                                <span class="admin-settings-summary-metric__label">Alcance</span>
+                                                <strong class="admin-settings-summary-metric__value">Global</strong>
+                                            </div>
+                                        </article>
+
+                                        <article class="admin-settings-summary-metric">
+                                            <span class="admin-settings-summary-metric__icon" aria-hidden="true">
+                                                <i class="bi bi-database"></i>
+                                            </span>
+                                            <div>
+                                                <span class="admin-settings-summary-metric__label">Overrides</span>
+                                                <strong class="admin-settings-summary-metric__value">{{ number_format($overrideCount) }}</strong>
+                                            </div>
+                                        </article>
+
+                                        <article class="admin-settings-summary-metric">
+                                            <span class="admin-settings-summary-metric__icon" aria-hidden="true">
+                                                <i class="bi bi-cash-coin"></i>
+                                            </span>
+                                            <div>
+                                                <span class="admin-settings-summary-metric__label">Moneda</span>
+                                                <strong class="admin-settings-summary-metric__value">{{ $defaultCurrency }}</strong>
+                                            </div>
+                                        </article>
+                                    </div>
+
+                                    <section class="admin-settings-summary__alerts" aria-label="Resumen de ventanas de alerta">
+                                        <h3 class="admin-settings-summary__section-title">Ventanas de alertas</h3>
+                                        <div class="admin-settings-summary-pill-group">
+                                            <span class="admin-settings-summary-pill">
+                                                <span>Préstamos</span>
+                                                <strong>{{ $loansDueSoonDefault }}d</strong>
+                                            </span>
+                                            <span class="admin-settings-summary-pill">
+                                                <span>Garantías</span>
+                                                <strong>{{ $warrantiesDueSoonDefault }}d</strong>
+                                            </span>
+                                            <span class="admin-settings-summary-pill">
+                                                <span>Renovaciones</span>
+                                                <strong>{{ $renewalsDueSoonDefault }}d</strong>
+                                            </span>
                                         </div>
-                                        <div>
-                                            <dt>Estado</dt>
-                                            <dd>{{ $settingsStatusLabel }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt>Overrides</dt>
-                                            <dd>{{ number_format($overrideCount) }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt>Moneda</dt>
-                                            <dd>{{ $defaultCurrency }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt>Alertas</dt>
-                                            <dd>
-                                                Préstamos: {{ $loansDueSoonDefault }}d ·
-                                                Garantías: {{ $warrantiesDueSoonDefault }}d ·
-                                                Renovaciones: {{ $renewalsDueSoonDefault }}d
-                                            </dd>
-                                        </div>
-                                    </dl>
+                                    </section>
 
                                     <p class="admin-settings-summary__hint mb-0">
-                                        Consejo: usa ventanas más cortas si necesitas seguimiento más estricto; ventanas más largas reducen ruido de alertas.
+                                        <i class="bi bi-lightbulb" aria-hidden="true"></i>
+                                        <span>
+                                            Consejo: usa ventanas más cortas para seguimiento más estricto; ventanas más largas reducen ruido de alertas.
+                                        </span>
                                     </p>
                                 </aside>
                             </div>

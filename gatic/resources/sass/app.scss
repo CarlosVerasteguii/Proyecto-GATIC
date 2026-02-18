@@ -13,8 +13,14 @@
 // Design Tokens (CSS custom properties, after Bootstrap for overrides)
 @import 'tokens';
 
+// Tables (theme-aware headers)
+@import 'tables';
+
 // Dashboard
 @import 'dashboard';
+
+// Admin users page
+@import 'admin-users';
 
 // Density modes (normal/compact)
 @import 'density';

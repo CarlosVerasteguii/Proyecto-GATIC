@@ -73,6 +73,12 @@ class AssetsGlobalIndex extends Component
 
     public string $bulkNote = '';
 
+    #[On('inventory:asset-changed')]
+    public function onAssetChanged(int $assetId): void
+    {
+        Gate::authorize('inventory.view');
+    }
+
     #[On('inventory:assets-batch-changed')]
     public function onAssetsBatchChanged(string $batchUuid, array $assetIds = []): void
     {

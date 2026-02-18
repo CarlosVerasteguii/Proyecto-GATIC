@@ -8,6 +8,7 @@ use App\Models\Product;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -31,6 +32,12 @@ class AssetsIndex extends Component
 
     #[Url(as: 'status')]
     public string $status = 'all';
+
+    #[On('inventory:asset-changed')]
+    public function onAssetChanged(int $assetId): void
+    {
+        Gate::authorize('inventory.view');
+    }
 
     public function mount(string $product): void
     {

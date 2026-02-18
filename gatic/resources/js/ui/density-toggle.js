@@ -64,7 +64,7 @@ function applyMode(mode) {
 
         const text = btn.querySelector('.density-text');
         if (text) {
-            text.textContent = isCompact ? 'Normal' : 'Compacto';
+            text.textContent = isCompact ? 'Compacto' : 'Normal';
         }
 
         btn.setAttribute('aria-pressed', isCompact);

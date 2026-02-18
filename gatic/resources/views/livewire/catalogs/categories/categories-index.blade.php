@@ -77,8 +77,8 @@
                         <thead>
                             <tr>
                                 <th>Nombre</th>
-                                <th>Serializado</th>
-                                <th>Requiere asset_tag</th>
+                                <th class="text-center">Serializado</th>
+                                <th class="text-center">Requiere asset tag</th>
                                 <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
@@ -91,14 +91,14 @@
                                             <div class="small text-body-secondary">ID {{ $category->id }}</div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td class="text-center">
                                         @if ($category->is_serialized)
                                             <span class="badge rounded-pill text-bg-success">Sí</span>
                                         @else
                                             <span class="badge rounded-pill text-bg-secondary">No</span>
                                         @endif
                                     </td>
-                                    <td>
+                                    <td class="text-center">
                                         @if ($category->requires_asset_tag)
                                             <span class="badge rounded-pill text-bg-success">Sí</span>
                                         @else

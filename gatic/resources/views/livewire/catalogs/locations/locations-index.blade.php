@@ -154,14 +154,9 @@
                                 @php($isRowEditing = $isEditingThisPage && $this->locationId === $location->id)
                                 <tr wire:key="location-row-{{ $location->id }}" @class(['catalogs-row-editing' => $isRowEditing])>
                                     <td class="min-w-0">
-                                        <div class="d-flex align-items-center gap-2 min-w-0">
-                                            <span class="catalogs-avatar" aria-hidden="true">
-                                                {{ mb_strtoupper(mb_substr($location->name, 0, 1)) }}
-                                            </span>
-                                            <div class="min-w-0">
-                                                <div class="fw-semibold text-truncate">{{ $location->name }}</div>
-                                                <div class="small text-body-secondary">ID {{ $location->id }}</div>
-                                            </div>
+                                        <div class="min-w-0">
+                                            <div class="fw-semibold text-truncate">{{ $location->name }}</div>
+                                            <div class="small text-body-secondary">ID {{ $location->id }}</div>
                                         </div>
                                     </td>
                                     <td class="text-end">

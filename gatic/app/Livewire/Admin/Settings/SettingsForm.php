@@ -16,6 +16,20 @@ class SettingsForm extends Component
 {
     use InteractsWithToasts;
 
+    /**
+     * Current config defaults (without DB overrides).
+     *
+     * @var array{loans:int,warranties:int,renewals:int,currency:string}
+     */
+    public array $configDefaults = [
+        'loans' => 7,
+        'warranties' => 30,
+        'renewals' => 90,
+        'currency' => 'MXN',
+    ];
+
+    public int $overrideCount = 0;
+
     // Loans
     public int $loansDueSoonDefault = 7;
 
@@ -48,9 +62,10 @@ class SettingsForm extends Component
 
         $store = app(SettingsStore::class);
 
+        $this->configDefaults = $this->resolveConfigDefaults();
         $this->loadOptions($store);
         $this->loadCurrentValues($store);
-        $this->hasOverrides = count($store->getAllOverrides()) > 0;
+        $this->syncOverridesState($store);
     }
 
     /**
@@ -186,7 +201,7 @@ class SettingsForm extends Component
             Log::warning('Settings: audit log failed (best-effort)', ['error' => $e->getMessage()]);
         }
 
-        $this->hasOverrides = count($store->getAllOverrides()) > 0;
+        $this->syncOverridesState($store);
         $this->toastSuccess('Configuración guardada correctamente.');
     }
 
@@ -220,7 +235,7 @@ class SettingsForm extends Component
 
         $this->loadOptions($store);
         $this->loadCurrentValues($store);
-        $this->hasOverrides = false;
+        $this->syncOverridesState($store);
 
         $this->toastSuccess('Configuración restaurada a valores por defecto.');
     }
@@ -298,5 +313,29 @@ class SettingsForm extends Component
         sort($filtered);
 
         return $filtered !== [] ? $filtered : $fallback;
+    }
+
+    /**
+     * @return array{loans:int,warranties:int,renewals:int,currency:string}
+     */
+    private function resolveConfigDefaults(): array
+    {
+        $currency = strtoupper(trim((string) config('gatic.inventory.money.default_currency', 'MXN')));
+        if ($currency === '') {
+            $currency = 'MXN';
+        }
+
+        return [
+            'loans' => (int) config('gatic.alerts.loans.due_soon_window_days_default', 7),
+            'warranties' => (int) config('gatic.alerts.warranties.due_soon_window_days_default', 30),
+            'renewals' => (int) config('gatic.alerts.renewals.due_soon_window_days_default', 90),
+            'currency' => $currency,
+        ];
+    }
+
+    private function syncOverridesState(SettingsStore $store): void
+    {
+        $this->overrideCount = count($store->getAllOverrides());
+        $this->hasOverrides = $this->overrideCount > 0;
     }
 }

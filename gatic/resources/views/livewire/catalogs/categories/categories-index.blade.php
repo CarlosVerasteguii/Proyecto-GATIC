@@ -93,16 +93,36 @@
                                     </td>
                                     <td class="text-center">
                                         @if ($category->is_serialized)
-                                            <span class="badge rounded-pill text-bg-success">Sí</span>
+                                            <span class="catalogs-indicator catalogs-indicator--yes">
+                                                <span class="catalogs-indicator-icon" aria-hidden="true">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </span>
+                                                <span>Sí</span>
+                                            </span>
                                         @else
-                                            <span class="badge rounded-pill text-bg-secondary">No</span>
+                                            <span class="catalogs-indicator catalogs-indicator--no">
+                                                <span class="catalogs-indicator-icon" aria-hidden="true">
+                                                    <i class="bi bi-dash-lg"></i>
+                                                </span>
+                                                <span>No</span>
+                                            </span>
                                         @endif
                                     </td>
                                     <td class="text-center">
                                         @if ($category->requires_asset_tag)
-                                            <span class="badge rounded-pill text-bg-success">Sí</span>
+                                            <span class="catalogs-indicator catalogs-indicator--yes">
+                                                <span class="catalogs-indicator-icon" aria-hidden="true">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </span>
+                                                <span>Sí</span>
+                                            </span>
                                         @else
-                                            <span class="badge rounded-pill text-bg-secondary">No</span>
+                                            <span class="catalogs-indicator catalogs-indicator--no">
+                                                <span class="catalogs-indicator-icon" aria-hidden="true">
+                                                    <i class="bi bi-dash-lg"></i>
+                                                </span>
+                                                <span>No</span>
+                                            </span>
                                         @endif
                                     </td>
                                     <td class="text-end">

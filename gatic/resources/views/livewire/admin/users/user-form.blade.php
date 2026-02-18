@@ -365,12 +365,13 @@
                                             {{ $isEdit ? 'Guardar cambios' : 'Crear usuario' }}
                                         </span>
                                         <span
-                                            wire:loading
+                                            wire:loading.inline
                                             wire:target="save"
-                                            class="d-inline-flex align-items-center gap-2"
                                         >
-                                            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                                            Guardando…
+                                            <span class="d-inline-flex align-items-center gap-2">
+                                                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                                Guardando…
+                                            </span>
                                         </span>
                                     </button>
 

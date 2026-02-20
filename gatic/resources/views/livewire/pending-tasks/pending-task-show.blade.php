@@ -233,7 +233,7 @@
                                 <span>
                                     <strong>Bloqueada por ti</strong>
                                     @if ($task->locked_at)
-                                        <span class="text-muted small ms-2">desde {{ $task->locked_at->diffForHumans() }}</span>
+                                        <span class="text-muted small ms-2">desde {{ $task->locked_at->locale('es')->diffForHumans() }}</span>
                                     @endif
                                 </span>
                             @elseif ($isOtherLock)
@@ -241,7 +241,7 @@
                                 <span>
                                     <strong>Bloqueada por {{ $task->lockedBy?->name ?? 'otro usuario' }}</strong>
                                     @if ($task->locked_at)
-                                        <span class="text-muted small ms-2">desde {{ $task->locked_at->diffForHumans() }}</span>
+                                        <span class="text-muted small ms-2">desde {{ $task->locked_at->locale('es')->diffForHumans() }}</span>
                                     @endif
                                 </span>
                             @else

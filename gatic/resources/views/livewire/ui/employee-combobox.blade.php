@@ -29,8 +29,17 @@
             active?.scrollIntoView({ block: 'nearest' });
         }
     }"
-    x-on:keydown.escape.prevent="open = false; $refs.input?.blur()"
+    x-effect="if (!open) { activeDescendantId = null; highlightedIndex = -1 }"
+    x-on:keydown.escape.prevent="open = false; activeDescendantId = null; highlightedIndex = -1; $refs.input?.blur()"
     x-on:click.away="open = false; activeDescendantId = null; highlightedIndex = -1"
+    x-on:employee-combobox:focus-input.window="
+        if ($event.detail?.inputId === '{{ $inputId }}') {
+            $refs.input?.focus();
+            open = false;
+            activeDescendantId = null;
+            highlightedIndex = -1;
+        }
+    "
 >
     @if ($employeeId)
         {{-- Pill visual del empleado seleccionado --}}
@@ -70,11 +79,12 @@
                 x-on:focus="open = true; highlightedIndex = -1; activeDescendantId = null"
                 role="combobox"
                 aria-haspopup="listbox"
-                aria-expanded="{{ $showDropdown ? 'true' : 'false' }}"
-                aria-controls="employee-listbox"
+                :aria-expanded="open ? 'true' : 'false'"
+                aria-controls="{{ $listboxId }}"
                 aria-autocomplete="list"
                 :aria-activedescendant="activeDescendantId"
                 autocomplete="off"
+                id="{{ $inputId }}"
             />
 
             <div
@@ -89,7 +99,7 @@
                 style="max-height: 300px; overflow-y: auto;"
                 x-ref="listbox"
                 role="listbox"
-                id="employee-listbox"
+                id="{{ $listboxId }}"
                 aria-label="Lista de empleados"
             >
                 @if (is_string($errorId) && $errorId !== '')
@@ -97,7 +107,7 @@
                         <div class="d-flex align-items-start gap-2">
                             <i class="bi bi-exclamation-triangle text-danger mt-1"></i>
                             <div>
-                                <div class="fw-semibold">Ocurrio un error inesperado.</div>
+                                <div class="fw-semibold">Ocurrió un error inesperado.</div>
                                 <div class="small text-muted">
                                     ID: <code class="ms-1">{{ $errorId }}</code>
                                 </div>
@@ -124,14 +134,28 @@
                                 Escribe al menos 2 caracteres
                             </div>
                         @elseif ($showNoResults)
-                            <div class="p-3 text-muted small">
-                                <i class="bi bi-search me-1"></i>
-                                Sin resultados
+                            <div class="p-2">
+                                <div class="px-2 py-1 text-muted small">
+                                    <i class="bi bi-search me-1"></i>
+                                    Sin resultados
+                                </div>
+                                <button
+                                    id="{{ $createOptionId }}"
+                                    type="button"
+                                    class="dropdown-item d-flex align-items-center gap-2 rounded"
+                                    wire:click="openCreateEmployeeModal"
+                                    wire:loading.attr="disabled"
+                                    wire:target="openCreateEmployeeModal"
+                                    role="option"
+                                >
+                                    <i class="bi bi-person-plus" aria-hidden="true"></i>
+                                    <span>Crear empleado</span>
+                                </button>
                             </div>
                         @elseif ($employees->isNotEmpty())
                             @foreach ($employees as $index => $employee)
                                 <button
-                                    id="employee-option-{{ $employee->id }}"
+                                    id="{{ $optionIdPrefix }}{{ $employee->id }}"
                                     type="button"
                                     class="dropdown-item d-flex flex-column align-items-start px-3 py-2"
                                     :class="{ 'bg-primary text-white': highlightedIndex === {{ $index }} }"
@@ -153,6 +177,93 @@
                         @endif
                     </div>
                 @endif
+            </div>
+        </div>
+    @endif
+
+    @if ($showCreateModal)
+        <div
+            class="modal fade show d-block"
+            tabindex="-1"
+            style="background: rgba(0,0,0,0.5);"
+            id="{{ $createModalId }}"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="{{ $createModalTitleId }}"
+            x-on:click.self="$wire.closeCreateEmployeeModal()"
+            x-on:keydown.escape.stop.prevent="$wire.closeCreateEmployeeModal()"
+        >
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="{{ $createModalTitleId }}">Crear empleado</h5>
+                        <button type="button" class="btn-close" wire:click="closeCreateEmployeeModal" aria-label="Cerrar"></button>
+                    </div>
+
+                    <form wire:submit="createEmployee">
+                        <div class="modal-body">
+                            @if (is_string($createErrorId) && $createErrorId !== '')
+                                <x-ui.error-alert-with-id :error-id="$createErrorId" class="mb-3" />
+                            @endif
+
+                            <div class="mb-3">
+                                <label for="{{ $createRpeInputId }}" class="form-label">
+                                    RPE <span class="text-danger">*</span>
+                                </label>
+                                <input
+                                    id="{{ $createRpeInputId }}"
+                                    type="text"
+                                    class="form-control @error('createRpe') is-invalid @enderror"
+                                    wire:model="createRpe"
+                                    maxlength="255"
+                                >
+                                @error('createRpe')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-0">
+                                <label for="{{ $createNameInputId }}" class="form-label">
+                                    Nombre <span class="text-danger">*</span>
+                                </label>
+                                <input
+                                    id="{{ $createNameInputId }}"
+                                    type="text"
+                                    class="form-control @error('createName') is-invalid @enderror"
+                                    wire:model="createName"
+                                    maxlength="255"
+                                >
+                                @error('createName')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button
+                                type="button"
+                                class="btn btn-outline-secondary"
+                                wire:click="closeCreateEmployeeModal"
+                                wire:loading.attr="disabled"
+                                wire:target="createEmployee"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                                wire:loading.attr="disabled"
+                                wire:target="createEmployee"
+                            >
+                                <span wire:loading.remove wire:target="createEmployee">Guardar</span>
+                                <span wire:loading.inline wire:target="createEmployee">
+                                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                    Guardando...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     @endif

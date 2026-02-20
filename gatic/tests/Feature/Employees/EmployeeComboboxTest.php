@@ -8,6 +8,7 @@ use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -49,7 +50,7 @@ class EmployeeComboboxTest extends TestCase
 
         $component = new EmployeeCombobox;
 
-        foreach (['mount', 'updatedSearch', 'clearSelection', 'retrySearch', 'closeDropdown'] as $method) {
+        foreach (['mount', 'updatedSearch', 'clearSelection', 'retrySearch', 'closeDropdown', 'openCreateEmployeeModal', 'closeCreateEmployeeModal', 'createEmployee'] as $method) {
             try {
                 $component->{$method}();
                 $this->fail("Expected AuthorizationException for {$method}().");
@@ -216,6 +217,61 @@ class EmployeeComboboxTest extends TestCase
             ->assertSee('Sin resultados');
     }
 
+    public function test_shows_create_employee_cta_when_no_results(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        $component = Livewire::actingAs($admin)
+            ->test(EmployeeCombobox::class)
+            ->set('search', 'NONEXISTENT');
+
+        $component
+            ->assertSee('Sin resultados')
+            ->assertSee('Crear empleado');
+
+        $this->assertSame(1, substr_count($component->html(), 'role="option"'));
+    }
+
+    public function test_create_employee_from_combobox_autoselects_created_employee(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        $component = Livewire::actingAs($admin)
+            ->test(EmployeeCombobox::class)
+            ->call('openCreateEmployeeModal')
+            ->set('createRpe', 'RPE-99999')
+            ->set('createName', 'Ana Ramirez')
+            ->call('createEmployee')
+            ->assertSet('showCreateModal', false)
+            ->assertSet('showDropdown', false)
+            ->assertSet('search', '')
+            ->assertSet('employeeLabel', 'RPE-99999 - Ana Ramirez')
+            ->assertDispatched('employee-combobox:focus-input')
+            ->assertDispatched('ui:toast', type: 'success');
+
+        $created = Employee::query()->where('rpe', 'RPE-99999')->first();
+        $this->assertNotNull($created);
+        $this->assertSame('Ana Ramirez', $created->name);
+        $component->assertSet('employeeId', $created->id);
+    }
+
+    public function test_create_employee_shows_validation_error_for_duplicate_rpe(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        Employee::query()->create(['rpe' => 'RPE-11111', 'name' => 'Usuario Existente']);
+
+        Livewire::actingAs($admin)
+            ->test(EmployeeCombobox::class)
+            ->call('openCreateEmployeeModal')
+            ->set('createRpe', 'RPE-11111')
+            ->set('createName', 'Usuario Nuevo')
+            ->call('createEmployee')
+            ->assertHasErrors(['createRpe'])
+            ->assertSet('showCreateModal', true);
+
+        $this->assertSame(1, Employee::query()->where('rpe', 'RPE-11111')->count());
+    }
+
     // AC2 - Case insensitive search
     public function test_search_is_case_insensitive(): void
     {
@@ -226,5 +282,37 @@ class EmployeeComboboxTest extends TestCase
             ->test(EmployeeCombobox::class)
             ->set('search', 'abc')
             ->assertSee('ABC123');
+    }
+
+    public function test_multiple_instances_have_unique_aria_ids(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        $html = Blade::render('<livewire:ui.employee-combobox /><livewire:ui.employee-combobox />');
+
+        preg_match_all('/aria-controls=\"(employee-listbox-[^\"]+)\"/', $html, $ariaControlsMatches);
+        preg_match_all('/id=\"(employee-listbox-[^\"]+)\"/', $html, $listboxIdMatches);
+
+        $this->assertCount(2, $ariaControlsMatches[1]);
+        $this->assertCount(2, $listboxIdMatches[1]);
+        $this->assertNotSame($ariaControlsMatches[1][0], $ariaControlsMatches[1][1]);
+        $this->assertNotSame($listboxIdMatches[1][0], $listboxIdMatches[1][1]);
+        $this->assertSame($ariaControlsMatches[1][0], $listboxIdMatches[1][0]);
+        $this->assertSame($ariaControlsMatches[1][1], $listboxIdMatches[1][1]);
+    }
+
+    public function test_soft_deleted_employees_are_excluded_from_suggestions(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $active = Employee::query()->create(['rpe' => 'RPE-20000', 'name' => 'Activo']);
+        $deleted = Employee::query()->create(['rpe' => 'RPE-20001', 'name' => 'Eliminado']);
+        $deleted->delete();
+
+        Livewire::actingAs($admin)
+            ->test(EmployeeCombobox::class)
+            ->set('search', 'RPE-200')
+            ->assertSee($active->rpe)
+            ->assertDontSee($deleted->rpe);
     }
 }

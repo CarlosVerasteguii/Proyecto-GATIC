@@ -26,13 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (\Throwable $e, Request $request) {
-            if (app()->environment(['local', 'testing'])) {
-                return null;
-            }
-
-            if ((bool) config('app.debug', false)) {
-                return null;
-            }
+            $isLivewire = $request->headers->has('X-Livewire');
+            $expectsJson = $request->expectsJson() || $isLivewire;
 
             if ($e instanceof HttpExceptionInterface && $e->getStatusCode() < 500) {
                 return null;
@@ -51,9 +46,28 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
+            if (
+                ! $expectsJson
+                && (bool) config('app.debug', false)
+                && app()->environment(['local', 'testing'])
+            ) {
+                $allowDebugPage = false;
+
+                try {
+                    $user = $request->user();
+                    $allowDebugPage = $user !== null && ($user->role?->value ?? null) === 'Admin';
+                } catch (\Throwable) {
+                    $allowDebugPage = false;
+                }
+
+                if ($allowDebugPage) {
+                    return null;
+                }
+            }
+
             $errorId = app(\App\Support\Errors\ErrorReporter::class)->report($e, $request);
 
-            if ($request->expectsJson() || $request->headers->has('X-Livewire')) {
+            if ($expectsJson) {
                 return response()->json([
                     'message' => 'Ocurrió un error inesperado.',
                     'error_id' => $errorId,

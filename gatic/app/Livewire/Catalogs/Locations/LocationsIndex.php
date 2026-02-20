@@ -47,6 +47,8 @@ class LocationsIndex extends Component
 
         $this->locationId = $location->id;
         $this->name = $location->name;
+
+        $this->dispatch('focus-field', field: 'location-name');
     }
 
     public function cancelEdit(): void
@@ -109,7 +111,7 @@ class LocationsIndex extends Component
             $location->save();
         } catch (QueryException $exception) {
             if ($this->isDuplicateNameException($exception)) {
-                $this->addError('name', 'La ubicacion ya existe.');
+                $this->addError('name', 'La ubicación ya existe.');
 
                 return;
             }

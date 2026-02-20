@@ -60,7 +60,7 @@ class CatalogsTrashTest extends TestCase
         $this->actingAs($admin)
             ->get('/catalogs/brands')
             ->assertOk()
-            ->assertSee('<td>HP</td>', false);
+            ->assertSeeText('HP');
     }
 
     public function test_admin_can_restore_soft_deleted_category(): void

@@ -142,8 +142,9 @@
                                                     class="form-control @error('default_useful_life_months') is-invalid @enderror"
                                                     wire:model="default_useful_life_months"
                                                     @disabled(! $is_serialized)
-                                                    placeholder="Ej. 48"
+                                                    placeholder="Ej. 48…"
                                                     inputmode="numeric"
+                                                    autocomplete="off"
                                                 />
                                                 <span class="input-group-text bg-body">meses</span>
                                             </div>

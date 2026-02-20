@@ -77,10 +77,17 @@
     @stack('styles')
 </head>
 <body>
+    <a
+        href="#main-content"
+        class="visually-hidden-focusable position-absolute top-0 start-0 m-2 px-3 py-2 bg-body border rounded-2 shadow-sm text-decoration-none z-3"
+    >
+        Saltar al contenido
+    </a>
+
     <div id="app" class="app-shell">
         @include('layouts.navigation')
 
-        <main class="app-main py-4">
+        <main id="main-content" class="app-main py-4" tabindex="-1">
             {{ $slot ?? '' }}
             @yield('content')
         </main>

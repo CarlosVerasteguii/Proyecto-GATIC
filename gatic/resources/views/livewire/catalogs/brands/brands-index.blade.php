@@ -15,7 +15,7 @@
         }
     "
 >
-    <x-ui.long-request target="save,delete" />
+    <x-ui.long-request target="save,delete,edit,cancelEdit,clearSearch" />
 
     @php
         $hasSearch = trim($this->search) !== '';
@@ -27,6 +27,7 @@
         <div class="col-12 col-xxl-11">
             <x-ui.toolbar
                 title="Marcas"
+                subtitle="Marcas disponibles para productos y activos."
                 filterId="brands-filters"
                 :filtersCollapsible="false"
                 class="catalogs-toolbar"
@@ -64,6 +65,7 @@
                         </span>
                         <input
                             id="brands-search"
+                            name="q"
                             type="search"
                             class="form-control"
                             placeholder="Buscar por nombre…"
@@ -109,6 +111,7 @@
                                 </span>
                                 <input
                                     id="brand-name"
+                                    name="name"
                                     type="text"
                                     class="form-control @error('name') is-invalid @enderror"
                                     placeholder="Nombre de la marca…"

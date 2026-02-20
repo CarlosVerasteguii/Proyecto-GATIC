@@ -39,20 +39,20 @@
 <div {{ $attributes->merge(['class' => 'card']) }}>
     {{-- Header with title and primary actions --}}
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="d-flex flex-column">
+        <div class="d-flex flex-column min-w-0">
             @if(isset($breadcrumbs))
                 <div class="mb-1">
                     {{ $breadcrumbs }}
                 </div>
             @endif
-            <span class="fw-medium">{{ $title }}</span>
+            <h1 class="h5 mb-0 text-truncate">{{ $title }}</h1>
             @if($subtitle)
-                <small class="text-muted">{{ $subtitle }}</small>
+                <p class="text-body-secondary mb-0 small">{{ $subtitle }}</p>
             @endif
         </div>
 
         @if(isset($actions))
-            <div class="d-flex gap-2 align-items-center">
+            <div class="d-flex flex-wrap gap-2 align-items-center justify-content-end">
                 {{ $actions }}
             </div>
         @endif

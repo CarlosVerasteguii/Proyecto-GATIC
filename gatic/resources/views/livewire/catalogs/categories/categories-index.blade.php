@@ -1,5 +1,5 @@
 <div class="container position-relative catalogs-page catalogs-categories-page">
-    <x-ui.long-request target="delete" />
+    <x-ui.long-request target="delete,clearSearch" />
 
     @php
         $hasSearch = trim($this->search) !== '';
@@ -10,6 +10,7 @@
         <div class="col-12 col-xxl-11">
             <x-ui.toolbar
                 title="Categorías"
+                subtitle="Reglas base para activos y productos por categoría."
                 filterId="categories-filters"
                 :filtersCollapsible="false"
                 class="catalogs-toolbar"
@@ -45,6 +46,7 @@
                         </span>
                         <input
                             id="categories-search"
+                            name="q"
                             type="search"
                             class="form-control"
                             placeholder="Buscar por nombre…"

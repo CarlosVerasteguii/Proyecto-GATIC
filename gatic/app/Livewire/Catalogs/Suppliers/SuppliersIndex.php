@@ -11,6 +11,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
@@ -21,6 +22,7 @@ class SuppliersIndex extends Component
     use InteractsWithToasts;
     use WithPagination;
 
+    #[Url(as: 'q')]
     public string $search = '';
 
     public ?int $supplierId = null;
@@ -36,6 +38,12 @@ class SuppliersIndex extends Component
         $this->resetPage();
     }
 
+    public function clearSearch(): void
+    {
+        $this->reset('search');
+        $this->resetPage();
+    }
+
     public function edit(int $supplierId): void
     {
         Gate::authorize('catalogs.manage');
@@ -46,6 +54,8 @@ class SuppliersIndex extends Component
         $this->name = $supplier->name;
         $this->contact = $supplier->contact ?? '';
         $this->notes = $supplier->notes ?? '';
+
+        $this->dispatch('focus-field', field: 'supplier-name');
     }
 
     public function cancelEdit(): void
@@ -181,14 +191,20 @@ class SuppliersIndex extends Component
         $search = Supplier::normalizeName($this->search);
         $escapedSearch = $search !== null ? $this->escapeLike($search) : null;
 
+        $suppliers = Supplier::query()
+            ->when($escapedSearch, function ($query) use ($escapedSearch) {
+                $query->whereRaw("name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
+            })
+            ->orderBy('name')
+            ->paginate(config('gatic.ui.pagination.per_page', 15));
+
         return view('livewire.catalogs.suppliers.suppliers-index', [
-            'suppliers' => Supplier::query()
-                ->when($escapedSearch, function ($query) use ($escapedSearch) {
-                    $query->whereRaw("name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
-                })
-                ->orderBy('name')
-                ->paginate(15),
+            'suppliers' => $suppliers,
             'isEditing' => (bool) $this->supplierId,
+            'summary' => [
+                'total' => Supplier::query()->count(),
+                'results' => $suppliers->total(),
+            ],
         ]);
     }
 

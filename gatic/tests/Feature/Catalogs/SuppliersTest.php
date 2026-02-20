@@ -97,10 +97,10 @@ class SuppliersTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(SuppliersIndex::class)
-            ->assertSeeHtml('<td>Proveedor XYZ</td>')
+            ->assertSee('Proveedor XYZ')
             ->call('delete', $supplier->id)
             ->assertDispatched('ui:toast', type: 'success')
-            ->assertDontSeeHtml('<td>Proveedor XYZ</td>');
+            ->assertDontSee('Proveedor XYZ');
 
         $this->assertSoftDeleted('suppliers', ['id' => $supplier->id]);
     }

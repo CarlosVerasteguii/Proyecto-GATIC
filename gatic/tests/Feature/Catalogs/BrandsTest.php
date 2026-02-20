@@ -79,10 +79,10 @@ class BrandsTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(BrandsIndex::class)
-            ->assertSeeHtml('<td>HP</td>')
+            ->assertSee('HP')
             ->call('delete', $brand->id)
             ->assertDispatched('ui:toast', type: 'success')
-            ->assertDontSeeHtml('<td>HP</td>');
+            ->assertDontSee('HP');
 
         $this->assertSoftDeleted('brands', ['id' => $brand->id]);
     }

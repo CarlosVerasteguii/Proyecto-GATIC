@@ -107,5 +107,32 @@ class DemoPendingTaskSeeder extends Seeder
                 'order' => 2,
             ]
         );
+
+        // === Quick Capture Pending Task (Draft) ===
+        // Used to validate the "Procesar captura rápida" flow (incl. LocationCombobox creable).
+        PendingTask::query()->updateOrCreate(
+            ['description' => 'Captura rápida demo 15-2 (stock in serializado)'],
+            [
+                'type' => PendingTaskType::StockIn,
+                'status' => PendingTaskStatus::Draft,
+                'creator_user_id' => $editor->id,
+                'payload' => [
+                    'schema' => PendingTask::QUICK_CAPTURE_SCHEMA,
+                    'version' => 1,
+                    'kind' => 'quick_stock_in',
+                    'product' => [
+                        'mode' => 'existing',
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'is_serialized' => true,
+                    ],
+                    'items' => [
+                        'type' => 'serialized',
+                        'serials' => ['QC-DEMO-001', 'QC-DEMO-002'],
+                    ],
+                    'note' => 'Demo QA: valida Ubicación creable en Quick Process.',
+                ],
+            ],
+        );
     }
 }

@@ -13,6 +13,7 @@ use App\Models\Supplier;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -22,9 +23,20 @@ class CatalogsTrash extends Component
     use InteractsWithToasts;
     use WithPagination;
 
+    #[Url(as: 'tab')]
     public string $tab = 'categories';
 
+    #[Url(as: 'q')]
     public string $search = '';
+
+    public function mount(): void
+    {
+        Gate::authorize('catalogs.manage');
+
+        if (! in_array($this->tab, ['categories', 'brands', 'locations', 'suppliers'], true)) {
+            $this->tab = 'categories';
+        }
+    }
 
     public function updatedSearch(): void
     {
@@ -33,7 +45,7 @@ class CatalogsTrash extends Component
 
     public function setTab(string $tab): void
     {
-        Gate::authorize('admin-only');
+        Gate::authorize('catalogs.manage');
 
         if (! in_array($tab, ['categories', 'brands', 'locations', 'suppliers'], true)) {
             abort(404);
@@ -45,7 +57,7 @@ class CatalogsTrash extends Component
 
     public function restore(string $type, int $id): void
     {
-        Gate::authorize('admin-only');
+        Gate::authorize('catalogs.manage');
 
         if (! in_array($type, ['categories', 'brands', 'locations', 'suppliers'], true)) {
             abort(404);
@@ -65,7 +77,7 @@ class CatalogsTrash extends Component
 
     public function purge(string $type, int $id): void
     {
-        Gate::authorize('admin-only');
+        Gate::authorize('catalogs.manage');
 
         if (! in_array($type, ['categories', 'brands', 'locations', 'suppliers'], true)) {
             abort(404);
@@ -85,7 +97,7 @@ class CatalogsTrash extends Component
 
     public function emptyTrash(): void
     {
-        Gate::authorize('admin-only');
+        Gate::authorize('catalogs.manage');
 
         $action = new EmptyTrash;
         $result = $action->execute($this->tab, auth()->id());
@@ -101,7 +113,7 @@ class CatalogsTrash extends Component
 
     public function render(): View
     {
-        Gate::authorize('admin-only');
+        Gate::authorize('catalogs.manage');
 
         $search = match ($this->tab) {
             'categories' => Category::normalizeName($this->search),

@@ -22,7 +22,6 @@ use App\Enums\PendingTaskLineType;
 use App\Enums\PendingTaskStatus;
 use App\Enums\UserRole;
 use App\Livewire\Concerns\InteractsWithToasts;
-use App\Models\Location;
 use App\Models\PendingTask;
 use App\Models\PendingTaskLine;
 use App\Models\Product;
@@ -135,9 +134,6 @@ class PendingTaskShow extends Component
 
     public string $quickProcessNote = '';
 
-    /** @var array<int, array{id:int, name:string}> */
-    public array $locations = [];
-
     public function mount(int $pendingTask): void
     {
         Gate::authorize('inventory.manage');
@@ -147,7 +143,6 @@ class PendingTaskShow extends Component
         $this->loadTask();
         $this->resumeProcessModeIfOwnLock();
         $this->loadProducts();
-        $this->loadLocations();
     }
 
     private function isQuickCaptureTask(): bool
@@ -228,19 +223,6 @@ class PendingTaskShow extends Component
                 'is_serialized' => (bool) $p->getAttribute('is_serialized'),
             ])
             ->toArray();
-    }
-
-    private function loadLocations(): void
-    {
-        $this->locations = Location::query()
-            ->whereNull('deleted_at')
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(static fn (Location $location): array => [
-                'id' => (int) $location->id,
-                'name' => (string) $location->name,
-            ])
-            ->all();
     }
 
     public function openAddLineModal(): void

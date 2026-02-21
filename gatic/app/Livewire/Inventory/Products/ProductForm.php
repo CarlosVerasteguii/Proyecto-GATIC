@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Inventory\Products;
 
-use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
@@ -39,11 +38,6 @@ class ProductForm extends Component
     /**
      * @var array<int, array{id:int, name:string}>
      */
-    public array $brands = [];
-
-    /**
-     * @var array<int, array{id:int, name:string}>
-     */
     public array $suppliers = [];
 
     private ?int $originalCategoryId = null;
@@ -60,16 +54,6 @@ class ProductForm extends Component
                 'id' => $category->id,
                 'name' => $category->name,
                 'is_serialized' => (bool) $category->is_serialized,
-            ])
-            ->all();
-
-        $this->brands = Brand::query()
-            ->whereNull('deleted_at')
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(static fn (Brand $brand): array => [
-                'id' => $brand->id,
-                'name' => $brand->name,
             ])
             ->all();
 
@@ -256,7 +240,6 @@ class ProductForm extends Component
         return view('livewire.inventory.products.product-form', [
             'isEdit' => (bool) $this->productId,
             'categories' => $this->categories,
-            'brands' => $this->brands,
             'suppliers' => $this->suppliers,
         ]);
     }

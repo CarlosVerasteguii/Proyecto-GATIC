@@ -42,6 +42,18 @@ class DemoInventorySeeder extends Seeder
             ['name' => 'Oficina Principal']
         );
 
+        // Soft-deleted demo records (for QA flows like "Existe en Papelera" + "Ir a Papelera").
+        // Use unique names to avoid touching real demo data.
+        $trashedBrand = Brand::withTrashed()->firstOrCreate(['name' => 'Marca Papelera QA']);
+        if ($trashedBrand->deleted_at === null) {
+            $trashedBrand->delete();
+        }
+
+        $trashedLocation = Location::withTrashed()->firstOrCreate(['name' => 'Ubicacion Papelera QA']);
+        if ($trashedLocation->deleted_at === null) {
+            $trashedLocation->delete();
+        }
+
         // === Employee ===
         $employee = Employee::query()->updateOrCreate(
             ['rpe' => 'RPE-001'],

@@ -15,6 +15,7 @@
     inset: 0;
     z-index: 0;
     overflow: hidden;
+    pointer-events: none; // Never block interactions with the login card
   }
 
   .login-bg-slide {
@@ -80,6 +81,7 @@
       rgba(0, 0, 0, 0.85) 100%
     );
     z-index: 1;
+    pointer-events: none; // Never block interactions with the login card
   }
 }
 

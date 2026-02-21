@@ -62,7 +62,7 @@ class ProcessQuickCapturePendingTask
             'task_id.exists' => 'La tarea no existe o fue eliminada.',
             'employee_id.exists' => 'El empleado seleccionado no existe.',
             'resolved_product_id.exists' => 'El producto seleccionado no existe o fue eliminado.',
-            'location_id.exists' => 'La ubicacion seleccionada no existe o fue eliminada.',
+            'location_id.exists' => 'La ubicación seleccionada no existe o fue eliminada.',
             'note.min' => 'La nota debe tener al menos :min caracteres.',
             'note.max' => 'La nota no puede exceder :max caracteres.',
         ])->validate();
@@ -75,13 +75,13 @@ class ProcessQuickCapturePendingTask
 
             if (! $task->hasQuickCapturePayload()) {
                 throw ValidationException::withMessages([
-                    'status' => ['Esta tarea no es una captura rapida.'],
+                    'status' => ['Esta tarea no es una captura rápida.'],
                 ]);
             }
 
             if (! $task->isQuickCaptureTask()) {
                 throw ValidationException::withMessages([
-                    'status' => ['Esta captura rapida ya fue procesada o convertida.'],
+                    'status' => ['Esta captura rápida ya fue procesada o convertida.'],
                 ]);
             }
 
@@ -93,7 +93,7 @@ class ProcessQuickCapturePendingTask
 
             if (PendingTaskLine::query()->where('pending_task_id', $task->id)->exists()) {
                 throw ValidationException::withMessages([
-                    'lines' => ['Esta captura rapida ya tiene renglones.'],
+                    'lines' => ['Esta captura rápida ya tiene renglones.'],
                 ]);
             }
 
@@ -113,7 +113,7 @@ class ProcessQuickCapturePendingTask
 
             $note = is_string($data['note'] ?? null) ? trim((string) $data['note']) : '';
             if ($note === '') {
-                $note = 'Procesado desde captura rapida';
+                $note = 'Procesado desde captura rápida';
             }
 
             $nowIso = CarbonImmutable::now()->toIso8601String();
@@ -148,13 +148,13 @@ class ProcessQuickCapturePendingTask
                 );
             } else {
                 throw ValidationException::withMessages([
-                    'payload' => ['Esta captura rapida no es valida o no es soportada.'],
+                    'payload' => ['Esta captura rápida no es válida o no es soportada.'],
                 ]);
             }
 
             if (($result['created_lines'] + $result['created_assets'] + $result['updated_assets'] + $result['skipped']) <= 0) {
                 throw ValidationException::withMessages([
-                    'status' => ['No se realizaron cambios al procesar la captura rapida.'],
+                    'status' => ['No se realizaron cambios al procesar la captura rápida.'],
                 ]);
             }
 
@@ -302,7 +302,7 @@ class ProcessQuickCapturePendingTask
 
         if ($locationId === null) {
             throw ValidationException::withMessages([
-                'location_id' => ['Selecciona una ubicacion para crear los activos.'],
+                'location_id' => ['Selecciona una ubicación para crear los activos.'],
             ]);
         }
 

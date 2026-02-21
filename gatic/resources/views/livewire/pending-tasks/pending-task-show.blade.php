@@ -672,19 +672,13 @@
                                     <label for="quickProcessLocationId" class="form-label">
                                         Ubicación para crear activos <span class="text-danger">*</span>
                                     </label>
-                                    <select
-                                        id="quickProcessLocationId"
-                                        class="form-select @error('location_id') is-invalid @enderror"
+                                    <livewire:ui.location-combobox
                                         wire:model.live="quickProcessLocationId"
-                                        required
-                                    >
-                                        <option value="">Seleccionar...</option>
-                                        @foreach ($locations as $location)
-                                            <option value="{{ $location['id'] }}">{{ $location['name'] }}</option>
-                                        @endforeach
-                                    </select>
+                                        inputId="quickProcessLocationId"
+                                        :key="'quick-process-location-' . $task->id"
+                                    />
                                     @error('location_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
                                     @enderror
                                 </div>
                             @endif

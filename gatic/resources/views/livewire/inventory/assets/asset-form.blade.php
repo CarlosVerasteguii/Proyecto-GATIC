@@ -49,18 +49,9 @@
 
                         <div class="mb-3">
                             <label for="asset-location" class="form-label">Ubicación</label>
-                            <select
-                                id="asset-location"
-                                class="form-select @error('location_id') is-invalid @enderror"
-                                wire:model.defer="location_id"
-                            >
-                                <option value="">Selecciona una ubicación.</option>
-                                @foreach ($locations as $location)
-                                    <option value="{{ $location['id'] }}">{{ $location['name'] }}</option>
-                                @endforeach
-                            </select>
+                            <livewire:ui.location-combobox wire:model="location_id" inputId="asset-location" />
                             @error('location_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
                         </div>
 

@@ -3,7 +3,6 @@
 namespace App\Livewire\Inventory\Assets;
 
 use App\Models\Asset;
-use App\Models\Location;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Support\Settings\SettingsStore;
@@ -70,11 +69,6 @@ class AssetForm extends Component
     /**
      * @var array<int, array{id:int, name:string}>
      */
-    public array $locations = [];
-
-    /**
-     * @var array<int, array{id:int, name:string}>
-     */
     public array $suppliers = [];
 
     /**
@@ -104,16 +98,6 @@ class AssetForm extends Component
             : null;
         $this->existingUsefulLifeMonths = null;
         $this->usefulLifeMonthsTouched = false;
-
-        $this->locations = Location::query()
-            ->whereNull('deleted_at')
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(static fn (Location $location): array => [
-                'id' => $location->id,
-                'name' => $location->name,
-            ])
-            ->all();
 
         $this->suppliers = Supplier::query()
             ->whereNull('deleted_at')
@@ -417,7 +401,6 @@ class AssetForm extends Component
             'product' => $this->productModel,
             'productIsSerialized' => $this->productIsSerialized,
             'requiresAssetTag' => $this->requiresAssetTag,
-            'locations' => $this->locations,
             'statuses' => $this->statuses,
             'suppliers' => $this->suppliers,
             'requiresEmployeeSelection' => $this->requiresCurrentEmployeeSelection(),

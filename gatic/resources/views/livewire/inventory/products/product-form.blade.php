@@ -52,18 +52,9 @@
 
                     <div class="mb-3">
                         <label for="product-brand" class="form-label">Marca (opcional)</label>
-                        <select
-                            id="product-brand"
-                            class="form-select @error('brand_id') is-invalid @enderror"
-                            wire:model.defer="brand_id"
-                        >
-                            <option value="">Sin marca</option>
-                            @foreach ($brands as $brand)
-                                <option value="{{ $brand['id'] }}">{{ $brand['name'] }}</option>
-                            @endforeach
-                        </select>
+                        <livewire:ui.brand-combobox wire:model="brand_id" inputId="product-brand" />
                         @error('brand_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
                     </div>
 

@@ -38,6 +38,10 @@ function buildToastElement({ type, title, message, timeoutMs, errorId, action })
     const resolvedErrorId = typeof errorId === 'string' && errorId.trim() !== '' ? errorId.trim() : null;
 
     const el = document.createElement('div');
+    el.dataset.testid = 'toast';
+    el.dataset.toastType = resolvedType;
+    if (resolvedTitle) el.dataset.toastTitle = resolvedTitle;
+    if (resolvedErrorId) el.dataset.errorId = resolvedErrorId;
     el.className = `toast gatic-toast text-bg-${resolvedType === 'error' ? 'danger' : resolvedType} border-0`;
     el.setAttribute('role', 'alert');
     el.setAttribute('aria-live', resolvedType === 'error' ? 'assertive' : 'polite');

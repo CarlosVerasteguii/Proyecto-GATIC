@@ -26,17 +26,22 @@ class CatalogsTrashTest extends TestCase
             ->assertOk();
     }
 
-    public function test_editor_and_lector_are_forbidden_from_catalogs_trash_page(): void
+    public function test_editor_can_access_catalogs_trash_page(): void
     {
-        $roles = [UserRole::Editor, UserRole::Lector];
+        $editor = User::factory()->create(['role' => UserRole::Editor]);
 
-        foreach ($roles as $role) {
-            $user = User::factory()->create(['role' => $role]);
+        $this->actingAs($editor)
+            ->get('/catalogs/trash')
+            ->assertOk();
+    }
 
-            $this->actingAs($user)
-                ->get('/catalogs/trash')
-                ->assertForbidden();
-        }
+    public function test_lector_is_forbidden_from_catalogs_trash_page(): void
+    {
+        $lector = User::factory()->create(['role' => UserRole::Lector]);
+
+        $this->actingAs($lector)
+            ->get('/catalogs/trash')
+            ->assertForbidden();
     }
 
     public function test_admin_can_restore_soft_deleted_brand(): void
@@ -115,23 +120,19 @@ class CatalogsTrashTest extends TestCase
             ->assertSee('Bodega Central');
     }
 
-    public function test_editor_and_lector_cannot_execute_restore_action(): void
+    public function test_lector_cannot_execute_restore_action(): void
     {
-        $roles = [UserRole::Editor, UserRole::Lector];
+        $lector = User::factory()->create(['role' => UserRole::Lector]);
 
-        foreach ($roles as $role) {
-            $user = User::factory()->create(['role' => $role]);
+        $this->actingAs($lector);
 
-            $this->actingAs($user);
+        $component = new CatalogsTrash;
 
-            $component = new CatalogsTrash;
-
-            try {
-                $component->restore('brands', 1);
-                $this->fail('Expected AuthorizationException for restore().');
-            } catch (AuthorizationException) {
-                $this->addToAssertionCount(1);
-            }
+        try {
+            $component->restore('brands', 1);
+            $this->fail('Expected AuthorizationException for restore().');
+        } catch (AuthorizationException) {
+            $this->addToAssertionCount(1);
         }
     }
 }

@@ -93,7 +93,7 @@ Route::middleware(['auth', 'active', 'can:catalogs.manage'])
         Route::get('/suppliers', SuppliersIndex::class)->name('suppliers.index');
     });
 
-Route::middleware(['auth', 'active', 'can:admin-only'])
+Route::middleware(['auth', 'active', 'can:catalogs.manage'])
     ->prefix('catalogs')
     ->name('catalogs.')
     ->group(function () {

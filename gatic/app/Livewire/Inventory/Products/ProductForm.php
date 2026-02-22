@@ -4,7 +4,6 @@ namespace App\Livewire\Inventory\Products;
 
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\Supplier;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -35,11 +34,6 @@ class ProductForm extends Component
      */
     public array $categories = [];
 
-    /**
-     * @var array<int, array{id:int, name:string}>
-     */
-    public array $suppliers = [];
-
     private ?int $originalCategoryId = null;
 
     public function mount(?string $product = null): void
@@ -54,16 +48,6 @@ class ProductForm extends Component
                 'id' => $category->id,
                 'name' => $category->name,
                 'is_serialized' => (bool) $category->is_serialized,
-            ])
-            ->all();
-
-        $this->suppliers = Supplier::query()
-            ->whereNull('deleted_at')
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(static fn (Supplier $supplier): array => [
-                'id' => $supplier->id,
-                'name' => $supplier->name,
             ])
             ->all();
 
@@ -240,7 +224,6 @@ class ProductForm extends Component
         return view('livewire.inventory.products.product-form', [
             'isEdit' => (bool) $this->productId,
             'categories' => $this->categories,
-            'suppliers' => $this->suppliers,
         ]);
     }
 }

@@ -215,18 +215,9 @@
 
                                 <div class="mb-3">
                                     <label for="asset-warranty-supplier" class="form-label">Proveedor de garantía</label>
-                                    <select
-                                        id="asset-warranty-supplier"
-                                        class="form-select @error('warrantySupplierId') is-invalid @enderror"
-                                        wire:model.defer="warrantySupplierId"
-                                    >
-                                        <option value="">Sin proveedor</option>
-                                        @foreach ($suppliers as $supplier)
-                                            <option value="{{ $supplier['id'] }}">{{ $supplier['name'] }}</option>
-                                        @endforeach
-                                    </select>
+                                    <livewire:ui.supplier-combobox wire:model="warrantySupplierId" inputId="asset-warranty-supplier" />
                                     @error('warrantySupplierId')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
                                     @enderror
                                 </div>
 

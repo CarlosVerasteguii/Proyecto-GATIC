@@ -5,7 +5,6 @@ namespace App\Livewire\Inventory\Contracts;
 use App\Livewire\Concerns\InteractsWithToasts;
 use App\Models\Asset;
 use App\Models\Contract;
-use App\Models\Supplier;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -59,11 +58,6 @@ class ContractForm extends Component
     public ?int $pendingReassignAssetId = null;
 
     /**
-     * @var array<int, array{id:int, name:string}>
-     */
-    public array $suppliers = [];
-
-    /**
      * @var array<int, array{id:int, serial:string, product_name:string}>
      */
     public array $linkedAssets = [];
@@ -71,16 +65,6 @@ class ContractForm extends Component
     public function mount(?string $contract = null): void
     {
         Gate::authorize('inventory.manage');
-
-        $this->suppliers = Supplier::query()
-            ->whereNull('deleted_at')
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(static fn (Supplier $supplier): array => [
-                'id' => $supplier->id,
-                'name' => $supplier->name,
-            ])
-            ->all();
 
         if (! $contract) {
             return;
@@ -345,7 +329,6 @@ class ContractForm extends Component
 
         return view('livewire.inventory.contracts.contract-form', [
             'isEdit' => (bool) $this->contractId,
-            'suppliers' => $this->suppliers,
             'types' => [
                 ['value' => Contract::TYPE_PURCHASE, 'label' => 'Compra'],
                 ['value' => Contract::TYPE_LEASE, 'label' => 'Arrendamiento'],

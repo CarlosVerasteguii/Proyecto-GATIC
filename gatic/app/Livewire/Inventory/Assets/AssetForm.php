@@ -4,7 +4,6 @@ namespace App\Livewire\Inventory\Assets;
 
 use App\Models\Asset;
 use App\Models\Product;
-use App\Models\Supplier;
 use App\Support\Settings\SettingsStore;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
@@ -67,11 +66,6 @@ class AssetForm extends Component
     public array $allowedCurrencies = [];
 
     /**
-     * @var array<int, array{id:int, name:string}>
-     */
-    public array $suppliers = [];
-
-    /**
      * @var list<string>
      */
     public array $statuses = Asset::STATUSES;
@@ -98,16 +92,6 @@ class AssetForm extends Component
             : null;
         $this->existingUsefulLifeMonths = null;
         $this->usefulLifeMonthsTouched = false;
-
-        $this->suppliers = Supplier::query()
-            ->whereNull('deleted_at')
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(static fn (Supplier $supplier): array => [
-                'id' => $supplier->id,
-                'name' => $supplier->name,
-            ])
-            ->all();
 
         /** @var mixed $currencies */
         $currencies = config('gatic.inventory.money.allowed_currencies', ['MXN', 'USD']);
@@ -402,7 +386,6 @@ class AssetForm extends Component
             'productIsSerialized' => $this->productIsSerialized,
             'requiresAssetTag' => $this->requiresAssetTag,
             'statuses' => $this->statuses,
-            'suppliers' => $this->suppliers,
             'requiresEmployeeSelection' => $this->requiresCurrentEmployeeSelection(),
             'allowedCurrencies' => $this->allowedCurrencies,
             'defaultUsefulLifeMonths' => $this->defaultUsefulLifeMonths,

@@ -56,18 +56,9 @@
 
                             <div class="col-12 col-md-6">
                                 <label for="contract-supplier" class="form-label">Proveedor</label>
-                                <select
-                                    id="contract-supplier"
-                                    class="form-select @error('supplier_id') is-invalid @enderror"
-                                    wire:model="supplier_id"
-                                >
-                                    <option value="">Sin proveedor</option>
-                                    @foreach ($suppliers as $supplier)
-                                        <option value="{{ $supplier['id'] }}">{{ $supplier['name'] }}</option>
-                                    @endforeach
-                                </select>
+                                <livewire:ui.supplier-combobox wire:model="supplier_id" inputId="contract-supplier" />
                                 @error('supplier_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 

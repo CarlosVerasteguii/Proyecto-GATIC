@@ -346,6 +346,27 @@ class AssetsTest extends TestCase
             ->assertHasErrors(['current_employee_id']);
     }
 
+    public function test_asset_form_uses_supplier_combobox_for_warranty_supplier(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AssetForm::class, ['product' => (string) $product->id])
+            ->assertSeeHtml('id="asset-warranty-supplier"')
+            ->assertDontSeeHtml('wire:model.defer="warrantySupplierId"');
+    }
+
     public function test_asset_form_persists_employee_on_edit_and_clears_it_when_status_no_longer_requires_holder(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);

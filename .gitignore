@@ -94,3 +94,8 @@ Context Chats
 .qoder/
 .github/skills/
 .qwen
+
+# Local screenshots / review artifacts (do not commit)
+artifacts/
+admin-settings-mobile-after-summary.png
+New Era.txt

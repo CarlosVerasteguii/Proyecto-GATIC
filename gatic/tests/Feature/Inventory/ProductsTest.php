@@ -1043,17 +1043,15 @@ class ProductsTest extends TestCase
             ->assertHasErrors(['supplier_id']);
     }
 
-    public function test_product_form_does_not_show_soft_deleted_suppliers(): void
+    public function test_product_form_uses_supplier_combobox_instead_of_select_preload(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
-        $activeSupplier = Supplier::query()->create(['name' => 'Proveedor Activo']);
-        $deletedSupplier = Supplier::query()->create(['name' => 'Proveedor Eliminado']);
-        $deletedSupplier->delete();
+        Supplier::query()->create(['name' => 'Proveedor Activo']);
 
         Livewire::actingAs($admin)
             ->test(ProductForm::class)
-            ->assertSee('Proveedor Activo')
-            ->assertDontSee('Proveedor Eliminado');
+            ->assertSeeHtml('id="product-supplier"')
+            ->assertDontSeeHtml('wire:model.defer="supplier_id"');
     }
 
     public function test_products_index_shows_supplier_column(): void

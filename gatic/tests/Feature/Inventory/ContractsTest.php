@@ -362,6 +362,17 @@ class ContractsTest extends TestCase
             ->assertHasErrors(['supplier_id']);
     }
 
+    public function test_contract_form_uses_supplier_combobox_instead_of_select_preload(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        Supplier::query()->create(['name' => 'Proveedor Activo']);
+
+        Livewire::actingAs($admin)
+            ->test(ContractForm::class)
+            ->assertSeeHtml('id="contract-supplier"')
+            ->assertDontSeeHtml('wire:model="supplier_id"');
+    }
+
     public function test_can_create_contract_with_valid_supplier(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);

@@ -34,9 +34,6 @@ class QuickRetirement extends Component
 
     public string $note = '';
 
-    /** @var array<int, array{id: int, name: string, is_serialized: bool}> */
-    public array $products = [];
-
     public int $maxLines = 200;
 
     public function mount(): void
@@ -44,25 +41,7 @@ class QuickRetirement extends Component
         Gate::authorize('inventory.manage');
 
         $this->maxLines = (int) config('gatic.pending_tasks.bulk_paste.max_lines', 200);
-        $this->loadProducts();
         $this->resetForm();
-    }
-
-    private function loadProducts(): void
-    {
-        $this->products = Product::query()
-            ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->whereNull('products.deleted_at')
-            ->whereNull('categories.deleted_at')
-            ->select('products.id', 'products.name', 'categories.is_serialized')
-            ->orderBy('products.name')
-            ->get()
-            ->map(fn ($p) => [
-                'id' => (int) $p->id,
-                'name' => (string) $p->name,
-                'is_serialized' => (bool) $p->getAttribute('is_serialized'),
-            ])
-            ->toArray();
     }
 
     public function open(): void
@@ -148,7 +127,7 @@ class QuickRetirement extends Component
                 'type' => $this->mode === 'serials' ? 'serialized' : 'quantity',
             ],
             'reason' => trim($this->reason),
-            'note' => is_string($this->note) && trim($this->note) !== '' ? trim($this->note) : null,
+            'note' => trim($this->note) !== '' ? trim($this->note) : null,
         ];
 
         $description = 'Retiro rápido';
@@ -160,14 +139,14 @@ class QuickRetirement extends Component
             $payload['items']['serials'] = $serials;
             $description = 'Retiro rápido: '.count($serials).' serial(es)';
         } else {
-            $product = collect($this->products)->firstWhere('id', $this->productId);
-            if (! is_array($product)) {
+            $product = $this->findSelectedProduct();
+            if ($product === null) {
                 throw ValidationException::withMessages([
                     'productId' => ['Selecciona un producto válido.'],
                 ]);
             }
 
-            if (($product['is_serialized'] ?? false) === true) {
+            if ((bool) $product->category->is_serialized === true) {
                 throw ValidationException::withMessages([
                     'productId' => ['El producto es serializado. Usa el modo "Por seriales".'],
                 ]);
@@ -177,13 +156,13 @@ class QuickRetirement extends Component
 
             $payload['product'] = [
                 'mode' => 'existing',
-                'id' => (int) $product['id'],
-                'name' => (string) $product['name'],
+                'id' => (int) $product->id,
+                'name' => (string) $product->name,
                 'is_serialized' => false,
             ];
             $payload['items']['quantity'] = $qty;
 
-            $description = 'Retiro rápido: '.(string) $product['name']." (Cantidad: {$qty})";
+            $description = 'Retiro rápido: '.(string) $product->name." (Cantidad: {$qty})";
         }
 
         /** @var int $userId */
@@ -300,11 +279,31 @@ class QuickRetirement extends Component
 
         $selected = null;
         if ($this->mode === 'product_quantity' && $this->productId !== null) {
-            $selected = collect($this->products)->firstWhere('id', $this->productId);
+            $product = $this->findSelectedProduct();
+            if ($product !== null) {
+                $selected = [
+                    'id' => (int) $product->id,
+                    'name' => (string) $product->name,
+                    'is_serialized' => (bool) $product->category->is_serialized,
+                ];
+            }
         }
 
         return view('livewire.pending-tasks.quick-retirement', [
             'selectedProduct' => $selected,
         ]);
+    }
+
+    private function findSelectedProduct(): ?Product
+    {
+        if ($this->productId === null) {
+            return null;
+        }
+
+        return Product::query()
+            ->with('category')
+            ->whereNull('products.deleted_at')
+            ->whereHas('category', static fn ($query) => $query->whereNull('categories.deleted_at'))
+            ->find($this->productId);
     }
 }

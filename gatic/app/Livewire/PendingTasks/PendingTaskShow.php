@@ -82,10 +82,6 @@ class PendingTaskShow extends Component
 
     public string $note = '';
 
-    // Product selection
-    /** @var array<int, array{id: int, name: string, is_serialized: bool}> */
-    public array $products = [];
-
     /** @var array<string, list<int>> */
     public array $duplicates = [];
 
@@ -142,7 +138,6 @@ class PendingTaskShow extends Component
         $this->serializedBulkMaxLines = (int) config('gatic.pending_tasks.bulk_paste.max_lines', 200);
         $this->loadTask();
         $this->resumeProcessModeIfOwnLock();
-        $this->loadProducts();
     }
 
     private function isQuickCaptureTask(): bool
@@ -206,23 +201,6 @@ class PendingTaskShow extends Component
         if ($this->isProcessMode && ! $this->hasLock && $this->task->hasActiveLock()) {
             $this->lockLost = true;
         }
-    }
-
-    private function loadProducts(): void
-    {
-        $this->products = Product::query()
-            ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->whereNull('products.deleted_at')
-            ->whereNull('categories.deleted_at')
-            ->select('products.id', 'products.name', 'categories.is_serialized')
-            ->orderBy('products.name')
-            ->get()
-            ->map(fn ($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'is_serialized' => (bool) $p->getAttribute('is_serialized'),
-            ])
-            ->toArray();
     }
 
     public function openAddLineModal(): void
@@ -393,14 +371,14 @@ class PendingTaskShow extends Component
         $this->loadTask();
         $this->dispatch('pending-tasks:refresh');
 
-        $message = match ($result['mode'] ?? null) {
+        $messagesByMode = [
             'lines' => 'Se genero el renglon. Ya puedes marcar la tarea como Lista y procesarla.',
             'assets_stock_in' => 'Se crearon activos desde la captura rapida.',
             'assets_retirement' => 'Se marcaron activos como Pendiente de Retiro.',
-            default => 'Captura rapida procesada.',
-        };
+        ];
+        $message = $messagesByMode[$result['mode']];
 
-        $hasErrors = is_array($result['errors'] ?? null) && count($result['errors']) > 0;
+        $hasErrors = $result['errors'] !== [];
         if ($hasErrors) {
             $message .= ' (con alertas)';
         }
@@ -415,9 +393,9 @@ class PendingTaskShow extends Component
     {
         // Auto-set line type based on product category
         if ($this->productId) {
-            $product = collect($this->products)->firstWhere('id', $this->productId);
-            if ($product) {
-                $this->lineType = $product['is_serialized']
+            $product = $this->findSelectableProduct($this->productId);
+            if ($product !== null) {
+                $this->lineType = (bool) $product->category->is_serialized
                     ? PendingTaskLineType::Serialized->value
                     : PendingTaskLineType::Quantity->value;
             }
@@ -1333,6 +1311,19 @@ class PendingTaskShow extends Component
             'lineTypes' => PendingTaskLineType::cases(),
             'lineStatusSummary' => $this->getLineStatusSummary(),
         ]);
+    }
+
+    private function findSelectableProduct(?int $productId): ?Product
+    {
+        if ($productId === null) {
+            return null;
+        }
+
+        return Product::query()
+            ->with('category')
+            ->whereNull('products.deleted_at')
+            ->whereHas('category', static fn ($query) => $query->whereNull('categories.deleted_at'))
+            ->find($productId);
     }
 
     /**

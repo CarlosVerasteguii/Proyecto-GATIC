@@ -37,6 +37,24 @@ class Fp03QuickCaptureTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_quick_capture_modals_use_product_combobox_instead_of_preloaded_selects(): void
+    {
+        $editor = User::factory()->create(['role' => 'Editor']);
+
+        Livewire::actingAs($editor)
+            ->test(QuickStockIn::class)
+            ->call('open')
+            ->assertSeeHtml('id="qs-productId"')
+            ->assertDontSeeHtml('wire:model.live="productId"');
+
+        Livewire::actingAs($editor)
+            ->test(QuickRetirement::class)
+            ->call('open')
+            ->set('mode', 'product_quantity')
+            ->assertSeeHtml('id="qr-productId"')
+            ->assertDontSeeHtml('wire:model.live="productId"');
+    }
+
     public function test_quick_stock_in_serialized_creates_draft_pending_task_with_expected_payload(): void
     {
         $editor = User::factory()->create(['role' => 'Editor']);
@@ -268,6 +286,25 @@ class Fp03QuickCaptureTest extends TestCase
         $readyTask->refresh();
         $this->assertEquals(PendingTaskStatus::Ready, $readyTask->status);
         $this->assertNull($readyTask->locked_by_user_id);
+    }
+
+    public function test_pending_task_show_uses_product_combobox_for_product_selection(): void
+    {
+        $editor = User::factory()->create(['role' => 'Editor']);
+
+        $task = PendingTask::factory()->create([
+            'type' => PendingTaskType::StockIn,
+            'status' => PendingTaskStatus::Draft,
+            'creator_user_id' => $editor->id,
+            'payload' => null,
+        ]);
+
+        Livewire::actingAs($editor)
+            ->test(PendingTaskShow::class, ['pendingTask' => $task->id])
+            ->call('openAddLineModal')
+            ->assertSet('showLineModal', true)
+            ->assertSeeHtml('id="productId"')
+            ->assertDontSeeHtml('wire:model.live="productId"');
     }
 
     public function test_legacy_pending_task_routes_return_forbidden_for_quick_capture(): void

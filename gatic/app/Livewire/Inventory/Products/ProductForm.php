@@ -4,6 +4,7 @@ namespace App\Livewire\Inventory\Products;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\Ui\ReturnToPath;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -29,6 +30,8 @@ class ProductForm extends Component
 
     public bool $categoryIsSerialized = false;
 
+    public ?string $returnTo = null;
+
     /**
      * @var array<int, array{id:int, name:string, is_serialized:bool}>
      */
@@ -39,6 +42,11 @@ class ProductForm extends Component
     public function mount(?string $product = null): void
     {
         Gate::authorize('inventory.manage');
+
+        $returnToQuery = request()->query('returnTo');
+        $this->returnTo = is_string($returnToQuery)
+            ? ReturnToPath::sanitize($returnToQuery)
+            : null;
 
         $this->categories = Category::query()
             ->whereNull('deleted_at')
@@ -52,6 +60,14 @@ class ProductForm extends Component
             ->all();
 
         if (! $product) {
+            $prefillQuery = request()->query('prefill');
+            $prefill = is_string($prefillQuery)
+                ? Product::normalizeName($prefillQuery)
+                : null;
+            if ($prefill !== null) {
+                $this->name = $prefill;
+            }
+
             return;
         }
 
@@ -191,7 +207,7 @@ class ProductForm extends Component
         $validated = $this->validate();
 
         if ($this->productId === null) {
-            Product::query()->create([
+            $created = Product::query()->create([
                 'name' => $validated['name'],
                 'category_id' => $validated['category_id'],
                 'brand_id' => $validated['brand_id'],
@@ -199,6 +215,13 @@ class ProductForm extends Component
                 'qty_total' => $this->categoryIsSerialized ? null : $validated['qty_total'],
                 'low_stock_threshold' => $this->categoryIsSerialized ? null : $validated['low_stock_threshold'],
             ]);
+
+            $returnTo = ReturnToPath::sanitize($this->returnTo);
+            if ($returnTo !== null) {
+                return redirect()
+                    ->to(ReturnToPath::withQuery($returnTo, ['created_id' => (int) $created->id]))
+                    ->with('status', 'Producto creado.');
+            }
 
             return redirect()
                 ->route('inventory.products.index')

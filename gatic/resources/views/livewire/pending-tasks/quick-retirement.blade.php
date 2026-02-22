@@ -78,21 +78,13 @@
                                         <label for="qr-productId" class="form-label">
                                             Producto <span class="text-danger">*</span>
                                         </label>
-                                        <select
-                                            id="qr-productId"
-                                            class="form-select @error('productId') is-invalid @enderror"
+                                        <livewire:ui.product-combobox
                                             wire:model.live="productId"
-                                        >
-                                            <option value="">Seleccionar...</option>
-                                            @foreach ($products as $product)
-                                                <option value="{{ $product['id'] }}">
-                                                    {{ $product['name'] }}
-                                                    ({{ $product['is_serialized'] ? 'Serializado' : 'Por cantidad' }})
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                            inputId="qr-productId"
+                                            :key="'qr-product-combobox-' . $this->getId()"
+                                        />
                                         @error('productId')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
                                         @if (is_array($selectedProduct))
                                             <div class="form-text">

@@ -978,6 +978,62 @@ class ProductsTest extends TestCase
         $response->assertDontSee('Umbral de stock bajo');
     }
 
+    public function test_product_form_prefills_name_from_prefill_query_parameter(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        Livewire::withQueryParams(['prefill' => '  Producto   Prefill  '])
+            ->actingAs($admin)
+            ->test(ProductForm::class)
+            ->assertSet('name', 'Producto Prefill');
+    }
+
+    public function test_product_form_create_redirects_to_return_to_with_created_id(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        $component = Livewire::withQueryParams([
+            'returnTo' => '/pending-tasks?tab=draft',
+            'prefill' => 'Producto retorno',
+        ])->actingAs($admin)
+            ->test(ProductForm::class)
+            ->set('category_id', $category->id)
+            ->set('qty_total', 7)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $created = Product::query()->where('name', 'Producto retorno')->first();
+        $this->assertNotNull($created);
+
+        $component->assertRedirect('/pending-tasks?tab=draft&created_id='.$created->id);
+    }
+
+    public function test_product_form_create_ignores_invalid_return_to_and_redirects_to_index(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        Livewire::withQueryParams([
+            'returnTo' => 'https://example.com/evil',
+            'prefill' => 'Producto invalido',
+        ])->actingAs($admin)
+            ->test(ProductForm::class)
+            ->set('category_id', $category->id)
+            ->set('qty_total', 5)
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('inventory.products.index'));
+    }
+
     public function test_product_form_can_save_with_supplier_id(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);

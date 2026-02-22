@@ -1,5 +1,10 @@
 <div class="container position-relative">
     <x-ui.long-request target="save" />
+    @php
+        $cancelUrl = is_string($returnTo) && $returnTo !== ''
+            ? $returnTo
+            : route('inventory.products.index');
+    @endphp
 
     <div class="row justify-content-center">
         <div class="col-12 col-lg-8">
@@ -9,6 +14,12 @@
                 </div>
 
                 <div class="card-body">
+                    @if (! $isEdit && is_string($returnTo) && $returnTo !== '')
+                        <div class="alert alert-info small">
+                            Al guardar volverás al flujo anterior y el producto nuevo quedará preseleccionado.
+                        </div>
+                    @endif
+
                     <div class="mb-3">
                         <label for="product-name" class="form-label">Nombre</label>
                         <input
@@ -106,7 +117,7 @@
                         <button type="button" class="btn btn-primary" wire:click="save" wire:loading.attr="disabled" wire:target="save">
                             Guardar
                         </button>
-                        <a class="btn btn-outline-secondary" href="{{ route('inventory.products.index') }}">
+                        <a class="btn btn-outline-secondary" href="{{ $cancelUrl }}">
                             Cancelar
                         </a>
                     </div>

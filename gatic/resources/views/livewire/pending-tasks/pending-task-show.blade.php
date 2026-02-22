@@ -643,27 +643,22 @@
                                     <label for="quickProcessProductId" class="form-label">
                                         Producto a usar <span class="text-danger">*</span>
                                     </label>
-                                    <select
-                                        id="quickProcessProductId"
-                                        class="form-select @error('resolved_product_id') is-invalid @enderror"
+                                    <livewire:ui.product-combobox
                                         wire:model.live="quickProcessProductId"
-                                        required
-                                    >
-                                        <option value="">Seleccionar...</option>
-                                        @foreach ($products as $product)
-                                            @if ($expectedSerialized === null || (bool) ($product['is_serialized'] ?? false) === $expectedSerialized)
-                                                <option value="{{ $product['id'] }}">
-                                                    {{ $product['name'] }}
-                                                </option>
-                                            @endif
-                                        @endforeach
-                                    </select>
+                                        inputId="quickProcessProductId"
+                                        :key="'quick-process-product-' . $task->id"
+                                    />
                                     @error('resolved_product_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
                                     @enderror
                                     <div class="form-text">
                                         Esta captura usa un producto placeholder. Selecciona el producto real (o crealo y vuelve).
                                     </div>
+                                    @if ($expectedSerialized === true)
+                                        <div class="form-text">Tipo esperado: serializado.</div>
+                                    @elseif ($expectedSerialized === false)
+                                        <div class="form-text">Tipo esperado: por cantidad.</div>
+                                    @endif
                                 </div>
                             @endif
 
@@ -757,22 +752,13 @@
                                     <label for="productId" class="form-label">
                                         Producto <span class="text-danger">*</span>
                                     </label>
-                                    <select
-                                        id="productId"
-                                        class="form-select @error('product_id') is-invalid @enderror"
+                                    <livewire:ui.product-combobox
                                         wire:model.live="productId"
-                                        required
-                                    >
-                                        <option value="">Seleccionar...</option>
-                                        @foreach ($products as $product)
-                                            <option value="{{ $product['id'] }}">
-                                                {{ $product['name'] }}
-                                                ({{ $product['is_serialized'] ? 'Serializado' : 'Por cantidad' }})
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                        inputId="productId"
+                                        :key="'pending-task-line-product-' . ($editingLineId ?? 'new')"
+                                    />
                                     @error('product_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
                                     @enderror
                                 </div>
 

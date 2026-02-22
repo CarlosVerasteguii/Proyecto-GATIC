@@ -40,9 +40,6 @@ class QuickStockIn extends Component
 
     public string $note = '';
 
-    /** @var array<int, array{id: int, name: string, is_serialized: bool}> */
-    public array $products = [];
-
     public int $maxLines = 200;
 
     public function mount(): void
@@ -50,25 +47,7 @@ class QuickStockIn extends Component
         Gate::authorize('inventory.manage');
 
         $this->maxLines = (int) config('gatic.pending_tasks.bulk_paste.max_lines', 200);
-        $this->loadProducts();
         $this->resetForm();
-    }
-
-    private function loadProducts(): void
-    {
-        $this->products = Product::query()
-            ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->whereNull('products.deleted_at')
-            ->whereNull('categories.deleted_at')
-            ->select('products.id', 'products.name', 'categories.is_serialized')
-            ->orderBy('products.name')
-            ->get()
-            ->map(fn ($p) => [
-                'id' => (int) $p->id,
-                'name' => (string) $p->name,
-                'is_serialized' => (bool) $p->getAttribute('is_serialized'),
-            ])
-            ->toArray();
     }
 
     public function open(): void
@@ -192,7 +171,7 @@ class QuickStockIn extends Component
             'items' => [
                 'type' => $isSerialized ? 'serialized' : 'quantity',
             ],
-            'note' => is_string($this->note) && trim($this->note) !== '' ? trim($this->note) : null,
+            'note' => trim($this->note) !== '' ? trim($this->note) : null,
         ];
 
         if ($isSerialized) {
@@ -262,16 +241,16 @@ class QuickStockIn extends Component
             ];
         }
 
-        $product = collect($this->products)->firstWhere('id', $this->productId);
-        if (! is_array($product)) {
+        $product = $this->findSelectedExistingProduct();
+        if ($product === null) {
             throw ValidationException::withMessages([
                 'productId' => ['Selecciona un producto válido.'],
             ]);
         }
 
         return [
-            'id' => (int) $product['id'],
-            'name' => (string) $product['name'],
+            'id' => (int) $product->id,
+            'name' => (string) $product->name,
         ];
     }
 
@@ -289,12 +268,12 @@ class QuickStockIn extends Component
             return null;
         }
 
-        $product = collect($this->products)->firstWhere('id', $this->productId);
-        if (! is_array($product)) {
+        $product = $this->findSelectedExistingProduct();
+        if ($product === null) {
             return null;
         }
 
-        return (bool) ($product['is_serialized'] ?? false);
+        return (bool) $product->category->is_serialized;
     }
 
     /**
@@ -372,12 +351,32 @@ class QuickStockIn extends Component
         $resolved = $this->resolveIsSerialized();
         $selected = null;
         if ($this->productMode === 'existing' && $this->productId !== null) {
-            $selected = collect($this->products)->firstWhere('id', $this->productId);
+            $product = $this->findSelectedExistingProduct();
+            if ($product !== null) {
+                $selected = [
+                    'id' => (int) $product->id,
+                    'name' => (string) $product->name,
+                    'is_serialized' => (bool) $product->category->is_serialized,
+                ];
+            }
         }
 
         return view('livewire.pending-tasks.quick-stock-in', [
             'resolvedIsSerialized' => $resolved,
             'selectedProduct' => $selected,
         ]);
+    }
+
+    private function findSelectedExistingProduct(): ?Product
+    {
+        if ($this->productId === null) {
+            return null;
+        }
+
+        return Product::query()
+            ->with('category')
+            ->whereNull('products.deleted_at')
+            ->whereHas('category', static fn ($query) => $query->whereNull('categories.deleted_at'))
+            ->find($this->productId);
     }
 }

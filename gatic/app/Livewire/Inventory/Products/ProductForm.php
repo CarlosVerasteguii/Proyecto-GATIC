@@ -32,6 +32,10 @@ class ProductForm extends Component
 
     public ?string $returnTo = null;
 
+    public ?string $createdCategoryFeedback = null;
+
+    public bool $createdCategoryFeedbackIsWarning = false;
+
     /**
      * @var array<int, array{id:int, name:string, is_serialized:bool}>
      */
@@ -66,6 +70,26 @@ class ProductForm extends Component
                 : null;
             if ($prefill !== null) {
                 $this->name = $prefill;
+            }
+
+            $createdIdQuery = request()->query('created_id');
+            if (is_string($createdIdQuery) && ctype_digit($createdIdQuery)) {
+                $createdId = (int) $createdIdQuery;
+
+                $createdCategory = Category::query()
+                    ->whereKey($createdId)
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                if ($createdCategory !== null) {
+                    $this->category_id = $createdCategory->id;
+                    $this->updatedCategoryId($this->category_id);
+                    $this->createdCategoryFeedback = 'Categoría creada y seleccionada.';
+                    $this->createdCategoryFeedbackIsWarning = false;
+                } else {
+                    $this->createdCategoryFeedback = 'No se pudo seleccionar la categoría recién creada porque ya no existe o fue eliminada.';
+                    $this->createdCategoryFeedbackIsWarning = true;
+                }
             }
 
             return;

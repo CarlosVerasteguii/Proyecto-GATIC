@@ -3,9 +3,11 @@
 namespace App\Livewire\Catalogs\Categories;
 
 use App\Models\Category;
+use App\Support\Ui\ReturnToPath;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -22,6 +24,8 @@ class CategoryForm extends Component
 
     public ?string $default_useful_life_months = null;
 
+    public ?string $returnTo = null;
+
     public function updatedIsSerialized(bool $value): void
     {
         if ($value) {
@@ -36,6 +40,11 @@ class CategoryForm extends Component
     public function mount(?string $category = null): void
     {
         Gate::authorize('catalogs.manage');
+
+        $returnToQuery = request()->query('returnTo');
+        $this->returnTo = is_string($returnToQuery)
+            ? ReturnToPath::sanitize($returnToQuery)
+            : null;
 
         if (! $category) {
             return;
@@ -111,7 +120,26 @@ class CategoryForm extends Component
             return null;
         }
 
-        $validated = $this->validate();
+        try {
+            $validated = $this->validate();
+        } catch (ValidationException $exception) {
+            $failed = $exception->validator->failed();
+            $failedNameRules = array_change_key_case($failed['name'] ?? [], CASE_LOWER);
+
+            if (
+                $this->categoryId === null
+                && array_key_exists('unique', $failedNameRules)
+                && Category::query()->onlyTrashed()->where('name', $this->name)->exists()
+            ) {
+                $exception->validator->errors()->forget('name');
+                $exception->validator->errors()->add(
+                    'name',
+                    'El nombre ya existe en la Papelera. Restaura la categoría desde Catálogos → Papelera.'
+                );
+            }
+
+            throw $exception;
+        }
 
         $defaultUsefulLifeMonths = null;
         if (
@@ -123,12 +151,18 @@ class CategoryForm extends Component
         }
 
         if (! $this->categoryId) {
-            Category::query()->create([
+            $created = Category::query()->create([
                 'name' => $this->name,
                 'is_serialized' => $this->is_serialized,
                 'requires_asset_tag' => $this->requires_asset_tag,
                 'default_useful_life_months' => $defaultUsefulLifeMonths,
             ]);
+
+            $returnTo = ReturnToPath::sanitize($this->returnTo);
+            if ($returnTo !== null) {
+                return redirect()
+                    ->to(ReturnToPath::withQuery($returnTo, ['created_id' => (int) $created->id]));
+            }
 
             return redirect()
                 ->route('catalogs.categories.index')

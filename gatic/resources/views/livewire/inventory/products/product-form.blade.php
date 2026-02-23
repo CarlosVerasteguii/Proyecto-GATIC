@@ -14,6 +14,12 @@
                 </div>
 
                 <div class="card-body">
+                    @if (is_string($createdCategoryFeedback) && $createdCategoryFeedback !== '')
+                        <div class="alert alert-{{ $createdCategoryFeedbackIsWarning ? 'warning' : 'success' }} small" role="status">
+                            {{ $createdCategoryFeedback }}
+                        </div>
+                    @endif
+
                     @if (! $isEdit && is_string($returnTo) && $returnTo !== '')
                         <div class="alert alert-info small">
                             Al guardar volverás al flujo anterior y el producto nuevo quedará preseleccionado.
@@ -49,6 +55,26 @@
                         @error('category_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+
+                        @if (! $isEdit)
+                            @can('catalogs.manage')
+                                @php
+                                    $categoryReturnTo = \App\Support\Ui\ReturnToPath::browserCurrent(['created_id']);
+                                    $createCategoryUrl = is_string($categoryReturnTo) && $categoryReturnTo !== ''
+                                        ? route('catalogs.categories.create', ['returnTo' => $categoryReturnTo])
+                                        : route('catalogs.categories.create');
+                                @endphp
+
+                                <div class="mt-2 d-flex flex-wrap align-items-center gap-2">
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ $createCategoryUrl }}">
+                                        <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Crear categoría
+                                    </a>
+                                    <span class="text-body-secondary small">
+                                        Si no existe, créala y al volver quedará seleccionada.
+                                    </span>
+                                </div>
+                            @endcan
+                        @endif
                     </div>
 
                     <div class="mb-3">

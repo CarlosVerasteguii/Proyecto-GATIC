@@ -98,6 +98,51 @@ class CategoriesTest extends TestCase
         ]);
     }
 
+    public function test_category_form_create_with_valid_return_to_redirects_back_with_created_id(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        $component = Livewire::withQueryParams([
+            'returnTo' => '/inventory/products/create?prefill=foo',
+        ])->actingAs($admin)
+            ->test(CategoryForm::class)
+            ->set('name', 'Nueva categoria')
+            ->set('is_serialized', false)
+            ->set('requires_asset_tag', false)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $created = Category::query()->where('name', 'Nueva Categoria')->first();
+        $this->assertNotNull($created);
+
+        $component->assertRedirect('/inventory/products/create?prefill=foo&created_id='.$created->id);
+    }
+
+    public function test_category_form_create_with_invalid_return_to_redirects_to_index(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        $invalidReturnToValues = [
+            'https://example.com/evil',
+            '//example.com/evil',
+            "/inventory/products/create?prefill=foo\nbar",
+            "/inventory/products/create?prefill=foo\r\nbar",
+        ];
+
+        foreach ($invalidReturnToValues as $index => $returnTo) {
+            Livewire::withQueryParams([
+                'returnTo' => $returnTo,
+            ])->actingAs($admin)
+                ->test(CategoryForm::class)
+                ->set('name', "Categoria sin retorno {$index}")
+                ->set('is_serialized', false)
+                ->set('requires_asset_tag', false)
+                ->call('save')
+                ->assertHasNoErrors()
+                ->assertRedirect(route('catalogs.categories.index'));
+        }
+    }
+
     public function test_name_is_unique_case_and_accent_insensitive_including_soft_deleted(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
@@ -115,7 +160,8 @@ class CategoriesTest extends TestCase
             ->set('is_serialized', false)
             ->set('requires_asset_tag', false)
             ->call('save')
-            ->assertHasErrors(['name' => 'unique']);
+            ->assertHasErrors(['name' => 'unique'])
+            ->assertSee('Papelera');
     }
 
     public function test_serialized_category_can_persist_default_useful_life_months(): void

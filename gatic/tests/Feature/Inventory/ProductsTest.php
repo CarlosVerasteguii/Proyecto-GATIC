@@ -988,6 +988,85 @@ class ProductsTest extends TestCase
             ->assertSet('name', 'Producto Prefill');
     }
 
+    public function test_product_form_hides_create_category_cta_when_catalogs_manage_is_denied(): void
+    {
+        $editor = User::factory()->create(['role' => UserRole::Editor]);
+
+        Gate::define('catalogs.manage', static fn (): bool => false);
+
+        Livewire::actingAs($editor)
+            ->test(ProductForm::class)
+            ->assertDontSee('Crear categoría')
+            ->assertDontSee('Si no existe, créala y al volver quedará seleccionada.');
+    }
+
+    public function test_product_form_autoselects_category_from_created_id_query_parameter(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        Livewire::withQueryParams(['created_id' => (string) $category->id])
+            ->actingAs($admin)
+            ->test(ProductForm::class)
+            ->assertSet('category_id', $category->id)
+            ->assertSet('categoryIsSerialized', false)
+            ->assertSee('Categoría creada y seleccionada');
+    }
+
+    public function test_product_form_does_not_autoselect_soft_deleted_category_from_created_id(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Soft deleted',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+        $category->delete();
+
+        Livewire::withQueryParams(['created_id' => (string) $category->id])
+            ->actingAs($admin)
+            ->test(ProductForm::class)
+            ->assertSet('category_id', null)
+            ->assertSee('No se pudo seleccionar la categoría recién creada');
+    }
+
+    public function test_product_form_does_not_autoselect_missing_category_from_created_id(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        Livewire::withQueryParams(['created_id' => '999999'])
+            ->actingAs($admin)
+            ->test(ProductForm::class)
+            ->assertSet('category_id', null)
+            ->assertSee('No se pudo seleccionar la categoría recién creada');
+    }
+
+    public function test_product_form_category_select_excludes_soft_deleted_categories(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        Category::query()->create([
+            'name' => 'Categoria Activa',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+
+        $deleted = Category::query()->create([
+            'name' => 'Categoria Eliminada',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+        $deleted->delete();
+
+        Livewire::actingAs($admin)
+            ->test(ProductForm::class)
+            ->assertSee('Categoria Activa')
+            ->assertDontSee('Categoria Eliminada');
+    }
+
     public function test_product_form_create_redirects_to_return_to_with_created_id(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);

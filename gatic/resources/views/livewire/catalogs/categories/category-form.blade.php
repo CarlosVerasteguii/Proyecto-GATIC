@@ -7,6 +7,10 @@
             ? 'Ajusta reglas y campos opcionales para los activos de esta categoría.'
             : 'Define el nombre y las reglas base para los activos que registrarás.';
 
+        $backUrl = is_string($returnTo) && $returnTo !== ''
+            ? $returnTo
+            : route('catalogs.categories.index');
+
         $serializedSummary = $is_serialized ? 'Serializada' : 'No serializada';
         $assetTagSummary = $is_serialized && $requires_asset_tag ? 'Requerido' : 'No requerido';
         $lifeSummary = $is_serialized && is_string($default_useful_life_months) && trim($default_useful_life_months) !== ''
@@ -29,12 +33,18 @@
                         <p class="text-body-secondary mb-0 catalogs-form-card__subtitle">{{ $pageSubtitle }}</p>
                     </div>
 
-                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('catalogs.categories.index') }}">
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ $backUrl }}">
                         <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
                     </a>
                 </div>
 
                 <div class="card-body">
+                    @if (! $isEdit && is_string($returnTo) && $returnTo !== '')
+                        <div class="alert alert-info small" role="status">
+                            Al guardar volverás al formulario anterior y la categoría quedará seleccionada.
+                        </div>
+                    @endif
+
                     @if ($errors->any())
                         <div class="alert alert-danger" role="alert" aria-live="assertive">
                             Revisa los campos marcados para continuar.
@@ -181,7 +191,7 @@
                                         </span>
                                     </button>
 
-                                    <a class="btn btn-outline-secondary" href="{{ route('catalogs.categories.index') }}">
+                                    <a class="btn btn-outline-secondary" href="{{ $backUrl }}">
                                         Cancelar
                                     </a>
                                 </div>

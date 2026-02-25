@@ -11,10 +11,13 @@ use App\Livewire\Alerts\Loans\LoanAlertsIndex;
 use App\Livewire\Alerts\Renewals\RenewalAlertsIndex;
 use App\Livewire\Alerts\Stock\LowStockAlertsIndex;
 use App\Livewire\Alerts\Warranties\WarrantyAlertsIndex;
+use App\Livewire\Catalogs\Brands\BrandForm;
 use App\Livewire\Catalogs\Brands\BrandsIndex;
 use App\Livewire\Catalogs\Categories\CategoriesIndex;
 use App\Livewire\Catalogs\Categories\CategoryForm;
+use App\Livewire\Catalogs\Locations\LocationForm;
 use App\Livewire\Catalogs\Locations\LocationsIndex;
+use App\Livewire\Catalogs\Suppliers\SupplierForm;
 use App\Livewire\Catalogs\Suppliers\SuppliersIndex;
 use App\Livewire\Catalogs\Trash\CatalogsTrash;
 use App\Livewire\Dev\LivewireSmokeTest;
@@ -89,8 +92,14 @@ Route::middleware(['auth', 'active', 'can:catalogs.manage'])
         Route::get('/categories/create', CategoryForm::class)->name('categories.create');
         Route::get('/categories/{category}/edit', CategoryForm::class)->name('categories.edit');
         Route::get('/brands', BrandsIndex::class)->name('brands.index');
+        Route::get('/brands/create', BrandForm::class)->name('brands.create');
+        Route::get('/brands/{brand}/edit', BrandForm::class)->name('brands.edit');
         Route::get('/locations', LocationsIndex::class)->name('locations.index');
+        Route::get('/locations/create', LocationForm::class)->name('locations.create');
+        Route::get('/locations/{location}/edit', LocationForm::class)->name('locations.edit');
         Route::get('/suppliers', SuppliersIndex::class)->name('suppliers.index');
+        Route::get('/suppliers/create', SupplierForm::class)->name('suppliers.create');
+        Route::get('/suppliers/{supplier}/edit', SupplierForm::class)->name('suppliers.edit');
     });
 
 Route::middleware(['auth', 'active', 'can:catalogs.manage'])

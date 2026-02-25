@@ -1,26 +1,9 @@
-<div
-    class="container position-relative catalogs-page catalogs-locations-page"
-    x-data="{}"
-    x-on:focus-field.window="
-        if ($event.detail.field !== 'location-name') {
-            return;
-        }
-        const el = document.getElementById('location-name');
-        if (el) {
-            el.focus();
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            if (el.select) {
-                el.select();
-            }
-        }
-    "
->
-    <x-ui.long-request target="save,delete,edit,cancelEdit,clearSearch" />
+<div class="container position-relative catalogs-page catalogs-locations-page">
+    <x-ui.long-request target="delete" />
 
     @php
         $hasSearch = trim($this->search) !== '';
         $resultsCount = $locations->total();
-        $isEditingThisPage = (bool) $isEditing;
     @endphp
 
     <div class="row justify-content-center">
@@ -49,12 +32,10 @@
                             Resultados <strong>{{ number_format($summary['results']) }}</strong>
                         </span>
                     @endif
-                    @if ($isEditingThisPage)
-                        <span class="dash-chip">
-                            <i class="bi bi-pencil-square" aria-hidden="true"></i>
-                            Editando
-                        </span>
-                    @endif
+
+                    <a class="btn btn-sm btn-primary" href="{{ route('catalogs.locations.create') }}">
+                        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nueva ubicación
+                    </a>
                 </x-slot:actions>
 
                 <x-slot:search>
@@ -73,175 +54,75 @@
                             aria-label="Buscar ubicación por nombre"
                             autocomplete="off"
                         />
+
+                        @php($clearHidden = ! $hasSearch)
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary{{ $clearHidden ? ' invisible' : '' }}"
+                            wire:click="clearSearch"
+                            wire:loading.attr="disabled"
+                            wire:target="clearSearch"
+                            aria-label="Limpiar búsqueda"
+                            title="Limpiar búsqueda"
+                            @if ($clearHidden) disabled aria-hidden="true" tabindex="-1" @endif
+                        >
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </button>
                     </div>
                 </x-slot:search>
 
-                <x-slot:filters>
-                    <div class="col-12 col-md-9">
-                        <div @class([
-                            'catalogs-inline-editor',
-                            'catalogs-inline-editor--editing' => $isEditingThisPage,
-                        ])>
-                            <div class="d-flex align-items-start justify-content-between gap-3">
-                                <div class="min-w-0">
-                                    <label for="location-name" class="catalogs-inline-editor__heading">
-                                        <i class="bi bi-geo-alt" aria-hidden="true"></i>
-                                        {{ $isEditingThisPage ? 'Editar ubicación' : 'Nueva ubicación' }}
-                                    </label>
-
-                                    <div class="catalogs-inline-editor__subtext">
-                                        @if ($isEditingThisPage)
-                                            Actualiza el nombre de la ubicación seleccionada.
-                                        @else
-                                            Agrega ubicaciones para usarlas en activos y productos.
-                                        @endif
-                                    </div>
-                                </div>
-
-                                @if ($isEditingThisPage)
-                                    <span class="catalogs-inline-editor__meta">
-                                        ID {{ $this->locationId }}
-                                    </span>
-                                @endif
-                            </div>
-
-                            <div class="input-group">
-                                <span class="input-group-text bg-body">
-                                    <i class="bi bi-geo-alt" aria-hidden="true"></i>
-                                </span>
-                                <input
-                                    id="location-name"
-                                    name="name"
-                                    type="text"
-                                    class="form-control @error('name') is-invalid @enderror"
-                                    placeholder="Nombre de la ubicación…"
-                                    wire:model.defer="name"
-                                    wire:keydown.enter.prevent="save"
-                                    @if ($isEditingThisPage) wire:keydown.escape.prevent="cancelEdit" @endif
-                                    aria-label="Nombre de la ubicación"
-                                    aria-describedby="location-name-shortcuts"
-                                    maxlength="255"
-                                    autocomplete="off"
-                                />
-                            </div>
-
-                            @error('name')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-
-                            <div class="catalogs-inline-editor__footer">
-                                <div id="location-name-shortcuts" class="catalogs-inline-editor__keys">
-                                    <span><kbd>Enter</kbd> Guardar</span>
-                                    @if ($isEditingThisPage)
-                                        <span><kbd>Esc</kbd> Cancelar</span>
-                                    @endif
-                                </div>
-
-                                <div class="d-flex flex-wrap justify-content-end gap-2">
-                                    <button
-                                        type="button"
-                                        class="btn btn-primary"
-                                        wire:click="save"
-                                        wire:loading.attr="disabled"
-                                        wire:target="save"
-                                        aria-label="{{ $isEditingThisPage ? 'Guardar cambios de ubicación' : 'Guardar nueva ubicación' }}"
-                                    >
-                                        <span wire:loading.remove wire:target="save">
-                                            <i class="bi bi-check2-circle me-1" aria-hidden="true"></i>
-                                            {{ $isEditingThisPage ? 'Guardar cambios' : 'Guardar' }}
-                                        </span>
-                                        <span wire:loading.inline wire:target="save">
-                                            <span class="d-inline-flex align-items-center gap-2">
-                                                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                                                Guardando…
-                                            </span>
-                                        </span>
-                                    </button>
-
-                                    @if ($isEditingThisPage)
-                                        <button
-                                            type="button"
-                                            class="btn btn-outline-secondary"
-                                            wire:click="cancelEdit"
-                                            wire:loading.attr="disabled"
-                                            wire:target="cancelEdit"
-                                        >
-                                            <i class="bi bi-x-lg me-1" aria-hidden="true"></i>
-                                            Cancelar
-                                        </button>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </x-slot:filters>
-
-                <x-slot:clearFilters>
-                    @if ($hasSearch)
-                        <button
-                            type="button"
-                            class="btn btn-outline-secondary w-100"
-                            wire:click="clearSearch"
-                            aria-label="Limpiar búsqueda"
-                        >
-                            <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Limpiar
-                        </button>
-                    @endif
-                </x-slot:clearFilters>
-
-                <div class="small text-body-secondary mb-2">
-                    Mostrando {{ number_format($resultsCount) }} resultado{{ $resultsCount === 1 ? '' : 's' }}.
+                <div class="small text-body-secondary mb-2" aria-live="polite">
+                    <span>Mostrando {{ number_format($resultsCount) }} resultado{{ $resultsCount === 1 ? '' : 's' }}.</span>
+                    <span
+                        class="ms-2 align-items-center gap-2"
+                        wire:loading.inline-flex
+                        wire:target="search,clearSearch"
+                    >
+                        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                        Buscando…
+                    </span>
                 </div>
 
-                <div class="table-responsive border rounded-3 catalogs-table-wrap">
+                <div
+                    class="table-responsive border rounded-3 catalogs-table-wrap"
+                    wire:loading.class="opacity-50 pe-none"
+                    wire:target="search,clearSearch"
+                >
                     <table class="table table-sm table-striped align-middle mb-0 table-gatic-head catalogs-table">
                         <thead>
                             <tr>
                                 <th>Nombre</th>
-                                <th class="text-end">Acciones</th>
+                                <th class="text-end" style="width: 1%;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($locations as $location)
-                                @php($isRowEditing = $isEditingThisPage && $this->locationId === $location->id)
-                                <tr wire:key="location-row-{{ $location->id }}" @class(['catalogs-row-editing' => $isRowEditing])>
-                                    <td class="min-w-0">
-                                        <div class="min-w-0">
-                                            <div class="fw-semibold text-truncate">{{ $location->name }}</div>
-                                            <div class="small text-body-secondary">ID {{ $location->id }}</div>
-                                        </div>
+                                <tr wire:key="location-row-{{ $location->id }}">
+                                    <td>
+                                        <div class="fw-semibold">{{ $location->name }}</div>
+                                        <div class="text-body-secondary small">ID {{ $location->id }}</div>
                                     </td>
                                     <td class="text-end">
                                         <div class="d-inline-flex flex-wrap justify-content-end gap-2">
-                                            @if ($isRowEditing)
-                                                <button type="button" class="btn btn-sm btn-primary" disabled>
-                                                    <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
-                                                    Editando
-                                                </button>
-                                            @else
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-sm btn-outline-primary"
-                                                    wire:click="edit({{ $location->id }})"
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="edit({{ $location->id }})"
-                                                    aria-label="Editar ubicación {{ $location->name }}"
-                                                >
-                                                    <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
-                                                    Editar
-                                                </button>
-                                            @endif
+                                            <a
+                                                class="btn btn-outline-primary catalogs-action-btn"
+                                                href="{{ route('catalogs.locations.edit', ['location' => $location->id]) }}"
+                                                aria-label="Editar ubicación {{ $location->name }}"
+                                                title="Editar"
+                                            >
+                                                <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                            </a>
                                             <button
                                                 type="button"
-                                                class="btn btn-sm btn-outline-danger"
+                                                class="btn btn-outline-danger catalogs-action-btn"
                                                 wire:click="delete({{ $location->id }})"
-                                                wire:confirm="¿Confirmas que deseas eliminar esta ubicación?"
+                                                wire:confirm="¿Confirmas que deseas eliminar la ubicación «{{ $location->name }}»?"
                                                 wire:loading.attr="disabled"
-                                                wire:target="delete({{ $location->id }})"
+                                                wire:target="delete"
                                                 aria-label="Eliminar ubicación {{ $location->name }}"
+                                                title="Eliminar"
                                             >
-                                                <i class="bi bi-trash me-1" aria-hidden="true"></i>
-                                                Eliminar
+                                                <i class="bi bi-trash" aria-hidden="true"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -255,9 +136,13 @@
                                             <x-ui.empty-state
                                                 icon="bi-geo-alt"
                                                 title="No hay ubicaciones"
-                                                description="Crea tu primera ubicación para usarla en activos y productos."
+                                                description="Crea tu primera ubicación para organizar activos y productos."
                                                 compact
-                                            />
+                                            >
+                                                <a class="btn btn-sm btn-primary" href="{{ route('catalogs.locations.create') }}">
+                                                    <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nueva ubicación
+                                                </a>
+                                            </x-ui.empty-state>
                                         @endif
                                     </td>
                                 </tr>
@@ -273,3 +158,4 @@
         </div>
     </div>
 </div>
+

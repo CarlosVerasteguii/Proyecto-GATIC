@@ -3,6 +3,7 @@
 namespace Tests\Feature\Catalogs;
 
 use App\Enums\UserRole;
+use App\Livewire\Catalogs\Locations\LocationForm;
 use App\Livewire\Catalogs\Locations\LocationsIndex;
 use App\Models\Location;
 use App\Models\User;
@@ -18,10 +19,11 @@ class LocationsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_and_editor_can_access_locations_page(): void
+    public function test_admin_and_editor_can_access_locations_pages(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
         $editor = User::factory()->create(['role' => UserRole::Editor]);
+        $location = Location::query()->create(['name' => 'Bodega Central']);
 
         $this->actingAs($admin)
             ->get('/catalogs/locations')
@@ -30,14 +32,39 @@ class LocationsTest extends TestCase
         $this->actingAs($editor)
             ->get('/catalogs/locations')
             ->assertOk();
+
+        $this->actingAs($admin)
+            ->get('/catalogs/locations/create')
+            ->assertOk();
+
+        $this->actingAs($editor)
+            ->get('/catalogs/locations/create')
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->get("/catalogs/locations/{$location->id}/edit")
+            ->assertOk();
+
+        $this->actingAs($editor)
+            ->get("/catalogs/locations/{$location->id}/edit")
+            ->assertOk();
     }
 
-    public function test_lector_cannot_access_locations_page(): void
+    public function test_lector_cannot_access_locations_routes(): void
     {
         $lector = User::factory()->create(['role' => UserRole::Lector]);
+        $location = Location::query()->create(['name' => 'Bodega Central']);
 
         $this->actingAs($lector)
             ->get('/catalogs/locations')
+            ->assertForbidden();
+
+        $this->actingAs($lector)
+            ->get('/catalogs/locations/create')
+            ->assertForbidden();
+
+        $this->actingAs($lector)
+            ->get("/catalogs/locations/{$location->id}/edit")
             ->assertForbidden();
     }
 
@@ -50,22 +77,17 @@ class LocationsTest extends TestCase
         $component = new LocationsIndex;
 
         try {
-            $component->save();
-            $this->fail('Expected AuthorizationException for save().');
-        } catch (AuthorizationException) {
-            $this->addToAssertionCount(1);
-        }
-
-        try {
-            $component->edit(1);
-            $this->fail('Expected AuthorizationException for edit().');
-        } catch (AuthorizationException) {
-            $this->addToAssertionCount(1);
-        }
-
-        try {
             $component->delete(1);
             $this->fail('Expected AuthorizationException for delete().');
+        } catch (AuthorizationException) {
+            $this->addToAssertionCount(1);
+        }
+
+        $form = new LocationForm;
+
+        try {
+            $form->save();
+            $this->fail('Expected AuthorizationException for save().');
         } catch (AuthorizationException) {
             $this->addToAssertionCount(1);
         }
@@ -76,11 +98,11 @@ class LocationsTest extends TestCase
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
         Livewire::actingAs($admin)
-            ->test(LocationsIndex::class)
+            ->test(LocationForm::class)
             ->set('name', '  Bodega   Central  ')
             ->call('save')
             ->assertHasNoErrors()
-            ->assertDispatched('ui:toast', type: 'success');
+            ->assertRedirect(route('catalogs.locations.index'));
 
         $this->assertDatabaseHas('locations', [
             'name' => 'Bodega Central',
@@ -96,10 +118,11 @@ class LocationsTest extends TestCase
         $existing->delete();
 
         Livewire::actingAs($admin)
-            ->test(LocationsIndex::class)
+            ->test(LocationForm::class)
             ->set('name', '  cafe central ')
             ->call('save')
-            ->assertHasErrors(['name' => 'unique']);
+            ->assertHasErrors(['name' => 'unique'])
+            ->assertSee('Papelera');
     }
 
     public function test_search_escapes_like_wildcards(): void

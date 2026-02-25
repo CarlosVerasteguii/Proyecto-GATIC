@@ -3,6 +3,7 @@
 namespace Tests\Feature\Catalogs;
 
 use App\Enums\UserRole;
+use App\Livewire\Catalogs\Suppliers\SupplierForm;
 use App\Livewire\Catalogs\Suppliers\SuppliersIndex;
 use App\Models\Product;
 use App\Models\Supplier;
@@ -16,10 +17,11 @@ class SuppliersTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_and_editor_can_access_suppliers_page(): void
+    public function test_admin_and_editor_can_access_suppliers_pages(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
         $editor = User::factory()->create(['role' => UserRole::Editor]);
+        $supplier = Supplier::query()->create(['name' => 'Proveedor XYZ']);
 
         $this->actingAs($admin)
             ->get('/catalogs/suppliers')
@@ -28,14 +30,39 @@ class SuppliersTest extends TestCase
         $this->actingAs($editor)
             ->get('/catalogs/suppliers')
             ->assertOk();
+
+        $this->actingAs($admin)
+            ->get('/catalogs/suppliers/create')
+            ->assertOk();
+
+        $this->actingAs($editor)
+            ->get('/catalogs/suppliers/create')
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->get("/catalogs/suppliers/{$supplier->id}/edit")
+            ->assertOk();
+
+        $this->actingAs($editor)
+            ->get("/catalogs/suppliers/{$supplier->id}/edit")
+            ->assertOk();
     }
 
-    public function test_lector_cannot_access_suppliers_page(): void
+    public function test_lector_cannot_access_suppliers_routes(): void
     {
         $lector = User::factory()->create(['role' => UserRole::Lector]);
+        $supplier = Supplier::query()->create(['name' => 'Proveedor XYZ']);
 
         $this->actingAs($lector)
             ->get('/catalogs/suppliers')
+            ->assertForbidden();
+
+        $this->actingAs($lector)
+            ->get('/catalogs/suppliers/create')
+            ->assertForbidden();
+
+        $this->actingAs($lector)
+            ->get("/catalogs/suppliers/{$supplier->id}/edit")
             ->assertForbidden();
     }
 
@@ -44,11 +71,11 @@ class SuppliersTest extends TestCase
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
         Livewire::actingAs($admin)
-            ->test(SuppliersIndex::class)
+            ->test(SupplierForm::class)
             ->set('name', '  Proveedor  Uno  ')
             ->call('save')
             ->assertHasNoErrors()
-            ->assertDispatched('ui:toast', type: 'success');
+            ->assertRedirect(route('catalogs.suppliers.index'));
 
         $this->assertDatabaseHas('suppliers', [
             'name' => 'Proveedor Uno',
@@ -61,13 +88,13 @@ class SuppliersTest extends TestCase
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
         Livewire::actingAs($admin)
-            ->test(SuppliersIndex::class)
+            ->test(SupplierForm::class)
             ->set('name', 'Proveedor Test')
             ->set('contact', 'Juan Perez - 555-1234')
             ->set('notes', 'Entrega los lunes.')
             ->call('save')
             ->assertHasNoErrors()
-            ->assertDispatched('ui:toast', type: 'success');
+            ->assertRedirect(route('catalogs.suppliers.index'));
 
         $this->assertDatabaseHas('suppliers', [
             'name' => 'Proveedor Test',
@@ -84,10 +111,11 @@ class SuppliersTest extends TestCase
         $existing->delete();
 
         Livewire::actingAs($admin)
-            ->test(SuppliersIndex::class)
+            ->test(SupplierForm::class)
             ->set('name', '  cafe central ')
             ->call('save')
-            ->assertHasErrors(['name' => 'unique']);
+            ->assertHasErrors(['name' => 'unique'])
+            ->assertSee('Papelera');
     }
 
     public function test_delete_is_soft_delete_and_supplier_disappears_from_list(): void
@@ -134,22 +162,17 @@ class SuppliersTest extends TestCase
         $component = new SuppliersIndex;
 
         try {
-            $component->save();
-            $this->fail('Expected AuthorizationException for save().');
-        } catch (AuthorizationException) {
-            $this->addToAssertionCount(1);
-        }
-
-        try {
-            $component->edit(1);
-            $this->fail('Expected AuthorizationException for edit().');
-        } catch (AuthorizationException) {
-            $this->addToAssertionCount(1);
-        }
-
-        try {
             $component->delete(1);
             $this->fail('Expected AuthorizationException for delete().');
+        } catch (AuthorizationException) {
+            $this->addToAssertionCount(1);
+        }
+
+        $form = new SupplierForm;
+
+        try {
+            $form->save();
+            $this->fail('Expected AuthorizationException for save().');
         } catch (AuthorizationException) {
             $this->addToAssertionCount(1);
         }

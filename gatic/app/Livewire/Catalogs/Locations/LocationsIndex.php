@@ -6,9 +6,7 @@ use App\Livewire\Concerns\InteractsWithToasts;
 use App\Models\Location;
 use App\Support\Catalogs\CatalogUsage;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -24,10 +22,6 @@ class LocationsIndex extends Component
     #[Url(as: 'q')]
     public string $search = '';
 
-    public ?int $locationId = null;
-
-    public string $name = '';
-
     public function updatedSearch(): void
     {
         $this->resetPage();
@@ -39,90 +33,6 @@ class LocationsIndex extends Component
         $this->resetPage();
     }
 
-    public function edit(int $locationId): void
-    {
-        Gate::authorize('catalogs.manage');
-
-        $location = Location::query()->findOrFail($locationId);
-
-        $this->locationId = $location->id;
-        $this->name = $location->name;
-
-        $this->dispatch('focus-field', field: 'location-name');
-    }
-
-    public function cancelEdit(): void
-    {
-        $this->reset(['locationId', 'name']);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function rules(): array
-    {
-        $uniqueNameRule = Rule::unique('locations', 'name');
-
-        if ($this->locationId) {
-            $uniqueNameRule = $uniqueNameRule->ignore($this->locationId);
-        }
-
-        return [
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                $uniqueNameRule,
-            ],
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function messages(): array
-    {
-        return [
-            'name.required' => 'El nombre es obligatorio.',
-            'name.unique' => 'La ubicación ya existe.',
-        ];
-    }
-
-    public function save(): void
-    {
-        Gate::authorize('catalogs.manage');
-
-        $this->name = Location::normalizeName($this->name) ?? '';
-
-        $this->validate();
-
-        try {
-            if (! $this->locationId) {
-                Location::query()->create(['name' => $this->name]);
-
-                $this->reset('name');
-                $this->toastSuccess('Ubicación creada.');
-
-                return;
-            }
-
-            $location = Location::query()->findOrFail($this->locationId);
-            $location->name = $this->name;
-            $location->save();
-        } catch (QueryException $exception) {
-            if ($this->isDuplicateNameException($exception)) {
-                $this->addError('name', 'La ubicación ya existe.');
-
-                return;
-            }
-
-            throw $exception;
-        }
-
-        $this->reset(['locationId', 'name']);
-        $this->toastSuccess('Ubicación actualizada.');
-    }
-
     public function delete(int $locationId): void
     {
         Gate::authorize('catalogs.manage');
@@ -130,7 +40,7 @@ class LocationsIndex extends Component
         $location = Location::query()->findOrFail($locationId);
 
         try {
-            $inUse = CatalogUsage::isInUse('locations', $location->id);
+            $usageCounts = CatalogUsage::usageCounts('locations', $location->id);
         } catch (Throwable $exception) {
             report($exception);
             $this->toastError('No se pudo validar si la ubicación está en uso.');
@@ -138,17 +48,14 @@ class LocationsIndex extends Component
             return;
         }
 
-        if ($inUse) {
-            $this->toastError('No se puede eliminar: la ubicación está en uso.');
+        if ($usageCounts !== []) {
+            $details = CatalogUsage::formatUsageCounts($usageCounts);
+            $this->toastError("No se puede eliminar: la ubicación está en uso ({$details}).");
 
             return;
         }
 
         $location->delete();
-
-        if ($this->locationId === $locationId) {
-            $this->reset(['locationId', 'name']);
-        }
 
         $this->toastSuccess('Ubicación eliminada.');
     }
@@ -169,7 +76,6 @@ class LocationsIndex extends Component
 
         return view('livewire.catalogs.locations.locations-index', [
             'locations' => $locations,
-            'isEditing' => (bool) $this->locationId,
             'summary' => [
                 'total' => Location::query()->count(),
                 'results' => $locations->total(),
@@ -182,16 +88,4 @@ class LocationsIndex extends Component
         return addcslashes($value, '\\%_');
     }
 
-    private function isDuplicateNameException(QueryException $exception): bool
-    {
-        $errorInfo = $exception->errorInfo;
-
-        if (! is_array($errorInfo) || count($errorInfo) < 2) {
-            return false;
-        }
-
-        $driverCode = (int) ($errorInfo[1] ?? 0);
-
-        return $driverCode === 1062;
-    }
 }

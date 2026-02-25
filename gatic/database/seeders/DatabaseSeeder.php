@@ -61,6 +61,7 @@ class DatabaseSeeder extends Seeder
         // Rich dashboard demo dataset (movements + alerts). Local only.
         if (app()->environment('local')) {
             $this->call(DemoDashboardSeeder::class);
+            $this->call(DemoFullSeeder::class);
         }
     }
 }

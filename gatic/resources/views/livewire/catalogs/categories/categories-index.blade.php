@@ -1,5 +1,5 @@
 <div class="container position-relative catalogs-page catalogs-categories-page">
-    <x-ui.long-request target="delete,clearSearch" />
+    <x-ui.long-request target="delete" />
 
     @php
         $hasSearch = trim($this->search) !== '';
@@ -54,34 +54,47 @@
                             aria-label="Buscar categoría por nombre"
                             autocomplete="off"
                         />
+
+                        @php($clearHidden = ! $hasSearch)
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary{{ $clearHidden ? ' invisible' : '' }}"
+                            wire:click="clearSearch"
+                            wire:loading.attr="disabled"
+                            wire:target="clearSearch"
+                            aria-label="Limpiar búsqueda"
+                            title="Limpiar búsqueda"
+                            @if ($clearHidden) disabled aria-hidden="true" tabindex="-1" @endif
+                        >
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </button>
                     </div>
                 </x-slot:search>
 
-                <x-slot:clearFilters>
-                    @if ($hasSearch)
-                        <button
-                            type="button"
-                            class="btn btn-outline-secondary w-100"
-                            wire:click="clearSearch"
-                            aria-label="Limpiar búsqueda"
-                        >
-                            <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Limpiar
-                        </button>
-                    @endif
-                </x-slot:clearFilters>
-
-                <div class="small text-body-secondary mb-2">
-                    Mostrando {{ number_format($resultsCount) }} resultado{{ $resultsCount === 1 ? '' : 's' }}.
+                <div class="small text-body-secondary mb-2" aria-live="polite">
+                    <span>Mostrando {{ number_format($resultsCount) }} resultado{{ $resultsCount === 1 ? '' : 's' }}.</span>
+                    <span
+                        class="ms-2 align-items-center gap-2"
+                        wire:loading.inline-flex
+                        wire:target="search,clearSearch"
+                    >
+                        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                        Buscando…
+                    </span>
                 </div>
 
-                <div class="table-responsive border rounded-3 catalogs-table-wrap">
+                <div
+                    class="table-responsive border rounded-3 catalogs-table-wrap"
+                    wire:loading.class="opacity-50 pe-none"
+                    wire:target="search,clearSearch"
+                >
                     <table class="table table-sm table-striped align-middle mb-0 table-gatic-head catalogs-table">
                         <thead>
                             <tr>
                                 <th>Nombre</th>
                                 <th class="text-center">Serializado</th>
                                 <th class="text-center">Requiere asset tag</th>
-                                <th class="text-end">Acciones</th>
+                                <th class="text-end" style="width: 1%;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -122,24 +135,24 @@
                                     <td class="text-end">
                                         <div class="d-inline-flex flex-wrap justify-content-end gap-2">
                                             <a
-                                                class="btn btn-sm btn-outline-primary"
+                                                class="btn btn-outline-primary catalogs-action-btn"
                                                 href="{{ route('catalogs.categories.edit', ['category' => $category->id]) }}"
                                                 aria-label="Editar categoría {{ $category->name }}"
+                                                title="Editar"
                                             >
-                                                <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
-                                                Editar
+                                                <i class="bi bi-pencil-square" aria-hidden="true"></i>
                                             </a>
                                             <button
                                                 type="button"
-                                                class="btn btn-sm btn-outline-danger"
+                                                class="btn btn-outline-danger catalogs-action-btn"
                                                 wire:click="delete({{ $category->id }})"
-                                                wire:confirm="¿Confirmas que deseas eliminar esta categoría?"
+                                                wire:confirm="¿Confirmas que deseas eliminar la categoría «{{ $category->name }}»?"
                                                 wire:loading.attr="disabled"
                                                 wire:target="delete"
                                                 aria-label="Eliminar categoría {{ $category->name }}"
+                                                title="Eliminar"
                                             >
-                                                <i class="bi bi-trash me-1" aria-hidden="true"></i>
-                                                Eliminar
+                                                <i class="bi bi-trash" aria-hidden="true"></i>
                                             </button>
                                         </div>
                                     </td>

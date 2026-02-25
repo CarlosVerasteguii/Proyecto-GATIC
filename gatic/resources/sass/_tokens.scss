@@ -180,6 +180,25 @@
 // Utility Classes
 // =============================================================================
 
+// Theme-aware surfaces (for custom popovers, dropdowns, etc.)
+.gatic-surface {
+  background: var(--gatic-surface);
+  color: var(--bs-body-color);
+}
+
+// Popover surface that also harmonizes list-group defaults inside.
+.gatic-surface-popover {
+  background: var(--gatic-surface);
+  color: var(--bs-body-color);
+  --bs-list-group-bg: transparent;
+  --bs-list-group-color: var(--bs-body-color);
+}
+
+// Long-request overlay needs opacity + theme awareness.
+.gatic-long-request {
+  background-color: rgba(var(--bs-body-bg-rgb), 0.75);
+}
+
 // Flex children need min-width:0 to allow text truncation
 .min-w-0 {
   min-width: 0 !important;

@@ -95,7 +95,7 @@
                 x-transition:leave="transition ease-in duration-75"
                 x-transition:leave-start="opacity-100 scale-100"
                 x-transition:leave-end="opacity-0 scale-95"
-                class="position-absolute w-100 mt-1 bg-white border rounded shadow-sm z-3"
+                class="position-absolute w-100 mt-1 gatic-surface-popover border rounded shadow-sm z-3"
                 style="max-height: 300px; overflow-y: auto;"
                 x-ref="listbox"
                 role="listbox"

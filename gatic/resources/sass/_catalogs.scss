@@ -26,6 +26,15 @@
     border-radius: var(--radius-md);
     background: var(--bs-body-bg);
     box-shadow: var(--shadow-sm);
+  }
+
+  .catalogs-inline-editor .card-header {
+    padding: var(--space-3);
+    background: var(--bs-tertiary-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+  }
+
+  .catalogs-inline-editor .card-body {
     padding: var(--space-3);
   }
 
@@ -35,6 +44,12 @@
     background:
       radial-gradient(circle at 95% -20%, rgba(0, 142, 90, 0.12), transparent 45%),
       var(--bs-body-bg);
+  }
+
+  .catalogs-inline-editor--editing .card-header {
+    background:
+      radial-gradient(circle at 95% -20%, rgba(0, 142, 90, 0.12), transparent 45%),
+      var(--bs-tertiary-bg);
   }
 
   .catalogs-inline-editor__heading {
@@ -53,7 +68,7 @@
   }
 
   .catalogs-inline-editor__subtext {
-    margin: 0.25rem 0 var(--space-3);
+    margin: 0.35rem 0 0;
     font-size: 0.85rem;
     color: var(--bs-secondary-color);
     max-width: 62ch;
@@ -109,6 +124,15 @@
 
   .catalogs-inline-editor .input-group .form-control.is-invalid {
     z-index: 2;
+  }
+
+  .catalogs-action-btn {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .catalogs-table thead th {
@@ -286,6 +310,12 @@
     background:
       radial-gradient(circle at 95% -20%, rgba(0, 179, 111, 0.14), transparent 45%),
       var(--bs-body-bg);
+  }
+
+  .catalogs-inline-editor--editing .card-header {
+    background:
+      radial-gradient(circle at 95% -20%, rgba(0, 179, 111, 0.14), transparent 45%),
+      var(--bs-tertiary-bg);
   }
 
   .catalogs-inline-editor__heading i {

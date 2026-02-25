@@ -40,7 +40,7 @@ class CategoriesIndex extends Component
         $category = Category::query()->findOrFail($categoryId);
 
         try {
-            $inUse = CatalogUsage::isInUse('categories', $category->id);
+            $usageCounts = CatalogUsage::usageCounts('categories', $category->id);
         } catch (Throwable $exception) {
             report($exception);
             $this->toastError('No se pudo validar si la categoría está en uso.');
@@ -48,8 +48,9 @@ class CategoriesIndex extends Component
             return;
         }
 
-        if ($inUse) {
-            $this->toastError('No se puede eliminar: la categoría está en uso.');
+        if ($usageCounts !== []) {
+            $details = CatalogUsage::formatUsageCounts($usageCounts);
+            $this->toastError("No se puede eliminar: la categoría está en uso ({$details}).");
 
             return;
         }

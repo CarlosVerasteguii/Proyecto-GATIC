@@ -13,6 +13,15 @@ class CatalogUsage
      */
     private static array $referencesCache = [];
 
+    /**
+     * @var array<string, string>
+     */
+    private static array $referenceTableLabels = [
+        'assets' => 'Activos',
+        'contracts' => 'Contratos',
+        'products' => 'Productos',
+    ];
+
     public static function isInUse(string $catalogTable, int $catalogId): bool
     {
         foreach (self::foreignKeyReferencesToCached($catalogTable) as $reference) {
@@ -22,6 +31,43 @@ class CatalogUsage
         }
 
         return false;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public static function usageCounts(string $catalogTable, int $catalogId): array
+    {
+        $counts = [];
+
+        foreach (self::foreignKeyReferencesToCached($catalogTable) as $reference) {
+            $count = (int) DB::table($reference['table'])
+                ->where($reference['column'], $catalogId)
+                ->count();
+
+            if ($count < 1) {
+                continue;
+            }
+
+            $counts[$reference['table']] = ($counts[$reference['table']] ?? 0) + $count;
+        }
+
+        return $counts;
+    }
+
+    /**
+     * @param  array<string, int>  $counts
+     */
+    public static function formatUsageCounts(array $counts): string
+    {
+        $parts = [];
+
+        foreach ($counts as $table => $count) {
+            $label = self::$referenceTableLabels[$table] ?? $table;
+            $parts[] = $label.' ('.number_format($count).')';
+        }
+
+        return implode(', ', $parts);
     }
 
     /**

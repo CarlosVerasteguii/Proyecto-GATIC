@@ -21,6 +21,7 @@ use App\Livewire\Catalogs\Suppliers\SupplierForm;
 use App\Livewire\Catalogs\Suppliers\SuppliersIndex;
 use App\Livewire\Catalogs\Trash\CatalogsTrash;
 use App\Livewire\Dev\LivewireSmokeTest;
+use App\Livewire\Dev\UiBadgesSmokeTest;
 use App\Livewire\Employees\EmployeeShow;
 use App\Livewire\Employees\EmployeesIndex;
 use App\Livewire\Inventory\Adjustments\AdjustmentsIndex as InventoryAdjustmentsIndex;
@@ -258,6 +259,10 @@ if (app()->environment(['local', 'testing'])) {
     Route::get('/dev/livewire-smoke', LivewireSmokeTest::class)
         ->middleware(['auth', 'active'])
         ->name('dev.livewire-smoke');
+
+    Route::get('/dev/ui-badges', UiBadgesSmokeTest::class)
+        ->middleware(['auth', 'active'])
+        ->name('dev.ui-badges');
 }
 
 // MVP: Profile management deshabilitado - Story 1.3 scope = "solo login/logout"

@@ -40,12 +40,12 @@ enum PendingTaskStatus: string
     public function badgeClass(): string
     {
         return match ($this) {
-            self::Draft => 'bg-secondary text-white',
-            self::Ready => 'bg-info text-dark',
-            self::Processing => 'bg-warning text-dark',
-            self::Completed => 'bg-success text-white',
-            self::PartiallyCompleted => 'bg-primary text-white',
-            self::Cancelled => 'bg-danger text-white',
+            self::Draft => 'ops-status-chip ops-status-chip--secondary',
+            self::Ready => 'ops-status-chip ops-status-chip--info',
+            self::Processing => 'ops-status-chip ops-status-chip--warning',
+            self::Completed => 'ops-status-chip ops-status-chip--success',
+            self::PartiallyCompleted => 'ops-status-chip ops-status-chip--primary',
+            self::Cancelled => 'ops-status-chip ops-status-chip--danger',
         };
     }
 

@@ -154,4 +154,3 @@ class LocationForm extends Component
         return $driverCode === 1062;
     }
 }
-

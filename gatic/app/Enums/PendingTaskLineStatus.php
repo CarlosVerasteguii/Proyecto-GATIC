@@ -36,10 +36,10 @@ enum PendingTaskLineStatus: string
     public function badgeClass(): string
     {
         return match ($this) {
-            self::Pending => 'bg-secondary text-white',
-            self::Processing => 'bg-warning text-dark',
-            self::Applied => 'bg-success text-white',
-            self::Error => 'bg-danger text-white',
+            self::Pending => 'ops-status-chip ops-status-chip--secondary',
+            self::Processing => 'ops-status-chip ops-status-chip--warning',
+            self::Applied => 'ops-status-chip ops-status-chip--success',
+            self::Error => 'ops-status-chip ops-status-chip--danger',
         };
     }
 }

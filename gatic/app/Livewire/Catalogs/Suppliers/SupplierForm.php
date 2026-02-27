@@ -185,4 +185,3 @@ class SupplierForm extends Component
         return $driverCode === 1062;
     }
 }
-

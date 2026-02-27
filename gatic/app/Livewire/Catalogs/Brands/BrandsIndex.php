@@ -87,5 +87,4 @@ class BrandsIndex extends Component
     {
         return addcslashes($value, '\\%_');
     }
-
 }

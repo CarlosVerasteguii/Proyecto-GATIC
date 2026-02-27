@@ -87,5 +87,4 @@ class LocationsIndex extends Component
     {
         return addcslashes($value, '\\%_');
     }
-
 }

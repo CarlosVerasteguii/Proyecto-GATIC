@@ -96,5 +96,4 @@ class SuppliersIndex extends Component
     {
         return addcslashes($value, '\\%_');
     }
-
 }

@@ -116,6 +116,7 @@ $app-sidebar-collapsed-width: 4.5rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-height: 44px;
     white-space: nowrap;
     overflow: hidden;
     border-radius: var(--radius-md);

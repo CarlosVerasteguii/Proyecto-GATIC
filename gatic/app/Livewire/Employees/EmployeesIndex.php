@@ -20,6 +20,8 @@ class EmployeesIndex extends Component
     use InteractsWithToasts;
     use WithPagination;
 
+    public int $totalEmployees = 0;
+
     public string $search = '';
 
     public ?int $employeeId = null;
@@ -32,8 +34,21 @@ class EmployeesIndex extends Component
 
     public string $jobTitle = '';
 
+    public function mount(): void
+    {
+        Gate::authorize('inventory.manage');
+
+        $this->totalEmployees = Employee::query()->count();
+    }
+
     public function updatedSearch(): void
     {
+        $this->resetPage();
+    }
+
+    public function clearSearch(): void
+    {
+        $this->search = '';
         $this->resetPage();
     }
 
@@ -128,6 +143,7 @@ class EmployeesIndex extends Component
             if (! $this->employeeId) {
                 $this->reset(['rpe', 'name', 'department', 'jobTitle']);
                 $this->resetValidation();
+                $this->refreshTotalEmployees();
                 $this->toastSuccess('Empleado creado.');
 
                 return;
@@ -154,6 +170,8 @@ class EmployeesIndex extends Component
 
         $action = new DeleteEmployee;
         $action->execute($employeeId);
+
+        $this->refreshTotalEmployees();
 
         if ($this->employeeId === $employeeId) {
             $this->reset(['employeeId', 'rpe', 'name', 'department', 'jobTitle']);
@@ -200,5 +218,10 @@ class EmployeesIndex extends Component
         $driverCode = (int) ($errorInfo[1] ?? 0);
 
         return $driverCode === 1062;
+    }
+
+    private function refreshTotalEmployees(): void
+    {
+        $this->totalEmployees = Employee::query()->count();
     }
 }

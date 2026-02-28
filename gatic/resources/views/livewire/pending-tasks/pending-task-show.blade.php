@@ -228,28 +228,28 @@
                 @endphp
                 <div class="alert {{ $isOtherLock ? 'alert-warning' : ($isMyLock ? 'alert-info' : 'alert-secondary') }} mb-4">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <div class="d-flex align-items-center gap-2">
-                            @if ($isMyLock)
-                                <i class="bi bi-lock-fill"></i>
-                                <span>
-                                    <strong>Bloqueada por ti</strong>
-                                    @if ($task->locked_at)
-                                        <span class="text-muted small ms-2">desde {{ $task->locked_at->locale('es')->diffForHumans() }}</span>
-                                    @endif
-                                </span>
-                            @elseif ($isOtherLock)
-                                <i class="bi bi-lock-fill"></i>
-                                <span>
-                                    <strong>Bloqueada por {{ $task->lockedBy?->name ?? 'otro usuario' }}</strong>
-                                    @if ($task->locked_at)
-                                        <span class="text-muted small ms-2">desde {{ $task->locked_at->locale('es')->diffForHumans() }}</span>
-                                    @endif
-                                </span>
-                            @else
-                                <i class="bi bi-unlock"></i>
-                                <span><strong>Libre</strong> - Nadie está procesando esta tarea</span>
-                            @endif
-                        </div>
+                            <div class="d-flex align-items-center gap-2">
+                                @if ($isMyLock)
+                                    <i class="bi bi-lock-fill" aria-hidden="true"></i>
+                                    <span>
+                                        <strong>Bloqueada por ti</strong>
+                                        @if ($task->locked_at)
+                                            <span class="text-muted small ms-2">desde {{ $task->locked_at->locale('es')->diffForHumans() }}</span>
+                                        @endif
+                                    </span>
+                                @elseif ($isOtherLock)
+                                    <i class="bi bi-lock-fill" aria-hidden="true"></i>
+                                    <span>
+                                        <strong>Bloqueada por {{ $task->lockedBy?->name ?? 'otro usuario' }}</strong>
+                                        @if ($task->locked_at)
+                                            <span class="text-muted small ms-2">desde {{ $task->locked_at->locale('es')->diffForHumans() }}</span>
+                                        @endif
+                                    </span>
+                                @else
+                                    <i class="bi bi-unlock" aria-hidden="true"></i>
+                                    <span><strong>Libre</strong> - Nadie está procesando esta tarea</span>
+                                @endif
+                            </div>
                         <div class="d-flex align-items-center gap-2">
                             @if ($isMyLock)
                                 <span class="badge bg-primary">Tú tienes el lock</span>
@@ -264,7 +264,7 @@
                         <hr class="my-2">
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <small class="text-muted">
-                                <i class="bi bi-shield-check me-1"></i>
+                                <i class="bi bi-shield-check me-1" aria-hidden="true"></i>
                                 Como Admin, puedes forzar acciones sobre este lock.
                             </small>
                             <div class="d-flex gap-2">

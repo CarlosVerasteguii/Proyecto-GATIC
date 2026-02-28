@@ -49,7 +49,7 @@
         <div class="d-flex align-items-center gap-2 p-2 bg-success bg-opacity-10 border border-success rounded">
             <div class="d-flex align-items-center gap-2 flex-grow-1">
                 <span class="badge bg-success">
-                    <i class="bi bi-geo-alt me-1"></i>Ubicación
+                    <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>Ubicación
                 </span>
                 <span class="fw-medium">{{ $locationLabel }}</span>
             </div>

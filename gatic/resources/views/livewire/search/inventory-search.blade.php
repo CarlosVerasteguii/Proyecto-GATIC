@@ -182,7 +182,7 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($this->products as $product)
-                                            <tr>
+                                            <tr wire:key="inventory-search-product-{{ $product->id }}">
                                                 <td>
                                                     <a
                                                         class="text-decoration-none"
@@ -195,7 +195,7 @@
                                                 <td>{{ $product->brand?->name ?? '-' }}</td>
                                                 <td>
                                                     @if ($product->category?->is_serialized)
-                                                        <span class="badge bg-info">Serializado</span>
+                                                        <span class="badge text-bg-info">Serializado</span>
                                                     @else
                                                         <span class="badge bg-secondary">Por cantidad</span>
                                                     @endif

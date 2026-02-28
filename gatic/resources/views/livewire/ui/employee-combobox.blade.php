@@ -46,7 +46,7 @@
         <div class="d-flex align-items-center gap-2 p-2 bg-success bg-opacity-10 border border-success rounded">
             <div class="d-flex align-items-center gap-2 flex-grow-1">
                 <span class="badge bg-success">
-                    <i class="bi bi-person-check me-1"></i>{{ $employeeRpe }}
+                    <i class="bi bi-person-check me-1" aria-hidden="true"></i>{{ $employeeRpe }}
                 </span>
                 <span class="fw-medium">{{ $employeeName }}</span>
                 @if($employeeDepartment)

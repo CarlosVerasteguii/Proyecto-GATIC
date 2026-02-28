@@ -112,7 +112,7 @@
                             </thead>
                             <tbody>
                                 @forelse ($assets as $asset)
-                                    <tr>
+                                    <tr wire:key="inventory-asset-{{ $asset->id }}">
                                         <td>{{ $asset->serial }}</td>
                                         <td>{{ $asset->asset_tag ?? '-' }}</td>
                                         <td><x-ui.status-badge :status="$asset->status" /></td>

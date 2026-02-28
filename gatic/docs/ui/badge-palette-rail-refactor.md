@@ -39,7 +39,7 @@ Este documento define el plan por fases para estandarizar **toda** la UI de badg
 Reglas base (deben ser constantes en todo el sistema):
 
 - Metrica unica: font-size, font-weight, padding, radius, gap.
-- Semantica unica: `success/warning/danger/info/secondary/neutral`.
+- Semantica unica: `success/warning/danger/info/secondary/neutral` (y `primary` solo como excepcion restringida, p. ej. Operaciones → “Parcialmente finalizado”).
 - Roles: colores fijos para `admin/editor/lector` (no re-usar estos tonos para estatus).
 - Variantes permitidas: `default`, `compact` (solo si es estrictamente necesario).
 
@@ -208,4 +208,3 @@ Si el entorno corre con build estatico (sin `public/hot`):
 - Fase 2 (Propuesta): mapeo final, orden de migracion, riesgos y mitigaciones.
 - Fase 3 (Ejecucion): lista de cambios por archivo (por PR) + screenshots comparativos (si se documenta).
 - Fase 4 (Validacion): comandos corridos + resultado + checklist de pantallas revisadas.
-

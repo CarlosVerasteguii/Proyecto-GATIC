@@ -94,7 +94,7 @@ class UndoMovementByToken
                     actor: $actor,
                 );
 
-            $token->used_at = now();
+            $token->used_at = now()->toImmutable();
             $token->used_by_user_id = $actor->id;
             $token->save();
 

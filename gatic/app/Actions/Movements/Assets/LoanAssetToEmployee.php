@@ -10,6 +10,7 @@ use App\Models\AssetMovement;
 use App\Models\AuditLog;
 use App\Support\Assets\AssetStatusTransitions;
 use App\Support\Audit\AuditRecorder;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -47,6 +48,11 @@ class LoanAssetToEmployee
                 ->lockForUpdate()
                 ->findOrFail($data['asset_id']);
 
+            $loanDueDateInput = $data['loan_due_date'] ?? null;
+            $loanDueDate = $loanDueDateInput !== null
+                ? CarbonImmutable::parse($loanDueDateInput)->startOfDay()
+                : null;
+
             try {
                 AssetStatusTransitions::assertCanLoan($asset->status);
             } catch (AssetTransitionException $e) {
@@ -55,7 +61,7 @@ class LoanAssetToEmployee
 
             $asset->status = Asset::STATUS_LOANED;
             $asset->current_employee_id = $data['employee_id'];
-            $asset->loan_due_date = $data['loan_due_date'] ?? null;
+            $asset->loan_due_date = $loanDueDate;
             $asset->save();
 
             $movement = AssetMovement::create([
@@ -63,7 +69,7 @@ class LoanAssetToEmployee
                 'employee_id' => $data['employee_id'],
                 'actor_user_id' => $data['actor_user_id'],
                 'type' => AssetMovement::TYPE_LOAN,
-                'loan_due_date' => $data['loan_due_date'] ?? null,
+                'loan_due_date' => $loanDueDate,
                 'note' => $data['note'],
             ]);
 
@@ -76,7 +82,7 @@ class LoanAssetToEmployee
                 context: [
                     'asset_id' => $asset->id,
                     'employee_id' => $data['employee_id'],
-                    'loan_due_date' => $data['loan_due_date'] ?? null,
+                    'loan_due_date' => $loanDueDate?->toDateString(),
                 ]
             );
 

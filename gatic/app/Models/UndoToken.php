@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $movement_kind
  * @property int|null $movement_id
  * @property string|null $batch_uuid
- * @property \Illuminate\Support\CarbonImmutable $expires_at
- * @property \Illuminate\Support\CarbonImmutable|null $used_at
+ * @property \Carbon\CarbonImmutable $expires_at
+ * @property \Carbon\CarbonImmutable|null $used_at
  * @property int|null $used_by_user_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at

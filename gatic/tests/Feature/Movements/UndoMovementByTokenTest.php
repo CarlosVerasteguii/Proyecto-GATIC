@@ -158,7 +158,7 @@ class UndoMovementByTokenTest extends TestCase
             'movement_id' => $movement->id,
         ]);
 
-        $token->expires_at = now()->subSecond();
+        $token->expires_at = now()->subSecond()->toImmutable();
         $token->save();
 
         $this->expectException(ValidationException::class);

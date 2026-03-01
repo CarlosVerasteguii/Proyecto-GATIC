@@ -5,6 +5,7 @@ namespace App\Livewire\Inventory\Assets;
 use App\Models\Asset;
 use App\Models\Product;
 use App\Support\Settings\SettingsStore;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
@@ -111,7 +112,7 @@ class AssetForm extends Component
         $store = app(SettingsStore::class);
         $normalizedDefaultCurrency = strtoupper(trim($store->getString('gatic.inventory.money.default_currency', 'MXN')));
         if ($normalizedDefaultCurrency === '' || ! in_array($normalizedDefaultCurrency, $this->allowedCurrencies, true)) {
-            $normalizedDefaultCurrency = $this->allowedCurrencies[0] ?? 'MXN';
+            $normalizedDefaultCurrency = $this->allowedCurrencies[0];
         }
 
         $this->acquisitionCurrency = $normalizedDefaultCurrency;
@@ -306,6 +307,9 @@ class AssetForm extends Component
         $usefulLifeMonths = $this->resolveUsefulLifeMonthsOverride($validated);
         $effectiveUsefulLifeMonths = $usefulLifeMonths ?? $this->defaultUsefulLifeMonths;
         $manualExpectedReplacementDate = $validated['expectedReplacementDate'] ?? null;
+        $manualExpectedReplacementDateCarbon = $manualExpectedReplacementDate !== null
+            ? CarbonImmutable::parse($manualExpectedReplacementDate)->startOfDay()
+            : null;
 
         $acquisitionCost = isset($validated['acquisitionCost']) && $validated['acquisitionCost'] !== ''
             ? (string) $validated['acquisitionCost']
@@ -313,7 +317,7 @@ class AssetForm extends Component
         $saveCurrencyStore = app(SettingsStore::class);
         $normalizedDefaultCurrency = strtoupper(trim($saveCurrencyStore->getString('gatic.inventory.money.default_currency', 'MXN')));
         if ($normalizedDefaultCurrency === '' || ! in_array($normalizedDefaultCurrency, $this->allowedCurrencies, true)) {
-            $normalizedDefaultCurrency = $this->allowedCurrencies[0] ?? 'MXN';
+            $normalizedDefaultCurrency = $this->allowedCurrencies[0];
         }
 
         $acquisitionCurrency = $acquisitionCost !== null
@@ -335,11 +339,14 @@ class AssetForm extends Component
                 'acquisition_cost' => $acquisitionCost,
                 'acquisition_currency' => $acquisitionCurrency,
                 'useful_life_months' => $usefulLifeMonths,
-                'expected_replacement_date' => $manualExpectedReplacementDate,
+                'expected_replacement_date' => $manualExpectedReplacementDateCarbon,
             ]);
 
             if ($manualExpectedReplacementDate === null && $effectiveUsefulLifeMonths !== null) {
-                $asset->expected_replacement_date = $this->calculateExpectedReplacementDate($asset->created_at, $effectiveUsefulLifeMonths);
+                $calculated = $this->calculateExpectedReplacementDate($asset->created_at, $effectiveUsefulLifeMonths);
+                $asset->expected_replacement_date = $calculated !== null
+                    ? CarbonImmutable::parse($calculated)->startOfDay()
+                    : null;
                 $asset->save();
             }
 
@@ -364,11 +371,14 @@ class AssetForm extends Component
         $model->acquisition_cost = $acquisitionCost;
         $model->acquisition_currency = $acquisitionCurrency;
         $model->useful_life_months = $usefulLifeMonths;
-        $model->expected_replacement_date = $this->resolveExpectedReplacementDateForUpdate(
+        $resolved = $this->resolveExpectedReplacementDateForUpdate(
             $model->created_at,
             $effectiveUsefulLifeMonths,
             $manualExpectedReplacementDate
         );
+        $model->expected_replacement_date = $resolved !== null
+            ? CarbonImmutable::parse($resolved)->startOfDay()
+            : null;
         $model->save();
 
         return redirect()
@@ -403,7 +413,6 @@ class AssetForm extends Component
 
         if (
             ! isset($validated['usefulLifeMonths'])
-            || $validated['usefulLifeMonths'] === null
             || $validated['usefulLifeMonths'] === ''
         ) {
             return null;

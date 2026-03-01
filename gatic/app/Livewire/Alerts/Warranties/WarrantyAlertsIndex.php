@@ -191,10 +191,6 @@ class WarrantyAlertsIndex extends Component
         $options = array_values(array_unique($options));
         sort($options);
 
-        if ($options === []) {
-            $options = [7, 14, 30];
-        }
-
         return $options;
     }
 

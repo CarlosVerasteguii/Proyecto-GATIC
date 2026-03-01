@@ -179,7 +179,7 @@ class SettingsForm extends Component
         try {
             $changed = array_filter(
                 $newValues,
-                fn (mixed $value, string $key) => ($oldValues[$key] ?? null) !== $value,
+                fn (mixed $value, string $key) => $oldValues[$key] !== $value,
                 ARRAY_FILTER_USE_BOTH,
             );
 

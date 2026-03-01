@@ -12,7 +12,7 @@ use App\Models\Note;
 use App\Models\Product;
 use App\Models\ProductQuantityMovement;
 use App\Support\Timeline\TimelineEventType;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Str;
 
 /**
@@ -48,7 +48,7 @@ final class RecentActivityBuilder
 
         // Sort descending by timestamp, stable by sort_key
         usort($events, static function (array $a, array $b): int {
-            $dateCmp = ($b['occurred_at_ts'] ?? 0) <=> ($a['occurred_at_ts'] ?? 0);
+            $dateCmp = $b['occurred_at_ts'] <=> $a['occurred_at_ts'];
             if ($dateCmp !== 0) {
                 return $dateCmp;
             }
@@ -58,11 +58,11 @@ final class RecentActivityBuilder
 
         $events = array_slice($events, 0, self::TOTAL_LIMIT);
 
-        return array_values(array_map(static function (array $event): array {
+        return array_map(static function (array $event): array {
             unset($event['sort_key'], $event['occurred_at_ts']);
 
             return $event;
-        }, $events));
+        }, $events);
     }
 
     /**
@@ -96,7 +96,7 @@ final class RecentActivityBuilder
             $typeLabel = TimelineEventType::label($eventType);
             $empLabel = $m->employee ? "{$m->employee->rpe} — {$m->employee->name}" : '—';
             $assetLabel = $m->asset ? $m->asset->serial : '—';
-            $productName = $m->asset?->product?->name ?? '—';
+            $productName = $m->asset?->product->name ?? '—';
 
             $route = null;
             if ($m->asset && $m->asset->product_id) {
@@ -176,17 +176,17 @@ final class RecentActivityBuilder
         foreach ($query->get() as $entry) {
             /** @var InventoryAdjustmentEntry $entry */
             $adjustment = $entry->adjustment;
-            $reason = $adjustment?->reason ?? '—';
-            $actorName = $adjustment?->actor?->name;
+            $reason = $adjustment->reason ?? '—';
+            $actorName = $adjustment->actor?->name;
 
             $entityLabel = '';
             $route = null;
             if ($entry->product_id) {
-                $entityLabel = $entry->product?->name ?? '—';
+                $entityLabel = $entry->product->name;
                 $route = $this->entityRoute('Product', $entry->product_id);
             } elseif ($entry->asset_id) {
-                $entityLabel = $entry->asset?->serial ?? '—';
-                if ($entry->asset?->product_id) {
+                $entityLabel = $entry->asset->serial;
+                if ($entry->asset->product_id) {
                     $route = $this->entityRoute('Asset', $entry->asset_id, $entry->asset->product_id);
                 }
             }
@@ -392,7 +392,7 @@ final class RecentActivityBuilder
         string $title,
         string $summary,
         ?string $actor,
-        Carbon $occurredAt,
+        CarbonInterface $occurredAt,
         string $source,
         int $sourceId,
         ?string $route,
@@ -439,9 +439,15 @@ final class RecentActivityBuilder
         }
 
         return match ($note->noteable_type) {
-            Product::class => $this->entityRoute('Product', $noteable->id),
-            Asset::class => $this->entityRoute('Asset', $noteable->id, $noteable->product_id ?? null),
-            Employee::class => $this->entityRoute('Employee', $noteable->id),
+            Product::class => $noteable instanceof Product
+                ? $this->entityRoute('Product', $noteable->id)
+                : null,
+            Asset::class => $noteable instanceof Asset
+                ? $this->entityRoute('Asset', $noteable->id, $noteable->product_id)
+                : null,
+            Employee::class => $noteable instanceof Employee
+                ? $this->entityRoute('Employee', $noteable->id)
+                : null,
             default => null,
         };
     }

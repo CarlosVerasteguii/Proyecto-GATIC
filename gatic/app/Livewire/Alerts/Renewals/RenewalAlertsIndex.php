@@ -190,10 +190,6 @@ class RenewalAlertsIndex extends Component
         $options = array_values(array_unique($options));
         sort($options);
 
-        if ($options === []) {
-            $options = [30, 60, 90, 180];
-        }
-
         return $options;
     }
 

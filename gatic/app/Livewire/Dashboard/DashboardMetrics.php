@@ -319,9 +319,10 @@ class DashboardMetrics extends Component
             $allowedOptions = [7, 14, 30];
         }
 
-        $defaultWindowDays = $store->getInt('gatic.alerts.loans.due_soon_window_days_default', $allowedOptions[0] ?? 7);
+        $fallbackWindowDays = $allowedOptions[0];
+        $defaultWindowDays = $store->getInt('gatic.alerts.loans.due_soon_window_days_default', $fallbackWindowDays);
         if (! in_array($defaultWindowDays, $allowedOptions, true)) {
-            $defaultWindowDays = (int) ($allowedOptions[0] ?? 7);
+            $defaultWindowDays = $fallbackWindowDays;
         }
 
         $this->loanDueSoonWindowDays = $defaultWindowDays;
@@ -389,9 +390,10 @@ class DashboardMetrics extends Component
             $allowedOptions = [7, 14, 30];
         }
 
-        $defaultWindowDays = $store->getInt('gatic.alerts.warranties.due_soon_window_days_default', $allowedOptions[0] ?? 30);
+        $fallbackWindowDays = $allowedOptions[0];
+        $defaultWindowDays = $store->getInt('gatic.alerts.warranties.due_soon_window_days_default', $fallbackWindowDays);
         if (! in_array($defaultWindowDays, $allowedOptions, true)) {
-            $defaultWindowDays = (int) ($allowedOptions[0] ?? 30);
+            $defaultWindowDays = $fallbackWindowDays;
         }
 
         $this->warrantyDueSoonWindowDays = $defaultWindowDays;
@@ -450,9 +452,10 @@ class DashboardMetrics extends Component
             $allowedOptions = [30, 60, 90, 180];
         }
 
-        $defaultWindowDays = $store->getInt('gatic.alerts.renewals.due_soon_window_days_default', $allowedOptions[0] ?? 90);
+        $fallbackWindowDays = $allowedOptions[0];
+        $defaultWindowDays = $store->getInt('gatic.alerts.renewals.due_soon_window_days_default', $fallbackWindowDays);
         if (! in_array($defaultWindowDays, $allowedOptions, true)) {
-            $defaultWindowDays = (int) ($allowedOptions[0] ?? 90);
+            $defaultWindowDays = $fallbackWindowDays;
         }
 
         $this->renewalDueSoonWindowDays = $defaultWindowDays;
@@ -562,7 +565,7 @@ class DashboardMetrics extends Component
         $allowed = [7, 30, 90];
         $resolved = in_array($value, $allowed, true) ? $value : 30;
 
-        return $resolved > 0 ? $resolved : 30;
+        return $resolved;
     }
 
     private function dispatchCharts(): void
@@ -676,7 +679,7 @@ class DashboardMetrics extends Component
         $filters = $this->buildFilterParams();
         $productFilters = $this->buildProductFilterParams();
 
-        return array_values(array_filter([
+        $items = [
             [
                 'key' => 'loans_overdue',
                 'label' => 'Préstamos vencidos',
@@ -732,14 +735,19 @@ class DashboardMetrics extends Component
                     : null,
                 'variant' => 'warning',
             ],
-            $canManage ? [
+        ];
+
+        if ($canManage) {
+            $items[] = [
                 'key' => 'pending_tasks',
                 'label' => 'Tareas pendientes',
                 'value' => $this->pendingTasksActiveCount,
                 'href' => route('pending-tasks.index'),
                 'variant' => 'info',
-            ] : null,
-        ]));
+            ];
+        }
+
+        return $items;
     }
 
     private function loadInventoryValue(): void
@@ -861,6 +869,7 @@ class DashboardMetrics extends Component
         $filters = $this->buildFilterParams();
         $returnTo = '/dashboard'.(count($filters) > 0 ? ('?'.http_build_query($filters)) : '');
 
+        /** @var list<array{priority: int, score: int, type: string, variant: string, icon: string, title: string, subtitle: string|null, detail: string|null, detailHint: string|null, location: string|null, actor: string|null, href: string}> $items */
         $items = [];
 
         if ($this->loansOverdueCount > 0) {
@@ -890,7 +899,7 @@ class DashboardMetrics extends Component
 
             foreach ($assets as $asset) {
                 $due = $asset->loan_due_date;
-                $days = $due ? $due->diffInDays($today) : null;
+                $days = $due ? (int) $due->diffInDays($today) : null;
                 $title = (string) $asset->serial;
                 if (is_string($asset->asset_tag) && $asset->asset_tag !== '') {
                     $title = "{$title} ({$asset->asset_tag})";
@@ -898,14 +907,14 @@ class DashboardMetrics extends Component
 
                 $items[] = [
                     'priority' => 100,
-                    'score' => is_int($days) ? $days : 0,
+                    'score' => $days ?? 0,
                     'type' => 'Préstamo vencido',
                     'variant' => 'danger',
                     'icon' => 'bi-clock-history',
                     'title' => $title,
                     'subtitle' => $asset->product?->name,
                     'detail' => $due?->format('d/m/Y'),
-                    'detailHint' => is_int($days) && $days > 0 ? "Hace {$days}d" : null,
+                    'detailHint' => $days !== null && $days > 0 ? "Hace {$days}d" : null,
                     'location' => $asset->location?->name,
                     'actor' => $asset->currentEmployee?->full_name,
                     'href' => route('inventory.products.assets.show', [
@@ -944,7 +953,7 @@ class DashboardMetrics extends Component
 
             foreach ($assets as $asset) {
                 $due = $asset->warranty_end_date;
-                $days = $due ? $due->diffInDays($today) : null;
+                $days = $due ? (int) $due->diffInDays($today) : null;
                 $title = (string) $asset->serial;
                 if (is_string($asset->asset_tag) && $asset->asset_tag !== '') {
                     $title = "{$title} ({$asset->asset_tag})";
@@ -952,14 +961,14 @@ class DashboardMetrics extends Component
 
                 $items[] = [
                     'priority' => 90,
-                    'score' => is_int($days) ? $days : 0,
+                    'score' => $days ?? 0,
                     'type' => 'Garantía vencida',
                     'variant' => 'danger',
                     'icon' => 'bi-shield-x',
                     'title' => $title,
                     'subtitle' => $asset->product?->name,
                     'detail' => $due?->format('d/m/Y'),
-                    'detailHint' => is_int($days) && $days > 0 ? "Hace {$days}d" : null,
+                    'detailHint' => $days !== null && $days > 0 ? "Hace {$days}d" : null,
                     'location' => $asset->location?->name,
                     'actor' => $asset->warrantySupplier?->name,
                     'href' => route('inventory.products.assets.show', [
@@ -996,7 +1005,7 @@ class DashboardMetrics extends Component
 
             foreach ($assets as $asset) {
                 $due = $asset->expected_replacement_date;
-                $days = $due ? $due->diffInDays($today) : null;
+                $days = $due ? (int) $due->diffInDays($today) : null;
                 $title = (string) $asset->serial;
                 if (is_string($asset->asset_tag) && $asset->asset_tag !== '') {
                     $title = "{$title} ({$asset->asset_tag})";
@@ -1004,14 +1013,14 @@ class DashboardMetrics extends Component
 
                 $items[] = [
                     'priority' => 80,
-                    'score' => is_int($days) ? $days : 0,
+                    'score' => $days ?? 0,
                     'type' => 'Renovación vencida',
                     'variant' => 'danger',
                     'icon' => 'bi-arrow-repeat',
                     'title' => $title,
                     'subtitle' => $asset->product?->name,
                     'detail' => $due?->format('d/m/Y'),
-                    'detailHint' => is_int($days) && $days > 0 ? "Hace {$days}d" : null,
+                    'detailHint' => $days !== null && $days > 0 ? "Hace {$days}d" : null,
                     'location' => $asset->location?->name,
                     'actor' => null,
                     'href' => route('inventory.products.assets.show', [
@@ -1068,12 +1077,12 @@ class DashboardMetrics extends Component
         }
 
         usort($items, static function (array $a, array $b): int {
-            $priority = ($b['priority'] ?? 0) <=> ($a['priority'] ?? 0);
+            $priority = $b['priority'] <=> $a['priority'];
             if ($priority !== 0) {
                 return $priority;
             }
 
-            return ($b['score'] ?? 0) <=> ($a['score'] ?? 0);
+            return $b['score'] <=> $a['score'];
         });
 
         $normalized = [];

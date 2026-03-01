@@ -67,8 +67,8 @@ final class ReturnToPath
             return null;
         }
 
-        $path = $parts['path'] ?? '/';
-        if (! is_string($path) || $path === '') {
+        $path = (string) ($parts['path'] ?? '/');
+        if ($path === '') {
             $path = '/';
         }
 

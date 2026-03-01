@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $batch_uuid
  * @property string $type
  * @property string $note
- * @property \Illuminate\Support\CarbonImmutable|null $loan_due_date
+ * @property \Carbon\CarbonImmutable|null $loan_due_date
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  */

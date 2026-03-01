@@ -78,6 +78,29 @@
   --radius-full: 9999px;
 
   // ---------------------------------------------------------------------------
+  // Badges — Paleta B (Rail)
+  // ---------------------------------------------------------------------------
+  --badge-rail-font-size: 0.75rem;
+  --badge-rail-font-weight: 700;
+  --badge-rail-line-height: 1.1;
+  --badge-rail-py: 0.20rem;
+  --badge-rail-px: 0.55rem;
+  --badge-rail-gap: 0.35rem;
+  --badge-rail-radius: var(--radius-full);
+  --badge-rail-border-width: 1px;
+  --badge-rail-rail-w: 0.25rem;
+  --badge-rail-rail-h: 0.90rem;
+  --badge-rail-bg-alpha: 0.08;
+  --badge-rail-border-alpha: 0.22;
+  --badge-rail-bg-alpha-dark: 0.12;
+  --badge-rail-border-alpha-dark: 0.28;
+
+  // Role tones (RBAC) — RGB values for rgba(var(--token), alpha)
+  --role-admin-rgb: 15, 118, 110;
+  --role-editor-rgb: 29, 78, 216;
+  --role-lector-rgb: 71, 85, 105;
+
+  // ---------------------------------------------------------------------------
   // Shadows
   // ---------------------------------------------------------------------------
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);

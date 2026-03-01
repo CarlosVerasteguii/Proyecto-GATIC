@@ -249,6 +249,10 @@ if (app()->environment(['local', 'testing'])) {
     Route::get('/dev/livewire-smoke', LivewireSmokeTest::class)
         ->middleware(['auth', 'active'])
         ->name('dev.livewire-smoke');
+
+    Route::view('/dev/ui-badges', 'dev.ui-badges')
+        ->middleware(['auth', 'active'])
+        ->name('dev.ui-badges');
 }
 
 // MVP: Profile management deshabilitado - Story 1.3 scope = "solo login/logout"

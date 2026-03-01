@@ -21,8 +21,13 @@ class StatusBadgeConsistencyTest extends TestCase
     {
         $html = Blade::render('<x-ui.status-badge :status="$status" />', ['status' => $status]);
 
+        $this->assertStringContainsString('gatic-badge', $html);
         $this->assertStringContainsString('status-badge', $html);
         $this->assertStringContainsString($expectedClass, $html);
+        $this->assertStringContainsString(
+            str_replace('status-badge--', 'gatic-badge--tone-status-', $expectedClass),
+            $html
+        );
         $this->assertStringContainsString($status, $html);
     }
 
@@ -56,6 +61,7 @@ class StatusBadgeConsistencyTest extends TestCase
             'status' => Asset::STATUS_ASSIGNED,
         ]);
 
+        $this->assertStringContainsString('gatic-badge--variant-solid', $html);
         $this->assertStringContainsString('status-badge--solid', $html);
         $this->assertStringContainsString('status-badge--assigned', $html);
     }

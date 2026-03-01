@@ -1,0 +1,174 @@
+// =============================================================================
+// Badges — Paleta B (Rail)
+// =============================================================================
+
+.gatic-badge {
+  --gatic-badge-accent-rgb: var(--bs-secondary-rgb);
+  --gatic-badge-bg-alpha: var(--badge-rail-bg-alpha);
+  --gatic-badge-border-alpha: var(--badge-rail-border-alpha);
+  --gatic-badge-bg-alpha-hover: 0.12;
+  --gatic-badge-border-alpha-hover: 0.3;
+  --gatic-badge-font-size: var(--badge-rail-font-size);
+  --gatic-badge-py: var(--badge-rail-py);
+  --gatic-badge-px: var(--badge-rail-px);
+  --gatic-badge-rail-h: var(--badge-rail-rail-h);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--badge-rail-gap);
+  padding: var(--gatic-badge-py) var(--gatic-badge-px);
+  font-size: var(--gatic-badge-font-size);
+  font-weight: var(--badge-rail-font-weight);
+  line-height: var(--badge-rail-line-height);
+  white-space: nowrap;
+  border-radius: var(--badge-rail-radius);
+  border: var(--badge-rail-border-width) solid rgba(var(--gatic-badge-accent-rgb), var(--gatic-badge-border-alpha));
+  background-color: rgba(var(--gatic-badge-accent-rgb), var(--gatic-badge-bg-alpha));
+  color: var(--bs-body-color);
+
+  &::before {
+    content: '';
+    width: var(--badge-rail-rail-w);
+    height: var(--gatic-badge-rail-h);
+    border-radius: var(--badge-rail-radius);
+    background-color: rgba(var(--gatic-badge-accent-rgb), 1);
+    flex: 0 0 auto;
+  }
+
+  &.gatic-badge--no-rail::before {
+    content: none;
+  }
+
+  &.gatic-badge--interactive {
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      background-color: rgba(var(--gatic-badge-accent-rgb), var(--gatic-badge-bg-alpha-hover));
+      border-color: rgba(var(--gatic-badge-accent-rgb), var(--gatic-badge-border-alpha-hover));
+      color: var(--bs-body-color);
+    }
+
+    &:focus-visible {
+      outline: 0;
+      box-shadow: 0 0 0 0.25rem rgba($cfe-green-dark, 0.25);
+    }
+  }
+}
+
+[data-bs-theme='dark'] .gatic-badge {
+  --gatic-badge-bg-alpha: var(--badge-rail-bg-alpha-dark);
+  --gatic-badge-border-alpha: var(--badge-rail-border-alpha-dark);
+  --gatic-badge-bg-alpha-hover: 0.18;
+  --gatic-badge-border-alpha-hover: 0.38;
+}
+
+// ---------------------------------------------------------------------------
+// Variants
+// ---------------------------------------------------------------------------
+
+.gatic-badge--variant-compact {
+  --gatic-badge-font-size: 0.6875rem;
+  --gatic-badge-py: 0.15rem;
+  --gatic-badge-px: 0.45rem;
+  --gatic-badge-rail-h: 0.8rem;
+}
+
+.app-compact .gatic-badge {
+  --gatic-badge-font-size: 0.6875rem;
+  --gatic-badge-py: 0.15rem;
+  --gatic-badge-px: 0.45rem;
+  --gatic-badge-rail-h: 0.8rem;
+}
+
+.gatic-badge--variant-solid {
+  --gatic-badge-bg-alpha: 0.18;
+  --gatic-badge-border-alpha: 0.42;
+}
+
+[data-bs-theme='dark'] .gatic-badge--variant-solid {
+  --gatic-badge-bg-alpha: 0.24;
+  --gatic-badge-border-alpha: 0.5;
+}
+
+.gatic-badge--variant-solid.gatic-badge--tone-neutral {
+  --gatic-badge-bg-alpha: 0.14;
+  --gatic-badge-border-alpha: 0.34;
+}
+
+[data-bs-theme='dark'] .gatic-badge--variant-solid.gatic-badge--tone-neutral {
+  --gatic-badge-bg-alpha: 0.2;
+  --gatic-badge-border-alpha: 0.44;
+}
+
+// ---------------------------------------------------------------------------
+// Tones
+// ---------------------------------------------------------------------------
+
+.gatic-badge--tone-neutral {
+  --gatic-badge-accent-rgb: var(--bs-secondary-rgb);
+  --gatic-badge-bg-alpha: 0.06;
+  --gatic-badge-border-alpha: 0.16;
+}
+
+[data-bs-theme='dark'] .gatic-badge--tone-neutral {
+  --gatic-badge-bg-alpha: 0.1;
+  --gatic-badge-border-alpha: 0.22;
+}
+
+.gatic-badge--tone-secondary {
+  --gatic-badge-accent-rgb: var(--bs-secondary-rgb);
+}
+
+.gatic-badge--tone-info {
+  --gatic-badge-accent-rgb: var(--bs-info-rgb);
+}
+
+.gatic-badge--tone-success {
+  --gatic-badge-accent-rgb: var(--bs-success-rgb);
+}
+
+.gatic-badge--tone-warning {
+  --gatic-badge-accent-rgb: var(--bs-warning-rgb);
+}
+
+.gatic-badge--tone-danger {
+  --gatic-badge-accent-rgb: var(--bs-danger-rgb);
+}
+
+.gatic-badge--tone-primary {
+  --gatic-badge-accent-rgb: var(--bs-primary-rgb);
+}
+
+.gatic-badge--tone-role-admin {
+  --gatic-badge-accent-rgb: var(--role-admin-rgb);
+}
+
+.gatic-badge--tone-role-editor {
+  --gatic-badge-accent-rgb: var(--role-editor-rgb);
+}
+
+.gatic-badge--tone-role-lector {
+  --gatic-badge-accent-rgb: var(--role-lector-rgb);
+}
+
+// Asset status tones (preserve the existing palette; Rail uses RGB for rgba())
+.gatic-badge--tone-status-available {
+  --gatic-badge-accent-rgb: var(--bs-success-rgb);
+}
+
+.gatic-badge--tone-status-loaned {
+  --gatic-badge-accent-rgb: 180, 83, 9;
+}
+
+.gatic-badge--tone-status-assigned {
+  --gatic-badge-accent-rgb: 124, 58, 237;
+}
+
+.gatic-badge--tone-status-pending {
+  --gatic-badge-accent-rgb: 234, 88, 12;
+}
+
+.gatic-badge--tone-status-retired {
+  --gatic-badge-accent-rgb: var(--bs-danger-rgb);
+}

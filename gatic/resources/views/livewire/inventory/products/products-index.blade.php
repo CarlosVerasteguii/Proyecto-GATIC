@@ -148,7 +148,7 @@
                                             && $total <= $product->low_stock_threshold;
                                     @endphp
 
-                                    <tr @class(['table-warning' => $available === 0])>
+                                    <tr wire:key="inventory-product-{{ $product->id }}" @class(['table-warning' => $available === 0])>
                                         <td>
                                             <a
                                                 class="text-decoration-none"

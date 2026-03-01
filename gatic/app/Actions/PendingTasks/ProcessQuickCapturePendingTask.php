@@ -222,7 +222,7 @@ class ProcessQuickCapturePendingTask
             ->whereNull('deleted_at')
             ->findOrFail($resolvedProductId);
 
-        $isSerializedProduct = (bool) ($product->category?->is_serialized ?? false);
+        $isSerializedProduct = (bool) $product->category->is_serialized;
 
         $items = is_array($payload['items'] ?? null) ? $payload['items'] : [];
         $qty = isset($items['quantity']) ? (int) $items['quantity'] : 0;
@@ -312,7 +312,7 @@ class ProcessQuickCapturePendingTask
             ->whereNull('deleted_at')
             ->findOrFail($resolvedProductId);
 
-        $isSerializedProduct = (bool) ($product->category?->is_serialized ?? false);
+        $isSerializedProduct = (bool) $product->category->is_serialized;
         if (! $isSerializedProduct) {
             throw ValidationException::withMessages([
                 'resolved_product_id' => ['El producto no es serializado.'],

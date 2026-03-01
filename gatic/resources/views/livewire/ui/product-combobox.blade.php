@@ -67,7 +67,7 @@
         <div class="d-flex align-items-center gap-2 p-2 bg-primary bg-opacity-10 border border-primary rounded">
             <div class="d-flex align-items-center gap-2 flex-grow-1">
                 <span class="badge bg-primary">
-                    <i class="bi bi-box-seam me-1"></i>
+                    <i class="bi bi-box-seam me-1" aria-hidden="true"></i>
                     {{ $productIsSerialized ? 'Serializado' : 'Por cantidad' }}
                 </span>
                 <span class="fw-medium">{{ $productLabel }}</span>

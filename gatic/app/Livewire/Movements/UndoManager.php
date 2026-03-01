@@ -28,13 +28,13 @@ class UndoManager extends Component
             ]);
 
             $this->toast(
-                type: (string) ($result['type'] ?? 'info'),
-                title: is_string($result['title'] ?? null) ? $result['title'] : null,
-                message: (string) ($result['message'] ?? ''),
+                type: $result['type'],
+                title: $result['title'],
+                message: $result['message'],
             );
 
             /** @var array<string, mixed> $context */
-            $context = is_array($result['context'] ?? null) ? $result['context'] : [];
+            $context = $result['context'];
 
             if (isset($context['asset_id'])) {
                 $this->dispatch('inventory:asset-changed', assetId: (int) $context['asset_id']);

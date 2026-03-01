@@ -20,14 +20,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $serial
  * @property string|null $asset_tag
  * @property string $status
- * @property \Illuminate\Support\CarbonImmutable|null $loan_due_date
- * @property \Illuminate\Support\CarbonImmutable|null $warranty_start_date
- * @property \Illuminate\Support\CarbonImmutable|null $warranty_end_date
+ * @property \Carbon\CarbonImmutable|null $loan_due_date
+ * @property \Carbon\CarbonImmutable|null $warranty_start_date
+ * @property \Carbon\CarbonImmutable|null $warranty_end_date
  * @property string|null $warranty_notes
  * @property string|null $acquisition_cost
  * @property string|null $acquisition_currency
  * @property int|null $useful_life_months
- * @property \Illuminate\Support\CarbonImmutable|null $expected_replacement_date
+ * @property \Carbon\CarbonImmutable|null $expected_replacement_date
  */
 class Asset extends Model
 {

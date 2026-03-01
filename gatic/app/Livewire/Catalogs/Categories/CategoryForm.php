@@ -117,7 +117,6 @@ class CategoryForm extends Component
         if (
             $this->is_serialized
             && isset($validated['default_useful_life_months'])
-            && $validated['default_useful_life_months'] !== null
         ) {
             $defaultUsefulLifeMonths = (int) $validated['default_useful_life_months'];
         }

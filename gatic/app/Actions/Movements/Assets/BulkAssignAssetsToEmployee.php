@@ -52,7 +52,7 @@ class BulkAssignAssetsToEmployee
         ])->validate();
 
         /** @var list<int> $assetIds */
-        $assetIds = array_values($data['asset_ids']);
+        $assetIds = $data['asset_ids'];
 
         return DB::transaction(function () use ($assetIds, $data): array {
             $assets = Asset::query()

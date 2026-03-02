@@ -45,9 +45,7 @@
         {{-- Pill visual del empleado seleccionado --}}
         <div class="d-flex align-items-center gap-2 p-2 bg-success bg-opacity-10 border border-success rounded">
             <div class="d-flex align-items-center gap-2 flex-grow-1">
-                <span class="badge bg-success">
-                    <i class="bi bi-person-check me-1" aria-hidden="true"></i>{{ $employeeRpe }}
-                </span>
+                <x-ui.badge tone="success" variant="compact" :with-rail="false" icon="bi-person-check">{{ $employeeRpe }}</x-ui.badge>
                 <span class="fw-medium">{{ $employeeName }}</span>
                 @if($employeeDepartment)
                     <span class="text-muted small">({{ $employeeDepartment }})</span>
@@ -61,7 +59,7 @@
                 title="Cambiar empleado"
                 style="min-width: 44px; min-height: 44px;"
             >
-                <i class="bi bi-arrow-repeat"></i>
+                <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                 <span class="visually-hidden">Cambiar</span>
             </button>
         </div>
@@ -105,7 +103,7 @@
                 @if (is_string($errorId) && $errorId !== '')
                     <div class="p-3">
                         <div class="d-flex align-items-start gap-2">
-                            <i class="bi bi-exclamation-triangle text-danger mt-1"></i>
+                            <i class="bi bi-exclamation-triangle text-danger mt-1" aria-hidden="true"></i>
                             <div>
                                 <div class="fw-semibold">Ocurrió un error inesperado.</div>
                                 <div class="small text-muted">
@@ -130,13 +128,13 @@
                     <div wire:loading.remove wire:target="search">
                         @if ($showMinCharsMessage)
                             <div class="p-3 text-muted small">
-                                <i class="bi bi-info-circle me-1"></i>
+                                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                                 Escribe al menos 2 caracteres
                             </div>
                         @elseif ($showNoResults)
                             <div class="p-2">
                                 <div class="px-2 py-1 text-muted small">
-                                    <i class="bi bi-search me-1"></i>
+                                    <i class="bi bi-search me-1" aria-hidden="true"></i>
                                     Sin resultados
                                 </div>
                                 <button

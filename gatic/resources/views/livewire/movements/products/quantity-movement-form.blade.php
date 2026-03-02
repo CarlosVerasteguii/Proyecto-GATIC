@@ -24,7 +24,7 @@
 
                         <dt class="col-sm-3">Stock actual</dt>
                         <dd class="col-sm-9">
-                            <span class="badge bg-primary fs-6">{{ $currentStock }}</span>
+                            <x-ui.badge tone="primary" variant="solid" class="fs-6">{{ $currentStock }}</x-ui.badge>
                         </dd>
                     </dl>
                 </div>
@@ -52,7 +52,7 @@
                                         class="form-check-input @error('direction') is-invalid @enderror"
                                     >
                                     <label for="direction_out" class="form-check-label">
-                                        <i class="bi bi-box-arrow-up text-danger me-1"></i> Salida
+                                        <i class="bi bi-box-arrow-up text-danger me-1" aria-hidden="true"></i> Salida
                                     </label>
                                 </div>
                                 <div class="form-check">
@@ -64,7 +64,7 @@
                                         class="form-check-input @error('direction') is-invalid @enderror"
                                     >
                                     <label for="direction_in" class="form-check-label">
-                                        <i class="bi bi-box-arrow-in-down text-success me-1"></i> Entrada / Devolucion
+                                        <i class="bi bi-box-arrow-in-down text-success me-1" aria-hidden="true"></i> Entrada / Devolucion
                                     </label>
                                 </div>
                             </div>
@@ -130,7 +130,7 @@
                             </a>
                             <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
                                 <span wire:loading.remove wire:target="register">
-                                    <i class="bi bi-check-circle me-1"></i> Registrar
+                                    <i class="bi bi-check-circle me-1" aria-hidden="true"></i> Registrar
                                 </span>
                                 <span wire:loading wire:target="register">
                                     <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>

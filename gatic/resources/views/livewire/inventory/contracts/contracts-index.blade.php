@@ -96,7 +96,7 @@
                                             @endif
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge bg-secondary">{{ $contract->assets_count }}</span>
+                                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $contract->assets_count }}</x-ui.badge>
                                         </td>
                                         <td class="text-end">
                                             <a
@@ -117,7 +117,7 @@
                                     <tr>
                                         <td colspan="6" class="text-muted text-center">
                                             <div class="py-4">
-                                                <i class="bi bi-file-earmark-text fs-1 d-block mb-2 text-secondary"></i>
+                                                <i class="bi bi-file-earmark-text fs-1 d-block mb-2 text-secondary" aria-hidden="true"></i>
                                                 No hay contratos registrados.
                                                 <div class="mt-2">
                                                     <a href="{{ route('inventory.contracts.create') }}" class="btn btn-sm btn-primary">

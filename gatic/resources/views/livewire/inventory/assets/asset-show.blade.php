@@ -135,11 +135,11 @@
                                     $isDueSoon = ! $isOverdue && $asset->expected_replacement_date->lte($today->copy()->addDays($renewalWindowDays));
                                 @endphp
                                 @if ($isOverdue)
-                                    <span class="badge bg-danger ms-1">Vencido</span>
+                                    <x-ui.badge tone="danger" variant="compact" :with-rail="false" class="ms-1">Vencido</x-ui.badge>
                                 @elseif ($isDueSoon)
-                                    <span class="badge bg-warning text-dark ms-1">Por vencer</span>
+                                    <x-ui.badge tone="warning" variant="compact" :with-rail="false" class="ms-1">Por vencer</x-ui.badge>
                                 @else
-                                    <span class="badge bg-success ms-1">En tiempo</span>
+                                    <x-ui.badge tone="success" variant="compact" :with-rail="false" class="ms-1">En tiempo</x-ui.badge>
                                 @endif
                             @else
                                 —
@@ -255,11 +255,11 @@
                                             $isDueSoon = ! $isExpired && $asset->warranty_end_date->lte($today->copy()->addDays($dueSoonDays));
                                         @endphp
                                         @if ($isExpired)
-                                            <span class="badge bg-danger ms-1">Vencida</span>
+                                            <x-ui.badge tone="danger" variant="compact" :with-rail="false" class="ms-1">Vencida</x-ui.badge>
                                         @elseif ($isDueSoon)
-                                            <span class="badge bg-warning text-dark ms-1">Por vencer</span>
+                                            <x-ui.badge tone="warning" variant="compact" :with-rail="false" class="ms-1">Por vencer</x-ui.badge>
                                         @else
-                                            <span class="badge bg-success ms-1">Vigente</span>
+                                            <x-ui.badge tone="success" variant="compact" :with-rail="false" class="ms-1">Vigente</x-ui.badge>
                                         @endif
                                     @endif
                                 </dd>

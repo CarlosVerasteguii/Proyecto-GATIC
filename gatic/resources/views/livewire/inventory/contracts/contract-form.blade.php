@@ -129,7 +129,7 @@
                                         wire:loading.attr="disabled"
                                         wire:target="searchAssets"
                                     >
-                                        <i class="bi bi-search"></i>
+                                        <i class="bi bi-search" aria-hidden="true"></i>
                                     </button>
                                 </div>
                             </div>
@@ -153,9 +153,9 @@
                                                 <td>{{ $result['product_name'] }}</td>
                                                 <td>
                                                     @if (!empty($result['current_contract_identifier']))
-                                                        <span class="badge bg-warning text-dark">
+                                                        <x-ui.badge tone="warning" variant="compact" :with-rail="false">
                                                             {{ $result['current_contract_identifier'] }}
-                                                        </span>
+                                                        </x-ui.badge>
                                                         <small class="text-muted d-block">
                                                             Se reasignará si confirmas.
                                                         </small>
@@ -170,7 +170,7 @@
                                                         wire:click="linkAsset({{ $result['id'] }})"
                                                         wire:loading.attr="disabled"
                                                     >
-                                                        <i class="bi bi-link-45deg"></i> Vincular
+                                                        <i class="bi bi-link-45deg" aria-hidden="true"></i> Vincular
                                                     </button>
                                                 </td>
                                             </tr>
@@ -180,7 +180,7 @@
                             </div>
                         @elseif ($assetSearch !== '' && count($searchResults) === 0)
                             <div class="alert alert-info mb-3">
-                                <i class="bi bi-info-circle me-1"></i>
+                                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                                 No se encontraron activos con ese criterio de busqueda.
                             </div>
                         @endif

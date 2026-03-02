@@ -1,7 +1,7 @@
 <div class="card mt-3" wire:key="timeline-panel-{{ $entityType }}-{{ $entityId }}">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-clock-history me-1" aria-hidden="true"></i>Timeline</span>
-        <span class="badge bg-secondary">{{ count($events) }}</span>
+        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ count($events) }}</x-ui.badge>
     </div>
     <div class="card-body">
         <x-ui.long-request target="toggleFilter,loadMore" />
@@ -43,7 +43,7 @@
                             <div class="flex-grow-1 min-width-0">
                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-1">
                                     <div>
-                                        <span class="badge bg-light text-dark border me-1">{{ $event['label'] }}</span>
+                                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false" class="me-1">{{ $event['label'] }}</x-ui.badge>
                                         <strong class="small">{{ $event['title'] }}</strong>
                                     </div>
                                     <small class="text-muted text-nowrap" title="{{ $event['occurred_at_human'] }}">

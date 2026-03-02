@@ -105,7 +105,7 @@
                 <div class="fw-semibold">
                     Filtros globales
                     @if ($activeFiltersCount > 0)
-                        <span class="badge bg-primary ms-1">{{ $activeFiltersCount }}</span>
+                        <x-ui.badge tone="primary" variant="compact" :with-rail="false" class="ms-1">{{ $activeFiltersCount }}</x-ui.badge>
                     @endif
                 </div>
                 <button
@@ -173,17 +173,17 @@
 
                         @if ($this->hasActiveFilters())
                             <div class="col-12">
-                                <div class="d-flex flex-wrap gap-2 align-items-center">
-                                    <span class="text-muted small">Aplicando filtros:</span>
-                                    @if (is_string($locName) && $locName !== '')
-                                        <span class="badge bg-light text-dark border">Ubicación: {{ $locName }}</span>
-                                    @endif
-                                    @if (is_string($catName) && $catName !== '')
-                                        <span class="badge bg-light text-dark border">Categoría: {{ $catName }}</span>
-                                    @endif
-                                    @if (is_string($brandName) && $brandName !== '')
-                                        <span class="badge bg-light text-dark border">Marca: {{ $brandName }}</span>
-                                    @endif
+                                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                                        <span class="text-muted small">Aplicando filtros:</span>
+                                        @if (is_string($locName) && $locName !== '')
+                                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Ubicación: {{ $locName }}</x-ui.badge>
+                                        @endif
+                                        @if (is_string($catName) && $catName !== '')
+                                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Categoría: {{ $catName }}</x-ui.badge>
+                                        @endif
+                                        @if (is_string($brandName) && $brandName !== '')
+                                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Marca: {{ $brandName }}</x-ui.badge>
+                                        @endif
 
                                     <button
                                         type="button"
@@ -213,13 +213,13 @@
                     <div class="d-flex flex-wrap gap-2 align-items-center">
                         <span class="text-muted small">Filtros activos:</span>
                         @if (is_string($locName) && $locName !== '')
-                            <span class="badge bg-light text-dark border">Ubicación: {{ $locName }}</span>
+                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Ubicación: {{ $locName }}</x-ui.badge>
                         @endif
                         @if (is_string($catName) && $catName !== '')
-                            <span class="badge bg-light text-dark border">Categoría: {{ $catName }}</span>
+                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Categoría: {{ $catName }}</x-ui.badge>
                         @endif
                         @if (is_string($brandName) && $brandName !== '')
-                            <span class="badge bg-light text-dark border">Marca: {{ $brandName }}</span>
+                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Marca: {{ $brandName }}</x-ui.badge>
                         @endif
                     </div>
                 </div>
@@ -345,7 +345,7 @@
                     >
                         @if (is_string($loansOverdueDeltaLabel) && $loansOverdueDeltaLabel !== '' && is_string($loansOverdueDeltaVariant) && $loansOverdueDeltaVariant !== '')
                             <div class="mt-2">
-                                <span class="badge text-bg-{{ $loansOverdueDeltaVariant }}">{{ $loansOverdueDeltaLabel }}</span>
+                                <x-ui.badge :tone="$loansOverdueDeltaVariant" variant="compact" :with-rail="false">{{ $loansOverdueDeltaLabel }}</x-ui.badge>
                             </div>
                         @endif
                     </x-ui.kpi-card>
@@ -363,7 +363,7 @@
                     >
                         @if (is_string($warrantiesExpiredDeltaLabel) && $warrantiesExpiredDeltaLabel !== '' && is_string($warrantiesExpiredDeltaVariant) && $warrantiesExpiredDeltaVariant !== '')
                             <div class="mt-2">
-                                <span class="badge text-bg-{{ $warrantiesExpiredDeltaVariant }}">{{ $warrantiesExpiredDeltaLabel }}</span>
+                                <x-ui.badge :tone="$warrantiesExpiredDeltaVariant" variant="compact" :with-rail="false">{{ $warrantiesExpiredDeltaLabel }}</x-ui.badge>
                             </div>
                         @endif
                     </x-ui.kpi-card>
@@ -379,7 +379,7 @@
                     >
                         @if (is_string($renewalsOverdueDeltaLabel) && $renewalsOverdueDeltaLabel !== '' && is_string($renewalsOverdueDeltaVariant) && $renewalsOverdueDeltaVariant !== '')
                             <div class="mt-2">
-                                <span class="badge text-bg-{{ $renewalsOverdueDeltaVariant }}">{{ $renewalsOverdueDeltaLabel }}</span>
+                                <x-ui.badge :tone="$renewalsOverdueDeltaVariant" variant="compact" :with-rail="false">{{ $renewalsOverdueDeltaLabel }}</x-ui.badge>
                             </div>
                         @endif
                     </x-ui.kpi-card>
@@ -412,7 +412,7 @@
                     >
                         @if (is_string($loansDueSoonDeltaLabel) && $loansDueSoonDeltaLabel !== '' && is_string($loansDueSoonDeltaVariant) && $loansDueSoonDeltaVariant !== '')
                             <div class="mt-2">
-                                <span class="badge text-bg-{{ $loansDueSoonDeltaVariant }}">{{ $loansDueSoonDeltaLabel }}</span>
+                                <x-ui.badge :tone="$loansDueSoonDeltaVariant" variant="compact" :with-rail="false">{{ $loansDueSoonDeltaLabel }}</x-ui.badge>
                             </div>
                         @endif
                     </x-ui.kpi-card>
@@ -430,7 +430,7 @@
                     >
                         @if (is_string($warrantiesDueSoonDeltaLabel) && $warrantiesDueSoonDeltaLabel !== '' && is_string($warrantiesDueSoonDeltaVariant) && $warrantiesDueSoonDeltaVariant !== '')
                             <div class="mt-2">
-                                <span class="badge text-bg-{{ $warrantiesDueSoonDeltaVariant }}">{{ $warrantiesDueSoonDeltaLabel }}</span>
+                                <x-ui.badge :tone="$warrantiesDueSoonDeltaVariant" variant="compact" :with-rail="false">{{ $warrantiesDueSoonDeltaLabel }}</x-ui.badge>
                             </div>
                         @endif
                     </x-ui.kpi-card>
@@ -446,7 +446,7 @@
                     >
                         @if (is_string($renewalsDueSoonDeltaLabel) && $renewalsDueSoonDeltaLabel !== '' && is_string($renewalsDueSoonDeltaVariant) && $renewalsDueSoonDeltaVariant !== '')
                             <div class="mt-2">
-                                <span class="badge text-bg-{{ $renewalsDueSoonDeltaVariant }}">{{ $renewalsDueSoonDeltaLabel }}</span>
+                                <x-ui.badge :tone="$renewalsDueSoonDeltaVariant" variant="compact" :with-rail="false">{{ $renewalsDueSoonDeltaLabel }}</x-ui.badge>
                             </div>
                         @endif
                     </x-ui.kpi-card>
@@ -477,9 +477,12 @@
                                         @foreach ($criticalQueue as $item)
                                             <tr>
                                                 <td class="text-nowrap">
-                                                    <span class="badge text-bg-{{ $item['variant'] }}">
-                                                        <i class="bi {{ $item['icon'] }} me-1" aria-hidden="true"></i>{{ $item['type'] }}
-                                                    </span>
+                                                    <x-ui.badge
+                                                        :tone="$item['variant']"
+                                                        variant="compact"
+                                                        :with-rail="false"
+                                                        :icon="$item['icon']"
+                                                    >{{ $item['type'] }}</x-ui.badge>
                                                 </td>
                                                 <td>
                                                     @if (is_string($item['href']) && $item['href'] !== '')
@@ -540,13 +543,13 @@
                     cta="Ver activos"
                 >
                     <div class="mt-2 d-flex flex-wrap gap-2">
-                        <span class="dash-chip">Prestados <strong>{{ $assetsLoaned }}</strong></span>
-                        <span class="dash-chip">Asignados <strong>{{ $assetsAssigned }}</strong></span>
-                        <span class="dash-chip">Retiro <strong>{{ $assetsPendingRetirement }}</strong></span>
+                        <x-ui.badge tone="status-loaned" variant="compact" :with-rail="false">Prestados <strong>{{ $assetsLoaned }}</strong></x-ui.badge>
+                        <x-ui.badge tone="status-assigned" variant="compact" :with-rail="false">Asignados <strong>{{ $assetsAssigned }}</strong></x-ui.badge>
+                        <x-ui.badge tone="status-pending" variant="compact" :with-rail="false">Retiro <strong>{{ $assetsPendingRetirement }}</strong></x-ui.badge>
                     </div>
                     @if (is_string($shareUnavailable) && $shareUnavailable !== '')
                         <div class="mt-2">
-                            <span class="dash-chip">{{ $shareUnavailable }}</span>
+                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $shareUnavailable }}</x-ui.badge>
                         </div>
                     @endif
                 </x-ui.kpi-card>
@@ -563,7 +566,7 @@
                 >
                     @if (is_string($shareLoaned) && $shareLoaned !== '')
                         <div class="mt-2">
-                            <span class="dash-chip">{{ $shareLoaned }}</span>
+                            <x-ui.badge tone="status-loaned" variant="compact" :with-rail="false">{{ $shareLoaned }}</x-ui.badge>
                         </div>
                     @endif
                 </x-ui.kpi-card>
@@ -580,7 +583,7 @@
                 >
                     @if (is_string($shareAssigned) && $shareAssigned !== '')
                         <div class="mt-2">
-                            <span class="dash-chip">{{ $shareAssigned }}</span>
+                            <x-ui.badge tone="status-assigned" variant="compact" :with-rail="false">{{ $shareAssigned }}</x-ui.badge>
                         </div>
                     @endif
                 </x-ui.kpi-card>
@@ -597,7 +600,7 @@
                 >
                     @if (is_string($sharePendingRetirement) && $sharePendingRetirement !== '')
                         <div class="mt-2">
-                            <span class="dash-chip">{{ $sharePendingRetirement }}</span>
+                            <x-ui.badge tone="status-pending" variant="compact" :with-rail="false">{{ $sharePendingRetirement }}</x-ui.badge>
                         </div>
                     @endif
                 </x-ui.kpi-card>
@@ -628,7 +631,7 @@
                 >
                     @if (is_string($shareAvailable) && $shareAvailable !== '')
                         <div class="mt-2">
-                            <span class="dash-chip">{{ $shareAvailable }}</span>
+                            <x-ui.badge tone="status-available" variant="compact" :with-rail="false">{{ $shareAvailable }}</x-ui.badge>
                         </div>
                     @endif
                 </x-ui.kpi-card>
@@ -643,13 +646,13 @@
                 >
                     @if (is_string($movementsDeltaLabel) && $movementsDeltaLabel !== '')
                         <div class="mt-2">
-                            <span class="badge text-bg-{{ $movementsDeltaVariant }}">{{ $movementsDeltaLabel }}</span>
+                            <x-ui.badge :tone="$movementsDeltaVariant" variant="compact" :with-rail="false">{{ $movementsDeltaLabel }}</x-ui.badge>
                         </div>
                     @endif
 
                     <div class="mt-2 d-flex flex-wrap gap-2">
-                        <span class="dash-chip">Ayer <strong>{{ $movementsYesterday }}</strong></span>
-                        <span class="dash-chip">Rango <strong>{{ (int) $trendRangeDays }}d</strong></span>
+                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Ayer <strong>{{ $movementsYesterday }}</strong></x-ui.badge>
+                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Rango <strong>{{ (int) $trendRangeDays }}d</strong></x-ui.badge>
                     </div>
                 </x-ui.kpi-card>
 
@@ -664,8 +667,8 @@
                         cta="Ver tareas"
                     >
                         <div class="mt-2 d-flex flex-wrap gap-2">
-                            <span class="dash-chip">Listas <strong>{{ $pendingTasksReadyCount }}</strong></span>
-                            <span class="dash-chip">Procesando <strong>{{ $pendingTasksProcessingCount }}</strong></span>
+                            <x-ui.badge tone="info" variant="compact" :with-rail="false">Listas <strong>{{ $pendingTasksReadyCount }}</strong></x-ui.badge>
+                            <x-ui.badge tone="warning" variant="compact" :with-rail="false">Procesando <strong>{{ $pendingTasksProcessingCount }}</strong></x-ui.badge>
                         </div>
                     </x-ui.kpi-card>
 
@@ -678,7 +681,7 @@
                         icon="bi-cash-coin"
                     >
                         <div class="mt-2">
-                            <span class="dash-chip">{{ $defaultCurrency }} · solo moneda default</span>
+                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $defaultCurrency }} · solo moneda default</x-ui.badge>
                         </div>
                     </x-ui.kpi-card>
                 @endcan

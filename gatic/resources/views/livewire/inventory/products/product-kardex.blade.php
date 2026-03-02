@@ -27,12 +27,12 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span>Movimientos</span>
-                    <span class="badge bg-secondary">{{ $entries->total() }} registros</span>
+                    <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $entries->total() }} registros</x-ui.badge>
                 </div>
                 <div class="card-body p-0">
                     @if ($entries->total() === 0)
                         <div class="text-center py-5">
-                            <i class="bi bi-inbox fs-1 text-muted"></i>
+                            <i class="bi bi-inbox fs-1 text-muted" aria-hidden="true"></i>
                             <p class="text-muted mt-2 mb-0">Sin movimientos aún</p>
                             <p class="text-muted small">Los movimientos y ajustes aparecerán aquí cuando se registren.</p>
                         </div>
@@ -58,16 +58,16 @@
                                             <td>
                                                 @switch($entry['type'])
                                                     @case('out')
-                                                        <span class="badge bg-danger">{{ $entry['type_label'] }}</span>
+                                                        <x-ui.badge tone="danger" variant="compact" :with-rail="false">{{ $entry['type_label'] }}</x-ui.badge>
                                                         @break
                                                     @case('in')
-                                                        <span class="badge bg-success">{{ $entry['type_label'] }}</span>
+                                                        <x-ui.badge tone="success" variant="compact" :with-rail="false">{{ $entry['type_label'] }}</x-ui.badge>
                                                         @break
                                                     @case('adjustment')
-                                                        <span class="badge bg-warning text-dark">{{ $entry['type_label'] }}</span>
+                                                        <x-ui.badge tone="warning" variant="compact" :with-rail="false">{{ $entry['type_label'] }}</x-ui.badge>
                                                         @break
                                                     @default
-                                                        <span class="badge bg-secondary">{{ $entry['type_label'] }}</span>
+                                                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $entry['type_label'] }}</x-ui.badge>
                                                 @endswitch
                                             </td>
                                             <td class="text-end">

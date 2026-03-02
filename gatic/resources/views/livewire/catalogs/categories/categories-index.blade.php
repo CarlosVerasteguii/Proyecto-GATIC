@@ -24,13 +24,13 @@
                 </x-slot:breadcrumbs>
 
                 <x-slot:actions>
-                    <span class="dash-chip">
+                    <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
                         Total <strong>{{ number_format($summary['total']) }}</strong>
-                    </span>
+                    </x-ui.badge>
                     @if ($hasSearch)
-                        <span class="dash-chip">
+                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
                             Resultados <strong>{{ number_format($summary['results']) }}</strong>
-                        </span>
+                        </x-ui.badge>
                     @endif
 
                     <a class="btn btn-sm btn-primary" href="{{ route('catalogs.categories.create') }}">

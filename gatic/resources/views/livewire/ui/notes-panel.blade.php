@@ -2,7 +2,7 @@
     @php($notes = $this->notes)
     <div class="card-header d-flex justify-content-between align-items-center">
         <span>Notas</span>
-        <span class="badge bg-secondary">{{ $notes->total() }}</span>
+        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $notes->total() }}</x-ui.badge>
     </div>
     <div class="card-body">
         {{-- Success message --}}

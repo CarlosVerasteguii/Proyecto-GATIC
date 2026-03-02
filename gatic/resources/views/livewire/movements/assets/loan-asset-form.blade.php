@@ -27,7 +27,7 @@
 
                         <dt class="col-sm-3">Estado actual</dt>
                         <dd class="col-sm-9">
-                            <span class="badge bg-success">{{ $asset->status }}</span>
+                            <x-ui.status-badge :status="$asset->status" />
                         </dd>
 
                         <dt class="col-sm-3">Ubicación</dt>
@@ -97,7 +97,7 @@
                             </a>
                             <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
                                 <span wire:loading.remove wire:target="loan">
-                                    <i class="bi bi-box-arrow-up-right me-1"></i> Prestar
+                                    <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i> Prestar
                                 </span>
                                 <span wire:loading wire:target="loan">
                                     <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>

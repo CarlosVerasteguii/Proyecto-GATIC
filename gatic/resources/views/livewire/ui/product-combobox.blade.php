@@ -66,10 +66,12 @@
     @if ($productId)
         <div class="d-flex align-items-center gap-2 p-2 bg-primary bg-opacity-10 border border-primary rounded">
             <div class="d-flex align-items-center gap-2 flex-grow-1">
-                <span class="badge bg-primary">
-                    <i class="bi bi-box-seam me-1" aria-hidden="true"></i>
-                    {{ $productIsSerialized ? 'Serializado' : 'Por cantidad' }}
-                </span>
+                <x-ui.badge
+                    tone="primary"
+                    variant="compact"
+                    :with-rail="false"
+                    icon="bi-box-seam"
+                >{{ $productIsSerialized ? 'Serializado' : 'Por cantidad' }}</x-ui.badge>
                 <span class="fw-medium">{{ $productLabel }}</span>
             </div>
             <button
@@ -80,7 +82,7 @@
                 title="Cambiar producto"
                 style="min-width: 44px; min-height: 44px;"
             >
-                <i class="bi bi-arrow-repeat"></i>
+                <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                 <span class="visually-hidden">Cambiar</span>
             </button>
         </div>
@@ -129,7 +131,7 @@
                 @if (is_string($errorId) && $errorId !== '')
                     <div class="p-3">
                         <div class="d-flex align-items-start gap-2">
-                            <i class="bi bi-exclamation-triangle text-danger mt-1"></i>
+                            <i class="bi bi-exclamation-triangle text-danger mt-1" aria-hidden="true"></i>
                             <div>
                                 <div class="fw-semibold">Ocurrió un error inesperado.</div>
                                 <div class="small text-muted">
@@ -167,7 +169,7 @@
                                             activeDescendantId = $el.id;
                                         "
                                     >
-                                        <i class="bi bi-plus-circle me-1"></i>Crear producto “{{ $search }}”
+                                        <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Crear producto “{{ $search }}”
                                     </a>
                                 @endif
                             </div>
@@ -190,9 +192,11 @@
                                     >
                                         <div class="d-flex justify-content-between align-items-center gap-2">
                                             <span class="fw-medium">{{ $product['name'] }}</span>
-                                            <span class="badge text-bg-light border">
-                                                {{ $product['is_serialized'] ? 'Serializado' : 'Por cantidad' }}
-                                            </span>
+                                            <x-ui.badge
+                                                :tone="$product['is_serialized'] ? 'info' : 'neutral'"
+                                                variant="compact"
+                                                :with-rail="false"
+                                            >{{ $product['is_serialized'] ? 'Serializado' : 'Por cantidad' }}</x-ui.badge>
                                         </div>
                                     </button>
                                 @endforeach

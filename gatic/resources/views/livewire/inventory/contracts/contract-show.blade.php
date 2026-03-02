@@ -11,7 +11,7 @@
                 </x-slot:breadcrumbs>
 
                 <x-slot:status>
-                    <span class="badge bg-primary">{{ $contract->type_label }}</span>
+                    <x-ui.badge tone="primary" variant="compact" :with-rail="false">{{ $contract->type_label }}</x-ui.badge>
                 </x-slot:status>
 
                 <x-slot:actions>
@@ -44,7 +44,7 @@
                                 <div class="d-flex align-items-center gap-2">
                                     @if ($contract->start_date)
                                         <span>
-                                            <i class="bi bi-calendar-event me-1 text-muted"></i>
+                                            <i class="bi bi-calendar-event me-1 text-muted" aria-hidden="true"></i>
                                             {{ $contract->start_date->format('d/m/Y') }}
                                         </span>
                                     @else
@@ -53,7 +53,7 @@
                                     <span class="text-muted">al</span>
                                     @if ($contract->end_date)
                                         <span>
-                                            <i class="bi bi-calendar-event me-1 text-muted"></i>
+                                            <i class="bi bi-calendar-event me-1 text-muted" aria-hidden="true"></i>
                                             {{ $contract->end_date->format('d/m/Y') }}
                                         </span>
                                     @else
@@ -76,7 +76,7 @@
             <div class="card mt-3">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span>Activos vinculados</span>
-                    <span class="badge bg-secondary">{{ $contract->assets->count() }}</span>
+                    <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $contract->assets->count() }}</x-ui.badge>
                 </div>
                 <div class="card-body">
                     @if ($contract->assets->count() > 0)
@@ -113,7 +113,7 @@
                         </div>
                     @else
                         <p class="text-muted mb-0">
-                            <i class="bi bi-info-circle me-1"></i>
+                            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                             No hay activos vinculados a este contrato.
                         </p>
                     @endif

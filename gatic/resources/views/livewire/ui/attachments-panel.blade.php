@@ -1,8 +1,8 @@
 <div class="card mt-3">
     @php($attachments = $this->attachments)
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-paperclip me-1"></i>Adjuntos</span>
-        <span class="badge bg-secondary">{{ $attachments->total() }}</span>
+        <span><i class="bi bi-paperclip me-1" aria-hidden="true"></i>Adjuntos</span>
+        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $attachments->total() }}</x-ui.badge>
     </div>
     <div class="card-body">
         {{-- Success message --}}
@@ -47,7 +47,7 @@
                 </div>
                 <button type="submit" class="btn btn-primary btn-sm" wire:loading.attr="disabled" wire:target="newFile,uploadAttachment">
                     <span wire:loading.remove wire:target="uploadAttachment">
-                        <i class="bi bi-upload me-1"></i>Subir adjunto
+                        <i class="bi bi-upload me-1" aria-hidden="true"></i>Subir adjunto
                     </span>
                     <span wire:loading wire:target="uploadAttachment">
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -82,10 +82,10 @@
                                 <td>
                                     <a
                                         href="{{ route('attachments.download', $attachment->id) }}"
-                                        class="text-decoration-none"
-                                        title="Descargar"
-                                    >
-                                        <i class="bi bi-file-earmark me-1"></i>{{ Str::limit($attachment->original_name, 40) }}
+                                    class="text-decoration-none"
+                                    title="Descargar"
+                                >
+                                        <i class="bi bi-file-earmark me-1" aria-hidden="true"></i>{{ Str::limit($attachment->original_name, 40) }}
                                     </a>
                                 </td>
                                 <td class="text-center d-none d-md-table-cell text-muted small">

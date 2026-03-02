@@ -42,4 +42,17 @@ enum PendingTaskLineStatus: string
             self::Error => 'bg-danger text-white',
         };
     }
+
+    /**
+     * Badge tone for <x-ui.badge> (Paleta B Rail)
+     */
+    public function badgeTone(): string
+    {
+        return match ($this) {
+            self::Pending => 'secondary',
+            self::Processing => 'warning',
+            self::Applied => 'success',
+            self::Error => 'danger',
+        };
+    }
 }

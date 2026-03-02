@@ -164,21 +164,13 @@
                                         <a class="text-decoration-none text-break" href="mailto:{{ $user->email }}">{{ $user->email }}</a>
                                     </td>
                                     <td>
-                                        <span class="badge rounded-pill admin-users-role admin-users-role--{{ $roleClass }}">
-                                            {{ $roleValue }}
-                                        </span>
+                                        <x-ui.badge tone="role-{{ $roleClass }}" variant="compact">{{ $roleValue }}</x-ui.badge>
                                     </td>
                                     <td>
                                         @if ($user->is_active)
-                                            <span class="badge rounded-pill admin-users-status admin-users-status--active">
-                                                <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
-                                                Activo
-                                            </span>
+                                            <x-ui.badge tone="success" variant="compact" :with-rail="false" icon="bi-check-circle-fill">Activo</x-ui.badge>
                                         @else
-                                            <span class="badge rounded-pill admin-users-status admin-users-status--inactive">
-                                                <i class="bi bi-slash-circle-fill" aria-hidden="true"></i>
-                                                Deshabilitado
-                                            </span>
+                                            <x-ui.badge tone="danger" variant="compact" :with-rail="false" icon="bi-slash-circle-fill">Deshabilitado</x-ui.badge>
                                         @endif
                                     </td>
                                     <td class="text-end">

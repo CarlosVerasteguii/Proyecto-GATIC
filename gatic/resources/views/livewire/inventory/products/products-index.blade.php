@@ -167,9 +167,9 @@
                                         <td class="text-end">
                                             <span class="fw-semibold">{{ $available }}</span>
                                             @if ($available === 0)
-                                                <span class="badge text-bg-danger ms-2" role="status">Sin disponibles</span>
+                                                <x-ui.badge tone="danger" variant="compact" :with-rail="false" class="ms-2" role="status">Sin disponibles</x-ui.badge>
                                             @elseif ($isLowStock)
-                                                <span class="badge text-bg-warning ms-2" role="status">Stock bajo</span>
+                                                <x-ui.badge tone="warning" variant="compact" :with-rail="false" class="ms-2" role="status">Stock bajo</x-ui.badge>
                                             @endif
                                         </td>
                                         <td class="text-end">

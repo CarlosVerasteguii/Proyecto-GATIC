@@ -101,7 +101,7 @@
                                 @if ($product?->low_stock_threshold !== null)
                                     {{ $product->low_stock_threshold }}
                                     @if ($isLowStock)
-                                        <span class="badge text-bg-warning ms-2">Stock bajo</span>
+                                        <x-ui.badge tone="warning" variant="compact" :with-rail="false" class="ms-2">Stock bajo</x-ui.badge>
                                     @endif
                                 @else
                                     <span class="text-muted">No configurado</span>

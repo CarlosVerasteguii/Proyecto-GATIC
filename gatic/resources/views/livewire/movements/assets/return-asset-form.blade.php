@@ -27,7 +27,7 @@
 
                         <dt class="col-sm-3">Estado actual</dt>
                         <dd class="col-sm-9">
-                            <span class="badge bg-info text-dark">{{ $asset->status }}</span>
+                            <x-ui.status-badge :status="$asset->status" />
                         </dd>
 
                         <dt class="col-sm-3">Ubicación</dt>
@@ -93,7 +93,7 @@
                             </a>
                             <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
                                 <span wire:loading.remove wire:target="returnAsset">
-                                    <i class="bi bi-arrow-return-left me-1"></i> Devolver
+                                    <i class="bi bi-arrow-return-left me-1" aria-hidden="true"></i> Devolver
                                 </span>
                                 <span wire:loading wire:target="returnAsset">
                                     <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>

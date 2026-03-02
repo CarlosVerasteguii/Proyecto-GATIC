@@ -92,14 +92,14 @@
                                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                                 <span>{{ $task->type->label() }}</span>
                                                 @if ($isQuickCapture)
-                                                    <span class="badge text-bg-info">{{ $quickLabel }}</span>
+                                                    <x-ui.badge tone="info" variant="compact" :with-rail="false">{{ $quickLabel }}</x-ui.badge>
                                                 @endif
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="badge {{ $task->status->badgeClass() }}">
+                                            <x-ui.badge :tone="$task->status->badgeTone()" variant="compact">
                                                 {{ $task->status->label() }}
-                                            </span>
+                                            </x-ui.badge>
                                         </td>
                                         <td>{{ $task->lines_count }}</td>
                                         <td>{{ $task->creator->name ?? '-' }}</td>

@@ -129,7 +129,7 @@
                                         wire:loading.attr="disabled"
                                         wire:target="searchAssets"
                                     >
-                                        <i class="bi bi-search"></i>
+                                        <i class="bi bi-search" aria-hidden="true"></i>
                                     </button>
                                 </div>
                             </div>
@@ -153,9 +153,9 @@
                                                 <td>{{ $result['product_name'] }}</td>
                                                 <td>
                                                     @if (!empty($result['current_contract_identifier']))
-                                                        <span class="badge bg-warning text-dark">
+                                                        <x-ui.badge tone="warning" variant="compact" :with-rail="false">
                                                             {{ $result['current_contract_identifier'] }}
-                                                        </span>
+                                                        </x-ui.badge>
                                                         <small class="text-muted d-block">
                                                             Se reasignará si confirmas.
                                                         </small>
@@ -170,7 +170,7 @@
                                                         wire:click="linkAsset({{ $result['id'] }})"
                                                         wire:loading.attr="disabled"
                                                     >
-                                                        <i class="bi bi-link-45deg"></i> Vincular
+                                                        <i class="bi bi-link-45deg" aria-hidden="true"></i> Vincular
                                                     </button>
                                                 </td>
                                             </tr>
@@ -180,7 +180,7 @@
                             </div>
                         @elseif ($assetSearch !== '' && count($searchResults) === 0)
                             <div class="alert alert-info mb-3">
-                                <i class="bi bi-info-circle me-1"></i>
+                                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                                 No se encontraron activos con ese criterio de busqueda.
                             </div>
                         @endif
@@ -205,10 +205,10 @@
                                                     <button
                                                         type="button"
                                                         class="btn btn-sm btn-outline-danger"
-                                                        wire:click="unlinkAsset({{ $asset['id'] }})"
-                                                        wire:loading.attr="disabled"
-                                                    >
-                                                        <i class="bi bi-x-lg"></i> Desvincular
+                                                    wire:click="unlinkAsset({{ $asset['id'] }})"
+                                                    wire:loading.attr="disabled"
+                                                >
+                                                        <i class="bi bi-x-lg" aria-hidden="true"></i> Desvincular
                                                     </button>
                                                 </td>
                                             </tr>
@@ -218,7 +218,7 @@
                             </div>
                         @else
                             <p class="text-muted mb-0">
-                                <i class="bi bi-info-circle me-1"></i>
+                                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                                 No hay activos vinculados a este contrato.
                             </p>
                         @endif
@@ -227,7 +227,7 @@
 
                 <div class="mt-3 d-flex justify-content-between">
                     <a href="{{ route('inventory.contracts.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancelar
                     </a>
                     <button
                         type="submit"
@@ -235,7 +235,7 @@
                         wire:loading.attr="disabled"
                         wire:target="save"
                     >
-                        <i class="bi bi-check-lg me-1"></i>{{ $isEdit ? 'Actualizar' : 'Crear' }} contrato
+                        <i class="bi bi-check-lg me-1" aria-hidden="true"></i>{{ $isEdit ? 'Actualizar' : 'Crear' }} contrato
                     </button>
                 </div>
             </form>

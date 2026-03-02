@@ -68,9 +68,7 @@
     @if ($supplierId)
         <div class="d-flex align-items-center gap-2 p-2 bg-info bg-opacity-10 border border-info rounded">
             <div class="d-flex align-items-center gap-2 flex-grow-1">
-                <span class="badge bg-info text-dark">
-                    <i class="bi bi-truck me-1"></i>Proveedor
-                </span>
+                <x-ui.badge tone="info" variant="compact" :with-rail="false" icon="bi-truck">Proveedor</x-ui.badge>
                 <span class="fw-medium">{{ $supplierLabel }}</span>
             </div>
             <button
@@ -81,7 +79,7 @@
                 title="Cambiar proveedor"
                 style="min-width: 44px; min-height: 44px;"
             >
-                <i class="bi bi-arrow-repeat"></i>
+                <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                 <span class="visually-hidden">Cambiar</span>
             </button>
         </div>
@@ -125,7 +123,7 @@
                 @if (is_string($errorId) && $errorId !== '')
                     <div class="p-3">
                         <div class="d-flex align-items-start gap-2">
-                            <i class="bi bi-exclamation-triangle text-danger mt-1"></i>
+                            <i class="bi bi-exclamation-triangle text-danger mt-1" aria-hidden="true"></i>
                             <div>
                                 <div class="fw-semibold">Ocurrió un error inesperado.</div>
                                 <div class="small text-muted">
@@ -155,7 +153,7 @@
                                 activeDescendantId = $el.id;
                             "
                         >
-                            <i class="bi bi-trash3 me-1"></i>Ir a Papelera
+                            <i class="bi bi-trash3 me-1" aria-hidden="true"></i>Ir a Papelera
                         </a>
                     </div>
                 @elseif ($showNoResults)
@@ -179,7 +177,7 @@
                                 "
                             >
                                 <span wire:loading.remove wire:target="openCreateSupplierModal">
-                                    <i class="bi bi-plus-circle me-1"></i>Crear “{{ $search }}”
+                                    <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Crear “{{ $search }}”
                                 </span>
                                 <span wire:loading.inline wire:target="openCreateSupplierModal">
                                     <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
@@ -242,7 +240,7 @@
                             @if (is_string($createTrashUrl) && $createTrashUrl !== '')
                                 <div class="alert alert-warning mb-3">
                                     <div class="d-flex align-items-start gap-2">
-                                        <i class="bi bi-trash3 mt-1"></i>
+                                        <i class="bi bi-trash3 mt-1" aria-hidden="true"></i>
                                         <div class="flex-grow-1">
                                             <div class="fw-semibold">Existe en Papelera</div>
                                             <div class="small text-muted">

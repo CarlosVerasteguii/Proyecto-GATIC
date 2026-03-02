@@ -85,7 +85,7 @@
                                             {{ $log->actor?->name ?? '-' }}
                                         </td>
                                         <td class="small">
-                                            <span class="badge bg-secondary">{{ $log->action_label }}</span>
+                                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $log->action_label }}</x-ui.badge>
                                         </td>
                                         <td class="small text-nowrap">
                                             {{ $log->subject_type_short }}
@@ -137,7 +137,7 @@
 
                             <dt class="col-sm-3">Acción</dt>
                             <dd class="col-sm-9">
-                                <span class="badge bg-secondary">{{ $selectedLog->action_label }}</span>
+                                <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $selectedLog->action_label }}</x-ui.badge>
                                 <code class="ms-2 small">{{ $selectedLog->action }}</code>
                             </dd>
 

@@ -50,6 +50,21 @@ enum PendingTaskStatus: string
     }
 
     /**
+     * Badge tone for <x-ui.badge> (Paleta B Rail)
+     */
+    public function badgeTone(): string
+    {
+        return match ($this) {
+            self::Draft => 'secondary',
+            self::Ready => 'info',
+            self::Processing => 'warning',
+            self::Completed => 'success',
+            self::PartiallyCompleted => 'primary',
+            self::Cancelled => 'danger',
+        };
+    }
+
+    /**
      * Check if task allows editing lines
      */
     public function allowsLineEditing(): bool

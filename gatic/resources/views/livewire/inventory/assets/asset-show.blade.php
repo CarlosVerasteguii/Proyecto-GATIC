@@ -135,11 +135,11 @@
                                     $isDueSoon = ! $isOverdue && $asset->expected_replacement_date->lte($today->copy()->addDays($renewalWindowDays));
                                 @endphp
                                 @if ($isOverdue)
-                                    <span class="badge bg-danger ms-1">Vencido</span>
+                                    <x-ui.badge tone="danger" variant="compact" :with-rail="false" class="ms-1">Vencido</x-ui.badge>
                                 @elseif ($isDueSoon)
-                                    <span class="badge bg-warning text-dark ms-1">Por vencer</span>
+                                    <x-ui.badge tone="warning" variant="compact" :with-rail="false" class="ms-1">Por vencer</x-ui.badge>
                                 @else
-                                    <span class="badge bg-success ms-1">En tiempo</span>
+                                    <x-ui.badge tone="success" variant="compact" :with-rail="false" class="ms-1">En tiempo</x-ui.badge>
                                 @endif
                             @else
                                 —
@@ -170,7 +170,7 @@
                             </div>
                         @else
                             <div class="d-flex align-items-center gap-2 text-warning">
-                                <i class="bi bi-exclamation-triangle"></i>
+                                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                                 <span>Sin tenencia registrada (estado legacy o ajuste manual)</span>
                             </div>
                         @endif
@@ -178,7 +178,7 @@
                         @if ($asset->status === \App\Models\Asset::STATUS_LOANED && $asset->loan_due_date)
                             <div class="mt-2">
                                 <small class="text-muted">
-                                    <i class="bi bi-calendar-event me-1"></i>
+                                    <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
                                     <strong>Vence:</strong> {{ $asset->loan_due_date->format('d/m/Y') }}
                                 </small>
                             </div>
@@ -255,11 +255,11 @@
                                             $isDueSoon = ! $isExpired && $asset->warranty_end_date->lte($today->copy()->addDays($dueSoonDays));
                                         @endphp
                                         @if ($isExpired)
-                                            <span class="badge bg-danger ms-1">Vencida</span>
+                                            <x-ui.badge tone="danger" variant="compact" :with-rail="false" class="ms-1">Vencida</x-ui.badge>
                                         @elseif ($isDueSoon)
-                                            <span class="badge bg-warning text-dark ms-1">Por vencer</span>
+                                            <x-ui.badge tone="warning" variant="compact" :with-rail="false" class="ms-1">Por vencer</x-ui.badge>
                                         @else
-                                            <span class="badge bg-success ms-1">Vigente</span>
+                                            <x-ui.badge tone="success" variant="compact" :with-rail="false" class="ms-1">Vigente</x-ui.badge>
                                         @endif
                                     @endif
                                 </dd>

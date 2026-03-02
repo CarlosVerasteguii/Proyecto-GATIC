@@ -43,7 +43,7 @@
 
                         <dt class="col-sm-3">Estado actual</dt>
                         <dd class="col-sm-9">
-                            <span class="badge bg-info text-dark">{{ $asset->status }}</span>
+                            <x-ui.status-badge :status="$asset->status" />
                         </dd>
 
                         <dt class="col-sm-3">Ubicación</dt>
@@ -79,17 +79,17 @@
                                             <span class="text-muted small ms-2">({{ $asset->currentEmployee->department }})</span>
                                         @endif
                                     </div>
-                                    <span class="badge bg-info text-dark">Tenencia actual</span>
+                                    <x-ui.badge tone="info" variant="compact" :with-rail="false">Tenencia actual</x-ui.badge>
                                 </div>
                             @else
                                 <div class="alert alert-warning py-2 mb-2">
-                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
                                     Sin tenencia registrada. Selecciona un empleado para preservar trazabilidad.
                                 </div>
                                 <livewire:ui.employee-combobox wire:model.live="employeeId" />
                                 @error('employeeId')
                                     <div class="invalid-feedback d-block mt-1">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                        <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>{{ $message }}
                                     </div>
                                 @enderror
                             @endif
@@ -109,7 +109,7 @@
                             ></textarea>
                             @error('note')
                                 <div class="invalid-feedback">
-                                    <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                    <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>{{ $message }}
                                 </div>
                             @enderror
                             <div class="form-text">
@@ -133,7 +133,7 @@
                                 style="min-width: 140px;"
                             >
                                 <span wire:loading.remove wire:target="unassignAsset">
-                                    <i class="bi bi-person-x me-1"></i> Desasignar
+                                    <i class="bi bi-person-x me-1" aria-hidden="true"></i> Desasignar
                                 </span>
                                 <span wire:loading wire:target="unassignAsset">
                                     <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>

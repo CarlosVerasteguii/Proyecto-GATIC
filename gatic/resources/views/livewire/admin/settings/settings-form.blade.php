@@ -22,14 +22,12 @@
                     </div>
 
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <span class="dash-chip">
-                            <i class="bi bi-sliders" aria-hidden="true"></i>
+                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false" icon="bi-sliders">
                             Estado <strong>{{ $settingsStatusLabel }}</strong>
-                        </span>
-                        <span class="dash-chip">
-                            <i class="bi bi-database" aria-hidden="true"></i>
+                        </x-ui.badge>
+                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false" icon="bi-database">
                             Overrides <strong>{{ number_format($overrideCount) }}</strong>
-                        </span>
+                        </x-ui.badge>
 
                         @if ($hasOverrides)
                             <button
@@ -254,13 +252,14 @@
 
                             <div class="col-12 col-xl-4">
                                 <aside class="admin-settings-summary">
-                                    @php($summaryStatusClass = $hasOverrides ? 'custom' : 'default')
                                     <div class="admin-settings-summary__header">
                                         <h2 class="admin-settings-summary__title mb-0">Resumen</h2>
-                                        <span class="admin-settings-summary-badge admin-settings-summary-badge--{{ $summaryStatusClass }}">
-                                            <i class="bi {{ $hasOverrides ? 'bi-sliders2' : 'bi-check2-circle' }}" aria-hidden="true"></i>
-                                            {{ $settingsStatusLabel }}
-                                        </span>
+                                        <x-ui.badge
+                                            :tone="$hasOverrides ? 'info' : 'neutral'"
+                                            variant="compact"
+                                            :with-rail="false"
+                                            :icon="$hasOverrides ? 'bi-sliders2' : 'bi-check2-circle'"
+                                        >{{ $settingsStatusLabel }}</x-ui.badge>
                                     </div>
 
                                     <div class="admin-settings-summary__metrics">

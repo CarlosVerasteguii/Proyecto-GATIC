@@ -41,19 +41,16 @@
                 </x-slot:breadcrumbs>
 
                 <x-slot:actions>
-                    <span class="dash-chip">
+                    <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
                         Total <strong>{{ number_format($summary['total']) }}</strong>
-                    </span>
+                    </x-ui.badge>
                     @if ($hasSearch)
-                        <span class="dash-chip">
+                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
                             Resultados <strong>{{ number_format($summary['results']) }}</strong>
-                        </span>
+                        </x-ui.badge>
                     @endif
                     @if ($isEditingThisPage)
-                        <span class="dash-chip">
-                            <i class="bi bi-pencil-square" aria-hidden="true"></i>
-                            Editando
-                        </span>
+                        <x-ui.badge tone="warning" variant="compact" :with-rail="false" icon="bi-pencil-square">Editando</x-ui.badge>
                     @endif
                 </x-slot:actions>
 

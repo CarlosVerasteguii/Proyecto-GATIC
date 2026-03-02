@@ -67,17 +67,17 @@
 
                     @if ($this->showMinCharsMessage)
                         <div class="alert alert-info mb-3" role="alert">
-                            <i class="bi bi-info-circle me-1"></i>
+                            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                             Ingresa al menos {{ $minChars }} caracteres para buscar.
                         </div>
                     @elseif ($this->showNoResultsMessage)
                         <div class="alert alert-warning mb-3" role="alert">
-                            <i class="bi bi-search me-1"></i>
+                            <i class="bi bi-search me-1" aria-hidden="true"></i>
                             No se encontraron resultados para "<strong>{{ $this->search }}</strong>".
                         </div>
                     @elseif ($this->search === '')
                         <div class="text-muted mb-3">
-                            <i class="bi bi-lightbulb me-1"></i>
+                            <i class="bi bi-lightbulb me-1" aria-hidden="true"></i>
                             Tip: Ingresa un serial o asset tag exacto para ir directamente al activo.
                         </div>
                     @endif
@@ -85,9 +85,9 @@
                     @if ($this->assets->isNotEmpty())
                         <div class="mb-4">
                             <h5 class="mb-3">
-                                <i class="bi bi-hdd me-1"></i>
+                                <i class="bi bi-hdd me-1" aria-hidden="true"></i>
                                 Activos
-                                <span class="badge bg-secondary">{{ $this->assets->count() }}</span>
+                                <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $this->assets->count() }}</x-ui.badge>
                             </h5>
                             @php
                                 $returnToParams = array_filter([
@@ -165,9 +165,9 @@
                     @if ($this->products->isNotEmpty())
                         <div class="mb-4">
                             <h5 class="mb-3">
-                                <i class="bi bi-box me-1"></i>
+                                <i class="bi bi-box me-1" aria-hidden="true"></i>
                                 Productos
-                                <span class="badge bg-secondary">{{ $this->products->count() }}</span>
+                                <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $this->products->count() }}</x-ui.badge>
                             </h5>
                             <div class="table-responsive">
                                 <table class="table table-sm table-striped align-middle mb-0">
@@ -195,9 +195,9 @@
                                                 <td>{{ $product->brand?->name ?? '-' }}</td>
                                                 <td>
                                                     @if ($product->category?->is_serialized)
-                                                        <span class="badge text-bg-info">Serializado</span>
+                                                        <x-ui.badge tone="info" variant="compact" :with-rail="false">Serializado</x-ui.badge>
                                                     @else
-                                                        <span class="badge bg-secondary">Por cantidad</span>
+                                                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Por cantidad</x-ui.badge>
                                                     @endif
                                                 </td>
                                                 <td class="text-end">

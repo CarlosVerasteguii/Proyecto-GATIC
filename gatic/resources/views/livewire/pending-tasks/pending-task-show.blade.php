@@ -24,13 +24,11 @@
                         <span class="fw-medium">Tarea #{{ $task->id }}</span>
                     </div>
                     <div class="d-flex gap-2 align-items-center">
-                        <span class="badge {{ $task->status->badgeClass() }}">
+                        <x-ui.badge :tone="$task->status->badgeTone()" variant="compact">
                             {{ $task->status->label() }}
-                        </span>
+                        </x-ui.badge>
                         @if ($hasQuickCapture)
-                            <span class="badge bg-light text-dark border">
-                                Origen: Captura rápida
-                            </span>
+                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Origen: Captura rápida</x-ui.badge>
                         @endif
                         @if ($isProcessMode)
                             <button
@@ -91,7 +89,7 @@
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div class="fw-semibold">Captura rápida</div>
-                        <span class="badge bg-light text-dark border">{{ $quickTitle }}</span>
+                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $quickTitle }}</x-ui.badge>
                     </div>
                     <div class="card-body">
                         @if ($isQuickCapturePending)
@@ -156,7 +154,7 @@
                                         </a>
                                     @else
                                         {{ $productName }}
-                                        <span class="badge bg-secondary ms-1">Placeholder</span>
+                                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false" class="ms-1">Placeholder</x-ui.badge>
                                     @endif
                                 @else
                                     —
@@ -251,9 +249,9 @@
                             </div>
                         <div class="d-flex align-items-center gap-2">
                             @if ($isMyLock)
-                                <span class="badge bg-primary">Tú tienes el lock</span>
+                                <x-ui.badge tone="primary" variant="compact">Tú tienes el lock</x-ui.badge>
                             @elseif ($isOtherLock)
-                                <span class="badge bg-warning text-dark">Solo lectura</span>
+                                <x-ui.badge tone="warning" variant="compact">Solo lectura</x-ui.badge>
                             @endif
                         </div>
                     </div>
@@ -273,7 +271,7 @@
                                     wire:click="forceReleaseLock"
                                     wire:confirm="¿Forzar liberación? El usuario {{ $task->lockedBy?->name ?? 'actual' }} perderá el lock."
                                 >
-                                    <i class="bi bi-unlock me-1"></i>
+                                    <i class="bi bi-unlock me-1" aria-hidden="true"></i>
                                     Forzar liberación
                                 </button>
                                 <button
@@ -282,7 +280,7 @@
                                     wire:click="forceClaimLock"
                                     wire:confirm="¿Forzar reclamo? Tomarás el control del lock y el usuario {{ $task->lockedBy?->name ?? 'actual' }} lo perderá."
                                 >
-                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                    <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
                                     Forzar reclamo
                                 </button>
                             </div>
@@ -296,7 +294,7 @@
                 <div class="alert alert-danger mb-4">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
                             <span>
                                 <strong>Lock perdido</strong> - Tu sesión de procesamiento ha expirado o alguien más reclamó la tarea.
                             </span>
@@ -306,7 +304,7 @@
                             class="btn btn-sm btn-danger"
                             wire:click="retryLock"
                         >
-                            <i class="bi bi-arrow-repeat me-1"></i>
+                            <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
                             Reintentar claim
                         </button>
                     </div>
@@ -319,18 +317,18 @@
                     <h5 class="alert-heading mb-2">Resumen de Finalizacion</h5>
                     <div class="d-flex flex-wrap gap-4">
                         <div>
-                            <span class="badge bg-success fs-6">{{ $finalizeResult['applied_count'] }}</span>
+                            <x-ui.badge tone="success" variant="solid" class="fs-6">{{ $finalizeResult['applied_count'] }}</x-ui.badge>
                             <span class="ms-1">Aplicados</span>
                         </div>
                         @if ($finalizeResult['error_count'] > 0)
                             <div>
-                                <span class="badge bg-danger fs-6">{{ $finalizeResult['error_count'] }}</span>
+                                <x-ui.badge tone="danger" variant="solid" class="fs-6">{{ $finalizeResult['error_count'] }}</x-ui.badge>
                                 <span class="ms-1">Errores</span>
                             </div>
                         @endif
                         @if ($finalizeResult['skipped_count'] > 0)
                             <div>
-                                <span class="badge bg-secondary fs-6">{{ $finalizeResult['skipped_count'] }}</span>
+                                <x-ui.badge tone="neutral" variant="solid" class="fs-6">{{ $finalizeResult['skipped_count'] }}</x-ui.badge>
                                 <span class="ms-1">Ya aplicados</span>
                             </div>
                         @endif
@@ -349,30 +347,22 @@
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <span>Renglones</span>
-                        <span class="badge bg-secondary">{{ $task->lines->count() }}</span>
+                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $task->lines->count() }}</x-ui.badge>
                         @if (count($duplicates) > 0)
-                            <span class="badge bg-warning text-dark" title="Duplicados detectados">
-                                {{ count($duplicates) }} duplicados
-                            </span>
+                            <x-ui.badge tone="warning" variant="compact" :with-rail="false" title="Duplicados detectados">{{ count($duplicates) }} duplicados</x-ui.badge>
                         @endif
 
                         {{-- Line status summary in process mode --}}
                         @if ($isProcessMode)
                             <span class="border-start ps-2 ms-2"></span>
                             @if ($lineStatusSummary['applied'] > 0)
-                                <span class="badge bg-success" title="Aplicados">
-                                    {{ $lineStatusSummary['applied'] }} aplicados
-                                </span>
+                                <x-ui.badge tone="success" variant="compact" :with-rail="false" title="Aplicados">{{ $lineStatusSummary['applied'] }} aplicados</x-ui.badge>
                             @endif
                             @if ($lineStatusSummary['pending'] > 0)
-                                <span class="badge bg-secondary" title="Pendientes">
-                                    {{ $lineStatusSummary['pending'] }} pendientes
-                                </span>
+                                <x-ui.badge tone="neutral" variant="compact" :with-rail="false" title="Pendientes">{{ $lineStatusSummary['pending'] }} pendientes</x-ui.badge>
                             @endif
                             @if ($lineStatusSummary['error'] > 0)
-                                <span class="badge bg-danger" title="Con error">
-                                    {{ $lineStatusSummary['error'] }} errores
-                                </span>
+                                <x-ui.badge tone="danger" variant="compact" :with-rail="false" title="Con error">{{ $lineStatusSummary['error'] }} errores</x-ui.badge>
                             @endif
                         @endif
                     </div>
@@ -398,7 +388,7 @@
                                 </button>
                             @endif
                         @elseif ($isQuickCapturePending)
-                            <span class="badge bg-light text-dark border align-self-center">Solo captura</span>
+                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false" class="align-self-center">Solo captura</x-ui.badge>
                         @elseif ($this->canProcess() && !$isProcessMode)
                             @php
                                 $canStartProcess = !$task->isLockedByOther(auth()->id());
@@ -483,9 +473,9 @@
 
                                                 @if ($isProcessMode)
                                                     <td>
-                                                        <span class="badge {{ $line->line_status->badgeClass() }}">
+                                                        <x-ui.badge :tone="$line->line_status->badgeTone()" variant="compact">
                                                             {{ $line->line_status->label() }}
-                                                        </span>
+                                                        </x-ui.badge>
                                                     </td>
                                                 @endif
 
@@ -494,12 +484,12 @@
                                                 <td>
                                                     {{ $line->identifier_display }}
                                                     @if ($this->isDuplicate($line->id))
-                                                        <span
-                                                            class="badge bg-warning text-dark"
+                                                        <x-ui.badge
+                                                            tone="warning"
+                                                            variant="compact"
+                                                            :with-rail="false"
                                                             title="Este identificador esta duplicado en la tarea"
-                                                        >
-                                                            Duplicado
-                                                        </span>
+                                                        >Duplicado</x-ui.badge>
                                                     @endif
                                                 </td>
                                                 <td>{{ $line->employee->full_name ?? '-' }}</td>
@@ -529,11 +519,11 @@
                                                     <td class="text-end">
                                                     @if ($line->line_status->value === 'applied')
                                                         <span class="text-success small">
-                                                            <i class="bi bi-check-circle"></i> Aplicado
+                                                            <i class="bi bi-check-circle" aria-hidden="true"></i> Aplicado
                                                         </span>
                                                     @elseif ($lockLost || !$hasLock)
                                                         <span class="text-muted small">
-                                                            <i class="bi bi-lock"></i> Sin lock
+                                                            <i class="bi bi-lock" aria-hidden="true"></i> Sin lock
                                                         </span>
                                                     @else
                                                         <div class="btn-group btn-group-sm">
@@ -542,16 +532,18 @@
                                                                 class="btn btn-outline-primary"
                                                                 wire:click="openProcessLineModal({{ $line->id }})"
                                                                 title="Editar"
+                                                                aria-label="Editar renglón"
                                                             >
-                                                                <i class="bi bi-pencil"></i>
+                                                                <i class="bi bi-pencil" aria-hidden="true"></i>
                                                             </button>
                                                             <button
                                                                 type="button"
                                                                 class="btn btn-outline-info"
                                                                 wire:click="validateLine({{ $line->id }})"
                                                                 title="Validar"
+                                                                aria-label="Validar renglón"
                                                             >
-                                                                <i class="bi bi-check2"></i>
+                                                                <i class="bi bi-check2" aria-hidden="true"></i>
                                                             </button>
                                                             @if ($line->line_status->value === 'error')
                                                                 <button
@@ -559,8 +551,9 @@
                                                                     class="btn btn-outline-secondary"
                                                                     wire:click="clearLineError({{ $line->id }})"
                                                                     title="Limpiar error"
+                                                                    aria-label="Limpiar error"
                                                                 >
-                                                                    <i class="bi bi-x-lg"></i>
+                                                                    <i class="bi bi-x-lg" aria-hidden="true"></i>
                                                                 </button>
                                                             @endif
                                                         </div>
@@ -573,7 +566,7 @@
                                             <tr class="table-danger">
                                                 <td></td>
                                                 <td colspan="{{ $task->isDraft() || $isProcessMode ? 7 : 6 }}" class="text-danger small py-1">
-                                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                                    <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
                                                     {{ $line->error_message }}
                                                 </td>
                                             </tr>

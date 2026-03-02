@@ -45,7 +45,7 @@
 
                         <dt class="col-sm-3">Estado actual</dt>
                         <dd class="col-sm-9">
-                            <span class="badge bg-success">{{ $asset->status }}</span>
+                            <x-ui.status-badge :status="$asset->status" />
                         </dd>
 
                         <dt class="col-sm-3">Ubicación</dt>
@@ -69,7 +69,7 @@
                             <livewire:ui.employee-combobox wire:model.live="employeeId" />
                             @error('employeeId')
                                 <div class="invalid-feedback d-block mt-1">
-                                    <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                    <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>{{ $message }}
                                 </div>
                             @enderror
                         </div>
@@ -89,7 +89,7 @@
                             ></textarea>
                             @error('note')
                                 <div class="invalid-feedback">
-                                    <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                    <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>{{ $message }}
                                 </div>
                             @enderror
                             <div class="form-text">
@@ -114,7 +114,7 @@
                                 style="min-width: 120px;"
                             >
                                 <span wire:loading.remove wire:target="assign">
-                                    <i class="bi bi-person-check me-1"></i> Asignar
+                                    <i class="bi bi-person-check me-1" aria-hidden="true"></i> Asignar
                                 </span>
                                 <span wire:loading wire:target="assign">
                                     <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>

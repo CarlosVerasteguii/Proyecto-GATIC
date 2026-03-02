@@ -25,28 +25,34 @@
     $statusMap = [
         Asset::STATUS_AVAILABLE => [
             'class' => 'available',
+            'tone' => 'status-available',
             'icon' => 'bi-check-circle-fill',
         ],
         Asset::STATUS_LOANED => [
             'class' => 'loaned',
+            'tone' => 'status-loaned',
             'icon' => 'bi-arrow-left-right',
         ],
         Asset::STATUS_ASSIGNED => [
             'class' => 'assigned',
+            'tone' => 'status-assigned',
             'icon' => 'bi-person-fill',
         ],
         Asset::STATUS_PENDING_RETIREMENT => [
             'class' => 'pending',
+            'tone' => 'status-pending',
             'icon' => 'bi-clock-fill',
         ],
         Asset::STATUS_RETIRED => [
             'class' => 'retired',
+            'tone' => 'status-retired',
             'icon' => 'bi-x-circle-fill',
         ],
     ];
 
     $config = $statusMap[$status] ?? [
         'class' => 'secondary',
+        'tone' => 'secondary',
         'icon' => 'bi-question-circle',
     ];
 
@@ -57,9 +63,11 @@
     ])->filter()->implode(' ');
 @endphp
 
-<span {{ $attributes->merge(['class' => $classes]) }}>
-    @if($icon)
-        <i class="bi {{ $config['icon'] }}" aria-hidden="true"></i>
-    @endif
-    <span>{{ $status }}</span>
-</span>
+<x-ui.badge
+    :tone="$config['tone']"
+    :variant="$solid ? 'solid' : 'default'"
+    :icon="$icon ? $config['icon'] : false"
+    {{ $attributes->merge(['class' => $classes]) }}
+>
+    {{ $status }}
+</x-ui.badge>

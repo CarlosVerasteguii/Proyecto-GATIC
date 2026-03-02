@@ -205,10 +205,10 @@
                                                     <button
                                                         type="button"
                                                         class="btn btn-sm btn-outline-danger"
-                                                        wire:click="unlinkAsset({{ $asset['id'] }})"
-                                                        wire:loading.attr="disabled"
-                                                    >
-                                                        <i class="bi bi-x-lg"></i> Desvincular
+                                                    wire:click="unlinkAsset({{ $asset['id'] }})"
+                                                    wire:loading.attr="disabled"
+                                                >
+                                                        <i class="bi bi-x-lg" aria-hidden="true"></i> Desvincular
                                                     </button>
                                                 </td>
                                             </tr>
@@ -218,7 +218,7 @@
                             </div>
                         @else
                             <p class="text-muted mb-0">
-                                <i class="bi bi-info-circle me-1"></i>
+                                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                                 No hay activos vinculados a este contrato.
                             </p>
                         @endif
@@ -227,7 +227,7 @@
 
                 <div class="mt-3 d-flex justify-content-between">
                     <a href="{{ route('inventory.contracts.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancelar
                     </a>
                     <button
                         type="submit"
@@ -235,7 +235,7 @@
                         wire:loading.attr="disabled"
                         wire:target="save"
                     >
-                        <i class="bi bi-check-lg me-1"></i>{{ $isEdit ? 'Actualizar' : 'Crear' }} contrato
+                        <i class="bi bi-check-lg me-1" aria-hidden="true"></i>{{ $isEdit ? 'Actualizar' : 'Crear' }} contrato
                     </button>
                 </div>
             </form>

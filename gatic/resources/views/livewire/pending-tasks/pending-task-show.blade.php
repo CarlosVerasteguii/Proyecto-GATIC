@@ -519,11 +519,11 @@
                                                     <td class="text-end">
                                                     @if ($line->line_status->value === 'applied')
                                                         <span class="text-success small">
-                                                            <i class="bi bi-check-circle"></i> Aplicado
+                                                            <i class="bi bi-check-circle" aria-hidden="true"></i> Aplicado
                                                         </span>
                                                     @elseif ($lockLost || !$hasLock)
                                                         <span class="text-muted small">
-                                                            <i class="bi bi-lock"></i> Sin lock
+                                                            <i class="bi bi-lock" aria-hidden="true"></i> Sin lock
                                                         </span>
                                                     @else
                                                         <div class="btn-group btn-group-sm">
@@ -532,16 +532,18 @@
                                                                 class="btn btn-outline-primary"
                                                                 wire:click="openProcessLineModal({{ $line->id }})"
                                                                 title="Editar"
+                                                                aria-label="Editar renglón"
                                                             >
-                                                                <i class="bi bi-pencil"></i>
+                                                                <i class="bi bi-pencil" aria-hidden="true"></i>
                                                             </button>
                                                             <button
                                                                 type="button"
                                                                 class="btn btn-outline-info"
                                                                 wire:click="validateLine({{ $line->id }})"
                                                                 title="Validar"
+                                                                aria-label="Validar renglón"
                                                             >
-                                                                <i class="bi bi-check2"></i>
+                                                                <i class="bi bi-check2" aria-hidden="true"></i>
                                                             </button>
                                                             @if ($line->line_status->value === 'error')
                                                                 <button
@@ -549,8 +551,9 @@
                                                                     class="btn btn-outline-secondary"
                                                                     wire:click="clearLineError({{ $line->id }})"
                                                                     title="Limpiar error"
+                                                                    aria-label="Limpiar error"
                                                                 >
-                                                                    <i class="bi bi-x-lg"></i>
+                                                                    <i class="bi bi-x-lg" aria-hidden="true"></i>
                                                                 </button>
                                                             @endif
                                                         </div>
@@ -563,7 +566,7 @@
                                             <tr class="table-danger">
                                                 <td></td>
                                                 <td colspan="{{ $task->isDraft() || $isProcessMode ? 7 : 6 }}" class="text-danger small py-1">
-                                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                                    <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
                                                     {{ $line->error_message }}
                                                 </td>
                                             </tr>

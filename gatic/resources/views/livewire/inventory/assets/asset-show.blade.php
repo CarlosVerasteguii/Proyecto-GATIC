@@ -170,7 +170,7 @@
                             </div>
                         @else
                             <div class="d-flex align-items-center gap-2 text-warning">
-                                <i class="bi bi-exclamation-triangle"></i>
+                                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                                 <span>Sin tenencia registrada (estado legacy o ajuste manual)</span>
                             </div>
                         @endif
@@ -178,7 +178,7 @@
                         @if ($asset->status === \App\Models\Asset::STATUS_LOANED && $asset->loan_due_date)
                             <div class="mt-2">
                                 <small class="text-muted">
-                                    <i class="bi bi-calendar-event me-1"></i>
+                                    <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
                                     <strong>Vence:</strong> {{ $asset->loan_due_date->format('d/m/Y') }}
                                 </small>
                             </div>

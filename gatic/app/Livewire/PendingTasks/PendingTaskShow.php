@@ -185,6 +185,60 @@ class PendingTaskShow extends Component
         }
     }
 
+    /**
+     * Refresh only lock-related state without reloading task lines.
+     *
+     * This avoids re-querying potentially large `lines` collections on every
+     * process-mode action (validate/clear/edit/finalize), while still ensuring
+     * correctness for the lock owner checks.
+     */
+    private function refreshTaskLockState(): void
+    {
+        $fresh = PendingTask::query()
+            ->select([
+                'id',
+                'status',
+                'locked_by_user_id',
+                'locked_at',
+                'heartbeat_at',
+                'expires_at',
+            ])
+            ->with(['lockedBy'])
+            ->find($this->pendingTask);
+
+        if (! $fresh) {
+            return;
+        }
+
+        if ($this->task) {
+            $this->task->status = $fresh->status;
+            $this->task->locked_by_user_id = $fresh->locked_by_user_id;
+            $this->task->locked_at = $fresh->locked_at;
+            $this->task->heartbeat_at = $fresh->heartbeat_at;
+            $this->task->expires_at = $fresh->expires_at;
+            $this->task->setRelation('lockedBy', $fresh->lockedBy);
+        } else {
+            $this->task = $fresh;
+        }
+
+        $userId = Auth::id();
+        if (! is_int($userId)) {
+            $this->hasLock = false;
+
+            return;
+        }
+
+        $this->hasLock = $fresh->isLockedBy($userId);
+
+        if ($this->hasLock) {
+            $this->lockLost = false;
+        }
+
+        if ($this->isProcessMode && ! $this->hasLock && $fresh->hasActiveLock()) {
+            $this->lockLost = true;
+        }
+    }
+
     private function loadTask(): void
     {
         $this->task = PendingTask::with(['creator', 'lockedBy', 'lines.product', 'lines.employee'])
@@ -747,7 +801,7 @@ class PendingTaskShow extends Component
      */
     private function requireActiveLock(): bool
     {
-        $this->loadTask();
+        $this->refreshTaskLockState();
 
         if (! $this->hasLock) {
             if ($this->isProcessMode) {
@@ -840,7 +894,7 @@ class PendingTaskShow extends Component
                 // Lock expired or lost
                 $this->hasLock = false;
                 $this->lockLost = true;
-                $this->loadTask();
+                $this->refreshTaskLockState();
             }
         } catch (\Throwable $e) {
             Log::warning('heartbeat failed', [

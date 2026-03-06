@@ -1,4 +1,5 @@
 @php
+    $currentUser = auth()->user();
     $adminUsersActive = request()->routeIs('admin.users.*');
     $adminTrashActive = request()->routeIs('admin.trash.*');
     $adminErrorReportsActive = request()->routeIs('admin.error-reports.*');
@@ -13,226 +14,153 @@
     $inventoryAssetsActive = request()->routeIs('inventory.assets.*');
     $inventoryProductsActive = request()->routeIs('inventory.products.*');
     $inventoryContractsActive = request()->routeIs('inventory.contracts.*');
-    $showAdminSection = auth()->user()->can('users.manage')
-        || auth()->user()->can('admin-only');
+    $showInventorySection = $currentUser?->can('inventory.view') ?? false;
+    $showOperationsSection = $currentUser?->can('inventory.manage') ?? false;
+    $showCatalogsSection = $currentUser?->can('catalogs.manage') ?? false;
+    $showAdminSection = ($currentUser?->can('users.manage') ?? false)
+        || ($currentUser?->can('admin-only') ?? false);
+
+    $sections = array_values(array_filter([
+        $showInventorySection ? [
+            'label' => 'Inventario',
+            'items' => array_values(array_filter([
+                [
+                    'label' => 'Productos',
+                    'route' => route('inventory.products.index'),
+                    'icon' => 'bi bi-box-seam',
+                    'active' => $inventoryProductsActive,
+                ],
+                [
+                    'label' => 'Activos',
+                    'route' => route('inventory.assets.index'),
+                    'icon' => 'bi bi-hdd',
+                    'active' => $inventoryAssetsActive,
+                ],
+                $showOperationsSection ? [
+                    'label' => 'Contratos',
+                    'route' => route('inventory.contracts.index'),
+                    'icon' => 'bi bi-file-earmark-text',
+                    'active' => $inventoryContractsActive,
+                ] : null,
+            ])),
+        ] : null,
+        $showOperationsSection ? [
+            'label' => 'Operaciones',
+            'items' => [
+                [
+                    'label' => 'Tareas Pendientes',
+                    'route' => route('pending-tasks.index'),
+                    'icon' => 'bi bi-list-task',
+                    'active' => $pendingTasksActive,
+                ],
+                [
+                    'label' => 'Empleados',
+                    'route' => route('employees.index'),
+                    'icon' => 'bi bi-person-badge',
+                    'active' => $employeesActive,
+                ],
+            ],
+        ] : null,
+        $showCatalogsSection ? [
+            'label' => 'Catálogos',
+            'items' => [
+                [
+                    'label' => 'Categorías',
+                    'route' => route('catalogs.categories.index'),
+                    'icon' => 'bi bi-folder',
+                    'active' => $catalogsCategoriesActive,
+                ],
+                [
+                    'label' => 'Marcas',
+                    'route' => route('catalogs.brands.index'),
+                    'icon' => 'bi bi-tag',
+                    'active' => $catalogsBrandsActive,
+                ],
+                [
+                    'label' => 'Ubicaciones',
+                    'route' => route('catalogs.locations.index'),
+                    'icon' => 'bi bi-geo-alt',
+                    'active' => $catalogsLocationsActive,
+                ],
+                [
+                    'label' => 'Proveedores',
+                    'route' => route('catalogs.suppliers.index'),
+                    'icon' => 'bi bi-truck',
+                    'active' => $catalogsSuppliersActive,
+                ],
+            ],
+        ] : null,
+        $showAdminSection ? [
+            'label' => 'Administración',
+            'items' => array_values(array_filter([
+                ($currentUser?->can('users.manage') ?? false) ? [
+                    'label' => 'Usuarios',
+                    'route' => route('admin.users.index'),
+                    'icon' => 'bi bi-people',
+                    'active' => $adminUsersActive,
+                ] : null,
+                ($currentUser?->can('admin-only') ?? false) ? [
+                    'label' => 'Papelera',
+                    'route' => route('admin.trash.index'),
+                    'icon' => 'bi bi-trash',
+                    'active' => $adminTrashActive,
+                ] : null,
+                ($currentUser?->can('admin-only') ?? false) ? [
+                    'label' => 'Errores (soporte)',
+                    'route' => route('admin.error-reports.lookup'),
+                    'icon' => 'bi bi-exclamation-triangle',
+                    'active' => $adminErrorReportsActive,
+                ] : null,
+                ($currentUser?->can('admin-only') ?? false) ? [
+                    'label' => 'Papelera catálogos',
+                    'route' => route('catalogs.trash.index'),
+                    'icon' => 'bi bi-trash3',
+                    'active' => $catalogsTrashActive,
+                ] : null,
+                ($currentUser?->can('admin-only') ?? false) ? [
+                    'label' => 'Configuración',
+                    'route' => route('admin.settings.index'),
+                    'icon' => 'bi bi-gear',
+                    'active' => $adminSettingsActive,
+                ] : null,
+            ])),
+        ] : null,
+    ]));
 @endphp
 
-<ul class="nav nav-pills flex-column gap-0">
-    @can('inventory.view')
-        <li class="sidebar-section px-2">
-            <div class="text-uppercase small text-secondary-emphasis">Inventario</div>
-        </li>
-
-        <li class="nav-item">
-            <a
-                class="nav-link @if ($inventoryProductsActive) active @endif"
-                href="{{ route('inventory.products.index') }}"
-                title="Productos"
-                aria-label="Productos"
-                @if ($inventoryProductsActive) aria-current="page" @endif
-            >
-                <i class="bi bi-box-seam nav-icon" aria-hidden="true"></i>
-                <span class="nav-text">Productos</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a
-                class="nav-link @if ($inventoryAssetsActive) active @endif"
-                href="{{ route('inventory.assets.index') }}"
-                title="Activos"
-                aria-label="Activos"
-                @if ($inventoryAssetsActive) aria-current="page" @endif
-            >
-                <i class="bi bi-hdd nav-icon" aria-hidden="true"></i>
-                <span class="nav-text">Activos</span>
-            </a>
-        </li>
-
-        @can('inventory.manage')
-            <li class="nav-item">
-                <a
-                    class="nav-link @if ($inventoryContractsActive) active @endif"
-                    href="{{ route('inventory.contracts.index') }}"
-                    title="Contratos"
-                    aria-label="Contratos"
-                    @if ($inventoryContractsActive) aria-current="page" @endif
-                >
-                    <i class="bi bi-file-earmark-text nav-icon" aria-hidden="true"></i>
-                    <span class="nav-text">Contratos</span>
-                </a>
+<ul
+    @if (isset($navId)) id="{{ $navId }}" @endif
+    class="sidebar-nav nav nav-pills flex-column"
+    aria-label="Navegación principal"
+>
+    @foreach ($sections as $section)
+        @if (! $loop->first)
+            <li class="sidebar-divider px-2" aria-hidden="true">
+                <hr />
             </li>
-        @endcan
-    @endcan
-
-    @can('inventory.manage')
-        <li class="sidebar-divider px-2">
-            <hr class="my-1 border-secondary opacity-25" />
-        </li>
+        @endif
 
         <li class="sidebar-section px-2">
-            <div class="text-uppercase small text-secondary-emphasis">Operaciones</div>
+            <span class="sidebar-group-label">{{ $section['label'] }}</span>
         </li>
 
-        <li class="nav-item">
-            <a
-                class="nav-link @if ($pendingTasksActive) active @endif"
-                href="{{ route('pending-tasks.index') }}"
-                title="Tareas Pendientes"
-                aria-label="Tareas Pendientes"
-                @if ($pendingTasksActive) aria-current="page" @endif
-            >
-                <i class="bi bi-list-task nav-icon" aria-hidden="true"></i>
-                <span class="nav-text">Tareas Pendientes</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a
-                class="nav-link @if ($employeesActive) active @endif"
-                href="{{ route('employees.index') }}"
-                title="Empleados"
-                aria-label="Empleados"
-                @if ($employeesActive) aria-current="page" @endif
-            >
-                <i class="bi bi-person-badge nav-icon" aria-hidden="true"></i>
-                <span class="nav-text">Empleados</span>
-            </a>
-        </li>
-    @endcan
-
-    @can('catalogs.manage')
-        <li class="sidebar-divider px-2">
-            <hr class="my-1 border-secondary opacity-25" />
-        </li>
-
-        <li class="sidebar-section px-2">
-            <div class="text-uppercase small text-secondary-emphasis">Catálogos</div>
-        </li>
-
-        <li class="nav-item">
-            <a
-                class="nav-link @if ($catalogsCategoriesActive) active @endif"
-                href="{{ route('catalogs.categories.index') }}"
-                title="Categorías"
-                aria-label="Categorías"
-                @if ($catalogsCategoriesActive) aria-current="page" @endif
-            >
-                <i class="bi bi-folder nav-icon" aria-hidden="true"></i>
-                <span class="nav-text">Categorías</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a
-                class="nav-link @if ($catalogsBrandsActive) active @endif"
-                href="{{ route('catalogs.brands.index') }}"
-                title="Marcas"
-                aria-label="Marcas"
-                @if ($catalogsBrandsActive) aria-current="page" @endif
-            >
-                <i class="bi bi-tag nav-icon" aria-hidden="true"></i>
-                <span class="nav-text">Marcas</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a
-                class="nav-link @if ($catalogsLocationsActive) active @endif"
-                href="{{ route('catalogs.locations.index') }}"
-                title="Ubicaciones"
-                aria-label="Ubicaciones"
-                @if ($catalogsLocationsActive) aria-current="page" @endif
-            >
-                <i class="bi bi-geo-alt nav-icon" aria-hidden="true"></i>
-                <span class="nav-text">Ubicaciones</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a
-                class="nav-link @if ($catalogsSuppliersActive) active @endif"
-                href="{{ route('catalogs.suppliers.index') }}"
-                title="Proveedores"
-                aria-label="Proveedores"
-                @if ($catalogsSuppliersActive) aria-current="page" @endif
-            >
-                <i class="bi bi-truck nav-icon" aria-hidden="true"></i>
-                <span class="nav-text">Proveedores</span>
-            </a>
-        </li>
-    @endcan
-
-    @if ($showAdminSection)
-        <li class="sidebar-divider px-2">
-            <hr class="my-1 border-secondary opacity-25" />
-        </li>
-
-        <li class="sidebar-section px-2">
-            <div class="text-uppercase small text-secondary-emphasis">Administración</div>
-        </li>
-
-        @can('users.manage')
+        @foreach ($section['items'] as $item)
             <li class="nav-item">
                 <a
-                    class="nav-link @if ($adminUsersActive) active @endif"
-                    href="{{ route('admin.users.index') }}"
-                    title="Usuarios"
-                    aria-label="Usuarios"
-                    @if ($adminUsersActive) aria-current="page" @endif
+                    class="nav-link sidebar-link @if ($item['active']) active @endif"
+                    href="{{ $item['route'] }}"
+                    title="{{ $item['label'] }}"
+                    aria-label="{{ $item['label'] }}"
+                    @if ($item['active']) aria-current="page" @endif
                 >
-                    <i class="bi bi-people nav-icon" aria-hidden="true"></i>
-                    <span class="nav-text">Usuarios</span>
+                    <span class="sidebar-link__icon" aria-hidden="true">
+                        <i class="{{ $item['icon'] }} nav-icon" aria-hidden="true"></i>
+                    </span>
+                    <span class="sidebar-link__body">
+                        <span class="nav-text">{{ $item['label'] }}</span>
+                    </span>
                 </a>
             </li>
-        @endcan
-
-        @can('admin-only')
-            <li class="nav-item">
-                <a
-                    class="nav-link @if ($adminTrashActive) active @endif"
-                    href="{{ route('admin.trash.index') }}"
-                    title="Papelera"
-                    aria-label="Papelera"
-                    @if ($adminTrashActive) aria-current="page" @endif
-                >
-                    <i class="bi bi-trash nav-icon" aria-hidden="true"></i>
-                    <span class="nav-text">Papelera</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a
-                    class="nav-link @if ($adminErrorReportsActive) active @endif"
-                    href="{{ route('admin.error-reports.lookup') }}"
-                    title="Errores (soporte)"
-                    aria-label="Errores (soporte)"
-                    @if ($adminErrorReportsActive) aria-current="page" @endif
-                >
-                    <i class="bi bi-exclamation-triangle nav-icon" aria-hidden="true"></i>
-                    <span class="nav-text">Errores (soporte)</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a
-                    class="nav-link @if ($catalogsTrashActive) active @endif"
-                    href="{{ route('catalogs.trash.index') }}"
-                    title="Papelera catálogos"
-                    aria-label="Papelera catálogos"
-                    @if ($catalogsTrashActive) aria-current="page" @endif
-                >
-                    <i class="bi bi-trash3 nav-icon" aria-hidden="true"></i>
-                    <span class="nav-text">Papelera catálogos</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a
-                    class="nav-link @if ($adminSettingsActive) active @endif"
-                    href="{{ route('admin.settings.index') }}"
-                    title="Configuración"
-                    aria-label="Configuración"
-                    @if ($adminSettingsActive) aria-current="page" @endif
-                >
-                    <i class="bi bi-gear nav-icon" aria-hidden="true"></i>
-                    <span class="nav-text">Configuración</span>
-                </a>
-            </li>
-        @endcan
-    @endif
+        @endforeach
+    @endforeach
 </ul>

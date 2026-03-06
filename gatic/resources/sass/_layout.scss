@@ -42,18 +42,34 @@ $app-sidebar-collapsed-width: 4.5rem;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    padding: 0.5rem 0.35rem 0.85rem;
+    border-bottom: 1px solid rgba(0, 107, 71, 0.08);
 }
 
 .app-sidebar-brand {
-    color: var(--bs-link-color);
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid rgba(0, 107, 71, 0.12);
+    border-radius: var(--radius-md);
+    background:
+        radial-gradient(circle at 95% -15%, rgba(0, 142, 90, 0.14), transparent 44%),
+        linear-gradient(180deg, rgba(0, 107, 71, 0.08), rgba(0, 107, 71, 0)),
+        var(--bs-body-bg);
+    box-shadow: var(--shadow-sm);
+    color: var(--bs-emphasis-color);
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease, border-color var(--transition-fast), box-shadow var(--transition-fast);
 
     .sidebar-collapsed & {
         opacity: 0;
         width: 0;
+        padding-inline: 0;
+        border-color: transparent;
+        box-shadow: none;
     }
 }
 
@@ -61,6 +77,7 @@ $app-sidebar-collapsed-width: 4.5rem;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    padding: 0.35rem 0.25rem 0.75rem;
 }
 
 .app-sidebar-toggle {
@@ -84,71 +101,146 @@ $app-sidebar-collapsed-width: 4.5rem;
     }
 }
 
-// Collapsed sidebar nav styles
-.sidebar-collapsed {
-    .app-sidebar {
-        .nav-link {
-            justify-content: center;
-            padding-inline: 0.5rem;
-
-            .nav-icon {
-                margin-right: 0;
-            }
-
-            .nav-text {
-                display: none;
-            }
-        }
-    }
-
-    .sidebar-section,
-    .sidebar-divider {
-        display: none;
-    }
+.sidebar-nav {
+    gap: 0.2rem;
+    padding-block: 0.2rem;
 }
 
-.app-sidebar .sidebar-divider hr {
-    margin-block: 0.15rem;
+.sidebar-divider {
+    margin: 0.25rem 0;
 }
 
-// Sidebar nav link with icon
-.app-sidebar .nav-link {
+.sidebar-divider hr {
+    margin: 0;
+    border-top-color: rgba(0, 107, 71, 0.14);
+    opacity: 1;
+}
+
+.sidebar-section {
+    padding-top: 0.6rem;
+    padding-bottom: 0.35rem;
+}
+
+.sidebar-group-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--bs-secondary-color);
+}
+
+.sidebar-link {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    min-height: 2.75rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--bs-secondary-color);
     white-space: nowrap;
     overflow: hidden;
-    border-radius: var(--radius-md);
-    color: var(--bs-secondary-color);
-    transition: background-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
-
-    .nav-icon {
-        flex-shrink: 0;
-        width: 1.25rem;
-        text-align: center;
-    }
-
-    .nav-text {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+    transition:
+        background-color var(--transition-fast),
+        border-color var(--transition-fast),
+        color var(--transition-fast),
+        box-shadow var(--transition-fast);
 
     &:hover {
-        background: var(--cfe-green-bg);
-        color: var(--cfe-green-dark);
+        background:
+            radial-gradient(circle at 100% 0, rgba(0, 142, 90, 0.1), transparent 42%),
+            rgba(0, 142, 90, 0.06);
+        border-color: rgba(0, 142, 90, 0.12);
+        color: var(--bs-emphasis-color);
+        box-shadow: var(--shadow-sm);
     }
 
     &.active {
-        background: var(--cfe-green-dark);
-        color: #fff;
-        box-shadow: var(--shadow-sm);
+        background:
+            radial-gradient(circle at 100% 0, rgba(0, 142, 90, 0.16), transparent 44%),
+            linear-gradient(180deg, rgba(0, 107, 71, 0.08), rgba(0, 107, 71, 0)),
+            var(--bs-body-bg);
+        border-color: rgba(0, 142, 90, 0.18);
+        color: var(--bs-emphasis-color);
+        box-shadow:
+            inset 0.22rem 0 0 rgba(0, 142, 90, 0.82),
+            var(--shadow-sm);
     }
 }
 
-.app-sidebar .sidebar-section .text-uppercase {
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
+.sidebar-link__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-md);
+    background: var(--bs-tertiary-bg);
     color: var(--bs-secondary-color);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.sidebar-link__body {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
+}
+
+.nav-icon {
+    flex-shrink: 0;
+    width: 1.25rem;
+    text-align: center;
+}
+
+.nav-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+}
+
+.sidebar-link:hover .sidebar-link__icon,
+.sidebar-link.active .sidebar-link__icon {
+    background: rgba(0, 142, 90, 0.12);
+    color: var(--cfe-green-dark);
+}
+
+.app-sidebar-offcanvas .offcanvas-header {
+    background:
+        radial-gradient(circle at 100% 0, rgba(0, 142, 90, 0.12), transparent 42%),
+        linear-gradient(180deg, rgba(0, 107, 71, 0.08), rgba(0, 107, 71, 0)),
+        var(--bs-body-bg);
+    border-bottom: 1px solid rgba(0, 107, 71, 0.12);
+}
+
+.app-sidebar-offcanvas .offcanvas-body {
+    padding: 0.85rem 0.85rem 1rem;
+    background:
+        linear-gradient(180deg, rgba(0, 107, 71, 0.04), rgba(0, 107, 71, 0)),
+        var(--bs-body-bg);
+}
+
+.sidebar-collapsed .app-sidebar .sidebar-link {
+    justify-content: center;
+    padding-inline: 0.5rem;
+    min-height: 3rem;
+}
+
+.sidebar-collapsed .app-sidebar .sidebar-link__icon {
+    width: 2.2rem;
+    height: 2.2rem;
+}
+
+.sidebar-collapsed .app-sidebar .sidebar-link__body,
+.sidebar-collapsed .app-sidebar .sidebar-section,
+.sidebar-collapsed .app-sidebar .sidebar-divider {
+    display: none;
 }
 
 .app-topbar {
@@ -189,6 +281,54 @@ $app-sidebar-collapsed-width: 4.5rem;
 }
 
 [data-bs-theme='dark'] {
+    .app-sidebar-header {
+        border-bottom-color: rgba(0, 179, 111, 0.16);
+    }
+
+    .app-sidebar-brand {
+        border-color: rgba(0, 179, 111, 0.2);
+        background:
+            radial-gradient(circle at 95% -15%, rgba(0, 179, 111, 0.16), transparent 44%),
+            linear-gradient(180deg, rgba(0, 142, 90, 0.12), rgba(0, 142, 90, 0)),
+            var(--bs-body-bg);
+    }
+
+    .sidebar-divider hr {
+        border-top-color: rgba(0, 179, 111, 0.2);
+    }
+
+    .sidebar-link:hover {
+        background:
+            radial-gradient(circle at 100% 0, rgba(0, 179, 111, 0.14), transparent 42%),
+            rgba(0, 179, 111, 0.08);
+        border-color: rgba(0, 179, 111, 0.16);
+    }
+
+    .sidebar-link.active {
+        background:
+            radial-gradient(circle at 100% 0, rgba(0, 179, 111, 0.18), transparent 44%),
+            linear-gradient(180deg, rgba(0, 142, 90, 0.16), rgba(0, 142, 90, 0)),
+            var(--bs-body-bg);
+        border-color: rgba(0, 179, 111, 0.22);
+        box-shadow:
+            inset 0.22rem 0 0 rgba(0, 179, 111, 0.82),
+            var(--shadow-sm);
+    }
+
+    .sidebar-link:hover .sidebar-link__icon,
+    .sidebar-link.active .sidebar-link__icon {
+        background: rgba(0, 179, 111, 0.18);
+        color: var(--cfe-green-light);
+    }
+
+    .app-sidebar-offcanvas .offcanvas-header {
+        background:
+            radial-gradient(circle at 100% 0, rgba(0, 179, 111, 0.14), transparent 42%),
+            linear-gradient(180deg, rgba(0, 142, 90, 0.12), rgba(0, 142, 90, 0)),
+            var(--bs-body-bg);
+        border-bottom-color: rgba(0, 179, 111, 0.18);
+    }
+
     .app-topbar {
         border-bottom-color: rgba(148, 163, 184, 0.24);
     }

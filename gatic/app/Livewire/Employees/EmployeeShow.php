@@ -26,7 +26,18 @@ class EmployeeShow extends Component
         $this->employeeId = (int) $employee;
 
         $this->employeeModel = Employee::query()
-            ->with(['assignedAssets.product', 'loanedAssets.product'])
+            ->select(['id', 'rpe', 'name', 'department', 'job_title'])
+            ->with([
+                'assignedAssets' => fn ($query) => $query
+                    ->select(['id', 'product_id', 'current_employee_id', 'serial', 'asset_tag', 'status'])
+                    ->with(['product:id,name'])
+                    ->orderBy('serial'),
+                'loanedAssets' => fn ($query) => $query
+                    ->select(['id', 'product_id', 'current_employee_id', 'serial', 'asset_tag', 'status', 'loan_due_date'])
+                    ->with(['product:id,name'])
+                    ->orderBy('loan_due_date')
+                    ->orderBy('serial'),
+            ])
             ->findOrFail($this->employeeId);
     }
 

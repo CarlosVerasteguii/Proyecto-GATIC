@@ -4,7 +4,9 @@ namespace Tests\Feature\Employees;
 
 use App\Enums\UserRole;
 use App\Livewire\Employees\EmployeeShow;
+use App\Models\Asset;
 use App\Models\Employee;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -127,7 +129,54 @@ class EmployeeShowTest extends TestCase
             ->test(EmployeeShow::class, ['employee' => (string) $employee->id])
             ->assertSee('Activos asignados')
             ->assertSee('Activos prestados')
-            ->assertSee('No hay activos asignados a este empleado')
-            ->assertSee('No hay activos prestados a este empleado');
+            ->assertSee('Sin activos asignados')
+            ->assertSee('Sin activos prestados');
+    }
+
+    public function test_employee_show_displays_asset_counts_and_rows(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $employee = Employee::query()->create([
+            'rpe' => 'OPS777',
+            'name' => 'Laura Campos',
+            'department' => 'Operaciones',
+            'job_title' => 'Coordinadora',
+        ]);
+
+        $assignedProduct = Product::factory()->create([
+            'name' => 'Laptop corporativa',
+        ]);
+        $loanedProduct = Product::factory()->create([
+            'name' => 'Monitor externo',
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $assignedProduct->id,
+            'current_employee_id' => $employee->id,
+            'serial' => 'ASSET-ASSIGNED-01',
+            'asset_tag' => 'TAG-ASSIGNED-01',
+            'status' => Asset::STATUS_ASSIGNED,
+        ]);
+
+        Asset::factory()->create([
+            'product_id' => $loanedProduct->id,
+            'current_employee_id' => $employee->id,
+            'serial' => 'ASSET-LOANED-01',
+            'asset_tag' => 'TAG-LOANED-01',
+            'status' => Asset::STATUS_LOANED,
+            'loan_due_date' => now()->addDays(3),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(EmployeeShow::class, ['employee' => (string) $employee->id])
+            ->assertSee('Laura Campos')
+            ->assertSee('Ficha completa')
+            ->assertSee('Total Activos')
+            ->assertSee('Activos actuales')
+            ->assertSee('Laptop corporativa')
+            ->assertSee('Monitor externo')
+            ->assertSee('ASSET-ASSIGNED-01')
+            ->assertSee('ASSET-LOANED-01')
+            ->assertSee('Por vencer');
     }
 }

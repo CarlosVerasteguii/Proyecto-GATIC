@@ -9,58 +9,121 @@
         $quickKind = $hasQuickCapture && is_array($quick) ? (string) ($quick['kind'] ?? '') : '';
         $quickProduct = $hasQuickCapture && is_array($quick) && is_array($quick['product'] ?? null) ? $quick['product'] : null;
         $quickItems = $hasQuickCapture && is_array($quick) && is_array($quick['items'] ?? null) ? $quick['items'] : null;
-    @endphp
+        @endphp
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
-            {{-- Task Header --}}
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div class="d-flex flex-column">
-                        <x-ui.breadcrumbs :items="[
-                            ['label' => 'Inicio', 'url' => route('dashboard')],
-                            ['label' => 'Tareas pendientes', 'url' => route('pending-tasks.index')],
-                            ['label' => 'Tarea #'.$task->id, 'url' => null],
-                        ]" />
-                        <span class="fw-medium">Tarea #{{ $task->id }}</span>
-                    </div>
-                    <div class="d-flex gap-2 align-items-center">
-                        <x-ui.badge :tone="$task->status->badgeTone()" variant="compact">
-                            {{ $task->status->label() }}
-                        </x-ui.badge>
-                        @if ($hasQuickCapture)
-                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Origen: Captura rápida</x-ui.badge>
-                        @endif
-                        @if ($isProcessMode)
+            {{-- Header --}}
+            @php
+                $creatorName = $task->creator->name ?? '—';
+                $createdAt = $task->created_at?->format('d/m/Y H:i') ?? '—';
+                $headerSubtitle = "{$task->type->label()} · {$creatorName} · {$createdAt}";
+
+                $canStartProcess = $this->canProcess()
+                    && ! $isProcessMode
+                    && ! $task->isLockedByOther(auth()->id());
+            @endphp
+
+            <x-ui.detail-header :title="'Tarea pendiente #'.$task->id" :subtitle="$headerSubtitle">
+                <x-slot:breadcrumbs>
+                    <x-ui.breadcrumbs :items="[
+                        ['label' => 'Inicio', 'url' => route('dashboard')],
+                        ['label' => 'Tareas pendientes', 'url' => route('pending-tasks.index')],
+                        ['label' => 'Tarea #'.$task->id, 'url' => null],
+                    ]" />
+                </x-slot:breadcrumbs>
+
+                <x-slot:status>
+                    <x-ui.badge :tone="$task->status->badgeTone()" variant="compact">
+                        {{ $task->status->label() }}
+                    </x-ui.badge>
+                    @if ($hasQuickCapture)
+                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">Origen: Captura rápida</x-ui.badge>
+                    @endif
+                </x-slot:status>
+
+                <x-slot:actions>
+                    @if ($task->isDraft() && ! $isQuickCapturePending)
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-primary"
+                            wire:click="openAddLineModal"
+                            wire:loading.attr="disabled"
+                            wire:target="openAddLineModal"
+                        >
+                            Agregar renglón
+                        </button>
+                        @if ($task->lines->count() > 0)
                             <button
                                 type="button"
-                                class="btn btn-sm btn-outline-secondary"
-                                wire:click="exitProcessMode"
+                                class="btn btn-sm btn-success"
+                                wire:click="markAsReady"
+                                wire:confirm="¿Marcar como lista? Ya no podrás editar los renglones."
+                                wire:loading.attr="disabled"
+                                wire:target="markAsReady"
                             >
-                                Salir de Procesar
+                                Marcar como lista
                             </button>
                         @endif
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-2">
-                            <strong>Tipo:</strong> {{ $task->type->label() }}
-                        </div>
-                        <div class="col-md-4 mb-2">
-                            <strong>Creador:</strong> {{ $task->creator->name ?? '-' }}
-                        </div>
-                        <div class="col-md-4 mb-2">
-                            <strong>Fecha:</strong> {{ $task->created_at->format('d/m/Y H:i') }}
-                        </div>
-                    </div>
-                    @if ($task->description)
-                        <div class="mt-2">
-                            <strong>Descripción:</strong>
-                            <p class="mb-0 text-muted">{{ $task->description }}</p>
-                        </div>
+                    @elseif ($isProcessMode)
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-success"
+                            wire:click="showFinalizeConfirm"
+                            wire:loading.attr="disabled"
+                            wire:target="showFinalizeConfirm"
+                            @if ($lockLost || ! $hasLock || ! $processModeReady) disabled title="{{ ! $processModeReady ? 'Cargando…' : 'No tienes el lock' }}" @endif
+                        >
+                            Finalizar
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            wire:click="exitProcessMode"
+                            wire:loading.attr="disabled"
+                            wire:target="exitProcessMode"
+                        >
+                            Salir de Procesar
+                        </button>
+                    @elseif ($this->canProcess())
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-primary"
+                            wire:click="enterProcessMode"
+                            wire:loading.attr="disabled"
+                            wire:target="enterProcessMode"
+                            @if (! $canStartProcess) disabled title="Bloqueada por otro usuario" @endif
+                        >
+                            <span wire:loading.remove wire:target="enterProcessMode">Procesar</span>
+                            <span wire:loading.inline wire:target="enterProcessMode">
+                                <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                Procesando…
+                            </span>
+                        </button>
                     @endif
-                </div>
-            </div>
+                </x-slot:actions>
+            </x-ui.detail-header>
+
+            <x-ui.section-card title="Resumen" class="mb-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Tipo</dt>
+                    <dd class="col-sm-9">{{ $task->type->label() }}</dd>
+
+                    <dt class="col-sm-3">Creador</dt>
+                    <dd class="col-sm-9">{{ $creatorName }}</dd>
+
+                    <dt class="col-sm-3">Fecha</dt>
+                    <dd class="col-sm-9">{{ $createdAt }}</dd>
+
+                    <dt class="col-sm-3">Descripción</dt>
+                    <dd class="col-sm-9 mb-0">
+                        @if (is_string($task->description) && trim($task->description) !== '')
+                            <span class="text-muted">{{ $task->description }}</span>
+                        @else
+                            <span class="text-muted">—</span>
+                        @endif
+                    </dd>
+                </dl>
+            </x-ui.section-card>
 
             @if ($hasQuickCapture)
                 @php
@@ -154,7 +217,7 @@
                                         </a>
                                     @else
                                         {{ $productName }}
-                                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false" class="ms-1">Placeholder</x-ui.badge>
+                                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false" class="ms-1">Producto provisional</x-ui.badge>
                                     @endif
                                 @else
                                     —
@@ -174,11 +237,11 @@
 
                         @if ($itemsType === 'serialized')
                             <div class="mt-3">
-                                <strong>Seriales:</strong>
+                                <label for="quickCaptureSerials" class="form-label fw-semibold mb-1">Seriales</label>
                                 <div class="text-muted small mb-1">
                                     Total: {{ is_array($serials) ? count($serials) : 0 }}
                                 </div>
-                                <textarea class="form-control" rows="6" readonly>{{ $serialsText }}</textarea>
+                                <textarea id="quickCaptureSerials" class="form-control" rows="6" readonly>{{ $serialsText }}</textarea>
                             </div>
                         @elseif ($itemsType === 'quantity')
                             <div class="mt-3">
@@ -222,8 +285,13 @@
                     $isMyLock = $task->isLockedBy($currentUserId);
                     $isOtherLock = $hasActiveLock && !$isMyLock;
                     $isAdmin = $this->isAdmin();
+
+                    $lockTone = $isOtherLock ? 'alert-warning' : ($isMyLock ? 'alert-info' : 'alert-secondary');
+                    if (! $hasActiveLock && $task->status === \App\Enums\PendingTaskStatus::Processing) {
+                        $lockTone = 'alert-warning';
+                    }
                 @endphp
-                <div class="alert {{ $isOtherLock ? 'alert-warning' : ($isMyLock ? 'alert-info' : 'alert-secondary') }} mb-4">
+                <div class="alert {{ $lockTone }} mb-4" role="status">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2">
                                 @if ($isMyLock)
@@ -241,10 +309,18 @@
                                         @if ($task->locked_at)
                                             <span class="text-muted small ms-2">desde {{ $task->locked_at->locale('es')->diffForHumans() }}</span>
                                         @endif
-                                    </span>
+                                     </span>
                                 @else
-                                    <i class="bi bi-unlock" aria-hidden="true"></i>
-                                    <span><strong>Libre</strong> - Nadie está procesando esta tarea</span>
+                                    @if ($task->status === \App\Enums\PendingTaskStatus::Processing)
+                                        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                                        <span>
+                                            <strong>Sin lock activo</strong>
+                                            <span class="text-muted small ms-2">La tarea está en estado “Procesando”, pero no hay un lock vigente.</span>
+                                        </span>
+                                    @else
+                                        <i class="bi bi-unlock" aria-hidden="true"></i>
+                                        <span><strong>Libre</strong> <span class="text-muted">— Nadie está procesando esta tarea</span></span>
+                                    @endif
                                 @endif
                             </div>
                         <div class="d-flex align-items-center gap-2">
@@ -291,7 +367,7 @@
 
             {{-- Lock Lost Banner (shown when user loses lock during processing) --}}
             @if ($lockLost)
-                <div class="alert alert-danger mb-4">
+                <div class="alert alert-danger mb-4" role="alert">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-2">
                             <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
@@ -314,7 +390,7 @@
             {{-- Finalize Result Summary --}}
             @if ($finalizeResult)
                 <div class="alert {{ $finalizeResult['error_count'] > 0 ? 'alert-warning' : 'alert-success' }} mb-4">
-                    <h5 class="alert-heading mb-2">Resumen de Finalizacion</h5>
+                    <h5 class="alert-heading mb-2">Resumen de Finalización</h5>
                     <div class="d-flex flex-wrap gap-4">
                         <div>
                             <x-ui.badge tone="success" variant="solid" class="fs-6">{{ $finalizeResult['applied_count'] }}</x-ui.badge>
@@ -367,57 +443,6 @@
                         @endif
                     </div>
 
-                    {{-- Action buttons --}}
-                    <div class="d-flex gap-2 flex-wrap">
-                        @if ($task->isDraft() && ! $isQuickCapturePending)
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-primary"
-                                wire:click="openAddLineModal"
-                            >
-                                Agregar renglón
-                            </button>
-                            @if ($task->lines->count() > 0)
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-success"
-                                    wire:click="markAsReady"
-                                    wire:confirm="Marcar como lista? Ya no podras editar los renglones."
-                                >
-                                    Marcar como lista
-                                </button>
-                            @endif
-                        @elseif ($isQuickCapturePending)
-                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false" class="align-self-center">Solo captura</x-ui.badge>
-                        @elseif ($this->canProcess() && !$isProcessMode)
-                            @php
-                                $canStartProcess = !$task->isLockedByOther(auth()->id());
-                            @endphp
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-primary"
-                                wire:click="enterProcessMode"
-                                wire:loading.attr="disabled"
-                                wire:target="enterProcessMode"
-                                @if (!$canStartProcess) disabled title="Bloqueada por otro usuario" @endif
-                            >
-                                <span wire:loading.remove wire:target="enterProcessMode">Procesar</span>
-                                <span wire:loading.inline wire:target="enterProcessMode">
-                                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
-                                    Procesando...
-                                </span>
-                            </button>
-                        @elseif ($isProcessMode)
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-success"
-                                wire:click="showFinalizeConfirm"
-                                @if ($lockLost || !$hasLock || !$processModeReady) disabled title="{{ !$processModeReady ? 'Cargando...' : 'No tienes el lock' }}" @endif
-                            >
-                                Finalizar
-                            </button>
-                        @endif
-                    </div>
                 </div>
                 <div class="card-body">
                     @if ($task->lines->count() > 0)
@@ -445,7 +470,7 @@
                             </div>
                         @else
                             <div class="table-responsive">
-                                <table class="table table-sm table-striped align-middle mb-0">
+                                <table class="table table-sm table-striped align-middle mb-0 table-gatic-head">
                                     <thead>
                                         <tr>
                                             <th>#</th>
@@ -464,11 +489,17 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($task->lines as $line)
-                                            <tr @class([
-                                                'table-warning' => $this->isDuplicate($line->id) && !$isProcessMode,
-                                                'table-success' => $isProcessMode && $line->line_status->value === 'applied',
-                                                'table-danger' => $isProcessMode && $line->line_status->value === 'error',
-                                            ])>
+                                            @php
+                                                $isDuplicate = $this->isDuplicate($line->id);
+                                            @endphp
+                                            <tr
+                                                wire:key="pending-task-line-{{ $line->id }}"
+                                                @class([
+                                                    'table-warning' => $isDuplicate && ! $isProcessMode,
+                                                    'table-success' => $isProcessMode && $line->line_status->value === 'applied',
+                                                    'table-danger' => $isProcessMode && $line->line_status->value === 'error',
+                                                ])
+                                            >
                                                 <td>{{ $line->order }}</td>
 
                                                 @if ($isProcessMode)
@@ -483,17 +514,17 @@
                                                 <td>{{ $line->product->name ?? '-' }}</td>
                                                 <td>
                                                     {{ $line->identifier_display }}
-                                                    @if ($this->isDuplicate($line->id))
+                                                    @if ($isDuplicate)
                                                         <x-ui.badge
                                                             tone="warning"
                                                             variant="compact"
                                                             :with-rail="false"
-                                                            title="Este identificador esta duplicado en la tarea"
+                                                            title="Este identificador está duplicado en la tarea"
                                                         >Duplicado</x-ui.badge>
                                                     @endif
                                                 </td>
                                                 <td>{{ $line->employee->full_name ?? '-' }}</td>
-                                                <td class="text-truncate" style="max-width: 150px;" title="{{ $line->note }}">
+                                                <td class="text-truncate" style="max-width: 220px;" title="{{ $line->note }}">
                                                     {{ $line->note }}
                                                 </td>
 
@@ -510,7 +541,7 @@
                                                             type="button"
                                                             class="btn btn-sm btn-outline-danger"
                                                             wire:click="removeLine({{ $line->id }})"
-                                                            wire:confirm="Eliminar este renglón?"
+                                                            wire:confirm="¿Eliminar este renglón?"
                                                         >
                                                             Eliminar
                                                         </button>
@@ -563,7 +594,7 @@
                                         </tr>
                                         {{-- Error message row in process mode --}}
                                         @if ($isProcessMode && $line->line_status->value === 'error' && $line->error_message)
-                                            <tr class="table-danger">
+                                            <tr class="table-danger" wire:key="pending-task-line-error-{{ $line->id }}">
                                                 <td></td>
                                                 <td colspan="{{ $task->isDraft() || $isProcessMode ? 7 : 6 }}" class="text-danger small py-1">
                                                     <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
@@ -577,15 +608,19 @@
                         </div>
                         @endif
                     @else
-                        <p class="text-muted mb-0">
-                            @if ($isQuickCapturePending)
-                                Esta tarea es una captura rápida. Procesa la captura para generar renglones o aplicar cambios.
-                            @elseif ($task->isDraft())
-                                No hay renglones. Haz clic en "Agregar renglón" para comenzar.
-                            @else
-                                No hay renglones en esta tarea.
-                            @endif
-                        </p>
+                        @php
+                            $emptyDescription = $isQuickCapturePending
+                                ? 'Esta tarea es una captura rápida. Procesa la captura para generar renglones o aplicar cambios.'
+                                : ($task->isDraft()
+                                    ? 'No hay renglones. Usa “Agregar renglón” para comenzar.'
+                                    : 'No hay renglones en esta tarea.');
+                        @endphp
+                        <x-ui.empty-state
+                            icon="bi-list-task"
+                            title="Sin renglones"
+                            :description="$emptyDescription"
+                            compact
+                        />
                     @endif
                 </div>
             </div>
@@ -608,12 +643,20 @@
             $expectedSerialized = is_array($quickProduct) ? (bool) ($quickProduct['is_serialized'] ?? false) : null;
             $needsLocation = $quickKind === 'quick_stock_in' && $itemsType === 'serialized';
         @endphp
-        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+        <div
+            class="modal fade show d-block"
+            tabindex="-1"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quickCaptureProcessTitle"
+            wire:keydown.escape="closeQuickProcessModal"
+            style="background: rgba(0,0,0,0.5);"
+        >
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Procesar captura rápida</h5>
-                        <button type="button" class="btn-close" wire:click="closeQuickProcessModal"></button>
+                        <h5 class="modal-title" id="quickCaptureProcessTitle">Procesar captura rápida</h5>
+                        <button type="button" class="btn-close" aria-label="Cerrar" wire:click="closeQuickProcessModal"></button>
                     </div>
                     <form wire:submit="processQuickCapture">
                         <div class="modal-body">
@@ -693,10 +736,10 @@
                                 <textarea
                                     id="quickProcessNote"
                                     class="form-control @error('note') is-invalid @enderror"
-                                    wire:model="quickProcessNote"
+                                    wire:model.blur="quickProcessNote"
                                     rows="3"
                                     @if ($needsEmployee) required @endif
-                                    placeholder="Motivo o descripcion del movimiento..."
+                                    placeholder="Motivo o descripción del movimiento…"
                                 ></textarea>
                                 @error('note')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -729,14 +772,22 @@
 
     {{-- Line Modal (Draft mode) --}}
     @if ($showLineModal)
-        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+        <div
+            class="modal fade show d-block"
+            tabindex="-1"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pendingTaskLineModalTitle"
+            wire:keydown.escape="closeModal"
+            style="background: rgba(0,0,0,0.5);"
+        >
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">
+                        <h5 class="modal-title" id="pendingTaskLineModalTitle">
                             {{ $editingLineId ? 'Editar renglón' : 'Agregar renglón' }}
                         </h5>
-                        <button type="button" class="btn-close" wire:click="closeModal"></button>
+                        <button type="button" class="btn-close" aria-label="Cerrar" wire:click="closeModal"></button>
                     </div>
                     <form wire:submit="saveLine">
                         <div class="modal-body">
@@ -765,7 +816,7 @@
                                         wire:model.live="lineType"
                                         required
                                     >
-                                        <option value="">Seleccionar...</option>
+                                        <option value="">Seleccionar…</option>
                                         @foreach ($lineTypes as $lt)
                                             <option value="{{ $lt->value }}">{{ $lt->label() }}</option>
                                         @endforeach
@@ -783,7 +834,7 @@
                                                 type="text"
                                                 id="serial"
                                                 class="form-control @error('serial') is-invalid @enderror"
-                                                wire:model="serial"
+                                                wire:model.blur="serial"
                                                 placeholder="Numero de serie"
                                             />
                                             @error('serial')
@@ -797,7 +848,7 @@
                                                 type="text"
                                                 id="assetTag"
                                                 class="form-control @error('asset_tag') is-invalid @enderror"
-                                                wire:model="assetTag"
+                                                wire:model.blur="assetTag"
                                                 placeholder="Etiqueta de activo"
                                             />
                                             @error('asset_tag')
@@ -891,7 +942,7 @@
                                             type="number"
                                             id="quantity"
                                             class="form-control @error('quantity') is-invalid @enderror"
-                                            wire:model="quantity"
+                                            wire:model.blur="quantity"
                                             min="1"
                                             required
                                         />
@@ -921,10 +972,10 @@
                                     <textarea
                                         id="note"
                                         class="form-control @error('note') is-invalid @enderror"
-                                        wire:model="note"
+                                        wire:model.blur="note"
                                         rows="2"
                                         required
-                                        placeholder="Motivo o descripcion del movimiento..."
+                                        placeholder="Motivo o descripción del movimiento…"
                                     ></textarea>
                                     @error('note')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -951,12 +1002,20 @@
         @php
             $editLine = $task->lines->firstWhere('id', $editingProcessLineId);
         @endphp
-        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+        <div
+            class="modal fade show d-block"
+            tabindex="-1"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pendingTaskProcessLineModalTitle"
+            wire:keydown.escape="closeProcessLineModal"
+            style="background: rgba(0,0,0,0.5);"
+        >
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Editar Renglon</h5>
-                        <button type="button" class="btn-close" wire:click="closeProcessLineModal"></button>
+                        <h5 class="modal-title" id="pendingTaskProcessLineModalTitle">Editar renglón</h5>
+                        <button type="button" class="btn-close" aria-label="Cerrar" wire:click="closeProcessLineModal"></button>
                     </div>
                     <form wire:submit="saveProcessLine">
                         <div class="modal-body">
@@ -974,7 +1033,7 @@
                                                 type="text"
                                                 id="processLineSerial"
                                                 class="form-control @error('processLineSerial') is-invalid @enderror"
-                                                wire:model="processLineSerial"
+                                                wire:model.blur="processLineSerial"
                                                 placeholder="Numero de serie"
                                             />
                                             @error('processLineSerial')
@@ -987,7 +1046,7 @@
                                                 type="text"
                                                 id="processLineAssetTag"
                                                 class="form-control @error('processLineAssetTag') is-invalid @enderror"
-                                                wire:model="processLineAssetTag"
+                                                wire:model.blur="processLineAssetTag"
                                                 placeholder="Etiqueta de activo"
                                             />
                                             @error('processLineAssetTag')
@@ -1004,7 +1063,7 @@
                                             type="number"
                                             id="processLineQuantity"
                                             class="form-control @error('processLineQuantity') is-invalid @enderror"
-                                            wire:model="processLineQuantity"
+                                            wire:model.blur="processLineQuantity"
                                             min="1"
                                             required
                                         />
@@ -1034,10 +1093,10 @@
                                     <textarea
                                         id="processLineNote"
                                         class="form-control @error('processLineNote') is-invalid @enderror"
-                                        wire:model="processLineNote"
+                                        wire:model.blur="processLineNote"
                                         rows="2"
                                         required
-                                        placeholder="Motivo o descripcion del movimiento..."
+                                        placeholder="Motivo o descripción del movimiento…"
                                     ></textarea>
                                     @error('processLineNote')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -1061,12 +1120,20 @@
 
     {{-- Finalize Confirmation Modal --}}
     @if ($showFinalizeConfirmModal)
-        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+        <div
+            class="modal fade show d-block"
+            tabindex="-1"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pendingTaskFinalizeConfirmTitle"
+            wire:keydown.escape="hideFinalizeConfirm"
+            style="background: rgba(0,0,0,0.5);"
+        >
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Confirmar Finalizacion</h5>
-                        <button type="button" class="btn-close" wire:click="hideFinalizeConfirm"></button>
+                        <h5 class="modal-title" id="pendingTaskFinalizeConfirmTitle">Confirmar finalización</h5>
+                        <button type="button" class="btn-close" aria-label="Cerrar" wire:click="hideFinalizeConfirm"></button>
                     </div>
                     <div class="modal-body">
                         <p>Estás a punto de finalizar esta tarea. Se aplicarán los movimientos de los renglones válidos.</p>

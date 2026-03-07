@@ -31,8 +31,12 @@ class LayoutNavigationTest extends TestCase
             ->actingAs($user)
             ->get('/dashboard')
             ->assertOk()
+            ->assertSee('data-sidebar-mobile-toggle', false)
             ->assertSee('data-bs-toggle="offcanvas"', false)
             ->assertSee('data-bs-target="#appSidebarOffcanvas"', false)
+            ->assertSee('aria-controls="appSidebarOffcanvas"', false)
+            ->assertSee('aria-expanded="false"', false)
+            ->assertSee('aria-label="Abrir men&uacute; principal"', false)
             ->assertSee('id="appSidebarOffcanvas"', false);
     }
 
@@ -45,9 +49,27 @@ class LayoutNavigationTest extends TestCase
             ->get('/dashboard')
             ->assertOk()
             ->assertSee('aria-controls="app-sidebar-nav-desktop"', false)
+            ->assertSee('aria-expanded="true"', false)
             ->assertSee('aria-label="Colapsar sidebar"', false)
+            ->assertSee('title="Colapsar sidebar"', false)
             ->assertSee('id="app-sidebar-nav-desktop"', false)
             ->assertSee('id="app-sidebar-nav-mobile"', false);
+    }
+
+    public function test_active_sidebar_link_marks_current_route_for_dashboard(): void
+    {
+        $user = User::factory()->create();
+
+        $content = $this
+            ->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/class="nav-link sidebar-link\s+active\s*".*?href="'.preg_quote(route('dashboard'), '/').'".*?title="Inicio".*?aria-label="Inicio".*?aria-current="page"/s',
+            $content,
+        );
     }
 
     public function test_admin_sees_users_link_in_sidebar(): void
@@ -81,17 +103,16 @@ class LayoutNavigationTest extends TestCase
     {
         $editor = User::factory()->create(['role' => UserRole::Editor]);
 
-        $this
+        $content = $this
             ->actingAs($editor)
             ->get(route('employees.index'))
             ->assertOk()
-            ->assertSeeInOrder([
-                'class="nav-link sidebar-link active"',
-                'href="'.route('employees.index').'"',
-                'title="Empleados"',
-                'aria-label="Empleados"',
-                'aria-current="page"',
-            ], false);
+            ->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/class="nav-link sidebar-link\s+active\s*".*?href="'.preg_quote(route('employees.index'), '/').'".*?title="Empleados".*?aria-label="Empleados".*?aria-current="page"/s',
+            $content,
+        );
     }
 
     public function test_admin_can_access_admin_users(): void

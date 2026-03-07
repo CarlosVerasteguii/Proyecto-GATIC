@@ -3,10 +3,12 @@
         <button
             class="navbar-toggler d-md-none"
             type="button"
+            data-sidebar-mobile-toggle
             data-bs-toggle="offcanvas"
             data-bs-target="#appSidebarOffcanvas"
             aria-controls="appSidebarOffcanvas"
-            aria-label="Abrir men&uacute;"
+            aria-expanded="false"
+            aria-label="Abrir men&uacute; principal"
         >
             <span class="navbar-toggler-icon"></span>
         </button>

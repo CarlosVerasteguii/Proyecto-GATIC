@@ -8,6 +8,14 @@ import { getBootstrapUiPreferences, persistUiPreference } from './user-ui-prefer
 
 const STORAGE_KEY = 'gatic-sidebar-collapsed';
 const COLLAPSED_CLASS = 'sidebar-collapsed';
+const DESKTOP_TOGGLE_LABELS = {
+    expanded: 'Colapsar sidebar',
+    collapsed: 'Expandir sidebar',
+};
+const MOBILE_TOGGLE_LABELS = {
+    expanded: 'Cerrar menú principal',
+    collapsed: 'Abrir menú principal',
+};
 
 /**
  * Get current collapsed state from localStorage
@@ -49,7 +57,9 @@ function applyState(collapsed) {
 
     if (toggleBtn) {
         const icon = toggleBtn.querySelector('i');
-        const toggleLabel = collapsed ? 'Expandir sidebar' : 'Colapsar sidebar';
+        const toggleLabel = collapsed
+            ? DESKTOP_TOGGLE_LABELS.collapsed
+            : DESKTOP_TOGGLE_LABELS.expanded;
 
         if (icon) {
             icon.classList.toggle('bi-chevron-left', !collapsed);
@@ -60,6 +70,20 @@ function applyState(collapsed) {
         toggleBtn.setAttribute('aria-label', toggleLabel);
         toggleBtn.setAttribute('title', toggleLabel);
     }
+}
+
+function syncMobileToggleState(expanded) {
+    const toggleBtn = document.querySelector('[data-sidebar-mobile-toggle]');
+
+    if (!toggleBtn) {
+        return;
+    }
+
+    toggleBtn.setAttribute('aria-expanded', String(expanded));
+    toggleBtn.setAttribute(
+        'aria-label',
+        expanded ? MOBILE_TOGGLE_LABELS.expanded : MOBILE_TOGGLE_LABELS.collapsed,
+    );
 }
 
 /**
@@ -84,6 +108,15 @@ export function registerSidebarToggle() {
     // Apply stored state on page load
     const initialState = getStoredState();
     applyState(initialState);
+    syncMobileToggleState(false);
+
+    const mobileOffcanvas = document.querySelector('#appSidebarOffcanvas');
+
+    if (mobileOffcanvas) {
+        syncMobileToggleState(mobileOffcanvas.classList.contains('show'));
+        mobileOffcanvas.addEventListener('show.bs.offcanvas', () => syncMobileToggleState(true));
+        mobileOffcanvas.addEventListener('hidden.bs.offcanvas', () => syncMobileToggleState(false));
+    }
 
     // Handle toggle button click
     document.addEventListener('click', (event) => {

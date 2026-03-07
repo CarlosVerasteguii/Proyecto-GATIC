@@ -1,5 +1,6 @@
 @php
     $currentUser = auth()->user();
+    $dashboardActive = request()->routeIs('dashboard');
     $adminUsersActive = request()->routeIs('admin.users.*');
     $adminTrashActive = request()->routeIs('admin.trash.*');
     $adminErrorReportsActive = request()->routeIs('admin.error-reports.*');
@@ -21,6 +22,15 @@
         || ($currentUser?->can('admin-only') ?? false);
 
     $sections = array_values(array_filter([
+        [
+            'label' => 'Principal',
+            'items' => [[
+                'label' => 'Inicio',
+                'route' => route('dashboard'),
+                'icon' => 'bi bi-speedometer2',
+                'active' => $dashboardActive,
+            ]],
+        ],
         $showInventorySection ? [
             'label' => 'Inventario',
             'items' => array_values(array_filter([

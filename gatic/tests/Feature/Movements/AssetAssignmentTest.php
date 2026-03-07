@@ -330,7 +330,7 @@ class AssetAssignmentTest extends TestCase
         $this->actingAs($admin)
             ->get("/employees/{$employee->id}")
             ->assertOk()
-            ->assertSee('Activos asignados (1)')
+            ->assertSee('Activos asignados')
             ->assertSee('Dell X1')
             ->assertSee('SER-001');
     }

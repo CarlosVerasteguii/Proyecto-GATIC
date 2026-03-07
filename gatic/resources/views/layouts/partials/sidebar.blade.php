@@ -9,6 +9,7 @@
             type="button"
             class="app-sidebar-toggle"
             data-sidebar-toggle
+            aria-controls="app-sidebar-nav-desktop"
             aria-expanded="true"
             aria-label="Colapsar sidebar"
             title="Colapsar sidebar"
@@ -18,16 +19,16 @@
     </div>
 
     <div class="app-sidebar-body">
-        @include('layouts.partials.sidebar-nav')
+        @include('layouts.partials.sidebar-nav', ['navId' => 'app-sidebar-nav-desktop'])
     </div>
 </aside>
 
-<div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="appSidebarOffcanvas" aria-labelledby="appSidebarOffcanvasLabel">
+<div class="offcanvas offcanvas-start app-sidebar-offcanvas d-md-none" tabindex="-1" id="appSidebarOffcanvas" aria-labelledby="appSidebarOffcanvasLabel">
     <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="appSidebarOffcanvasLabel">{{ $appName }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
     </div>
     <div class="offcanvas-body">
-        @include('layouts.partials.sidebar-nav')
+        @include('layouts.partials.sidebar-nav', ['navId' => 'app-sidebar-nav-mobile'])
     </div>
 </div>

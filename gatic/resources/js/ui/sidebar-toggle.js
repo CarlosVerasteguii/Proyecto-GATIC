@@ -49,12 +49,16 @@ function applyState(collapsed) {
 
     if (toggleBtn) {
         const icon = toggleBtn.querySelector('i');
+        const toggleLabel = collapsed ? 'Expandir sidebar' : 'Colapsar sidebar';
+
         if (icon) {
             icon.classList.toggle('bi-chevron-left', !collapsed);
             icon.classList.toggle('bi-chevron-right', collapsed);
         }
-        toggleBtn.setAttribute('aria-expanded', !collapsed);
-        toggleBtn.setAttribute('title', collapsed ? 'Expandir sidebar' : 'Colapsar sidebar');
+
+        toggleBtn.setAttribute('aria-expanded', String(!collapsed));
+        toggleBtn.setAttribute('aria-label', toggleLabel);
+        toggleBtn.setAttribute('title', toggleLabel);
     }
 }
 

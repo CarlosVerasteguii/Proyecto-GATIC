@@ -36,6 +36,20 @@ class LayoutNavigationTest extends TestCase
             ->assertSee('id="appSidebarOffcanvas"', false);
     }
 
+    public function test_sidebar_toggle_declares_controlled_nav_and_initial_label(): void
+    {
+        $user = User::factory()->create();
+
+        $this
+            ->actingAs($user)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('aria-controls="app-sidebar-nav-desktop"', false)
+            ->assertSee('aria-label="Colapsar sidebar"', false)
+            ->assertSee('id="app-sidebar-nav-desktop"', false)
+            ->assertSee('id="app-sidebar-nav-mobile"', false);
+    }
+
     public function test_admin_sees_users_link_in_sidebar(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
@@ -61,6 +75,23 @@ class LayoutNavigationTest extends TestCase
                 ->assertOk()
                 ->assertDontSee('href="'.route('admin.users.index').'"', false);
         }
+    }
+
+    public function test_active_sidebar_link_marks_current_route_for_employees(): void
+    {
+        $editor = User::factory()->create(['role' => UserRole::Editor]);
+
+        $this
+            ->actingAs($editor)
+            ->get(route('employees.index'))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'class="nav-link sidebar-link active"',
+                'href="'.route('employees.index').'"',
+                'title="Empleados"',
+                'aria-label="Empleados"',
+                'aria-current="page"',
+            ], false);
     }
 
     public function test_admin_can_access_admin_users(): void

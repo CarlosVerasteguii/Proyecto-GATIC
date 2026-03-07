@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Alerts\Loans;
 
+use App\Livewire\Alerts\Concerns\LoadsInventoryAlertOptions;
 use App\Models\Asset;
 use App\Support\Settings\SettingsStore;
 use Illuminate\Contracts\View\View;
@@ -14,6 +15,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class LoanAlertsIndex extends Component
 {
+    use LoadsInventoryAlertOptions;
     use WithPagination;
 
     #[Url(as: 'type')]
@@ -64,6 +66,17 @@ class LoanAlertsIndex extends Component
     {
         $this->normalizeFilters();
         $this->resetPage();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['locationId', 'categoryId', 'brandId']);
+        $this->resetPage();
+    }
+
+    public function hasActiveFilters(): bool
+    {
+        return $this->locationId !== null || $this->categoryId !== null || $this->brandId !== null;
     }
 
     /**
@@ -134,6 +147,9 @@ class LoanAlertsIndex extends Component
             'today' => $today,
             'resolvedWindowDays' => $resolvedWindowDays,
             'windowDaysOptions' => $this->getWindowDaysOptionsFromConfig(),
+            'locations' => $this->getAlertLocations(),
+            'categories' => $this->getAlertCategories(),
+            'brands' => $this->getAlertBrands(),
             'returnTo' => $returnTo,
             'filterParams' => $this->buildFilterParams(),
         ]);
@@ -143,6 +159,18 @@ class LoanAlertsIndex extends Component
     {
         if (! in_array($this->type, ['overdue', 'due-soon'], true)) {
             $this->type = 'overdue';
+        }
+
+        if ($this->locationId !== null && $this->locationId <= 0) {
+            $this->locationId = null;
+        }
+
+        if ($this->categoryId !== null && $this->categoryId <= 0) {
+            $this->categoryId = null;
+        }
+
+        if ($this->brandId !== null && $this->brandId <= 0) {
+            $this->brandId = null;
         }
 
         $options = $this->getWindowDaysOptionsFromConfig();
@@ -160,18 +188,6 @@ class LoanAlertsIndex extends Component
         }
 
         $this->windowDays = $value;
-
-        if ($this->locationId !== null && $this->locationId <= 0) {
-            $this->locationId = null;
-        }
-
-        if ($this->categoryId !== null && $this->categoryId <= 0) {
-            $this->categoryId = null;
-        }
-
-        if ($this->brandId !== null && $this->brandId <= 0) {
-            $this->brandId = null;
-        }
     }
 
     /**

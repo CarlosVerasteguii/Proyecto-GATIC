@@ -2,8 +2,7 @@
 
 namespace App\Livewire\Alerts\Stock;
 
-use App\Models\Brand;
-use App\Models\Category;
+use App\Livewire\Alerts\Concerns\LoadsInventoryAlertOptions;
 use App\Models\Product;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
@@ -15,6 +14,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class LowStockAlertsIndex extends Component
 {
+    use LoadsInventoryAlertOptions;
     use WithPagination;
 
     #[Url(as: 'category')]
@@ -23,13 +23,20 @@ class LowStockAlertsIndex extends Component
     #[Url(as: 'brand')]
     public ?int $brandId = null;
 
+    public function mount(): void
+    {
+        $this->normalizeFilters();
+    }
+
     public function updatedCategoryId(): void
     {
+        $this->normalizeFilters();
         $this->resetPage();
     }
 
     public function updatedBrandId(): void
     {
+        $this->normalizeFilters();
         $this->resetPage();
     }
 
@@ -48,16 +55,6 @@ class LowStockAlertsIndex extends Component
     {
         Gate::authorize('inventory.manage');
 
-        $categories = Category::query()
-            ->whereNull('deleted_at')
-            ->orderBy('name')
-            ->get(['id', 'name']);
-
-        $brands = Brand::query()
-            ->whereNull('deleted_at')
-            ->orderBy('name')
-            ->get(['id', 'name']);
-
         $alerts = Product::query()
             ->with([
                 'category:id,name,is_serialized',
@@ -71,20 +68,19 @@ class LowStockAlertsIndex extends Component
 
         return view('livewire.alerts.stock.low-stock-alerts-index', [
             'alerts' => $alerts,
-            'categories' => $categories,
-            'brands' => $brands,
-            'filterParams' => $this->buildFilterParams(),
+            'categories' => $this->getAlertCategories(),
+            'brands' => $this->getAlertBrands(),
         ]);
     }
 
-    /**
-     * @return array{category?: int, brand?: int}
-     */
-    private function buildFilterParams(): array
+    private function normalizeFilters(): void
     {
-        return array_filter([
-            'category' => $this->categoryId,
-            'brand' => $this->brandId,
-        ], static fn ($value): bool => $value !== null);
+        if ($this->categoryId !== null && $this->categoryId <= 0) {
+            $this->categoryId = null;
+        }
+
+        if ($this->brandId !== null && $this->brandId <= 0) {
+            $this->brandId = null;
+        }
     }
 }

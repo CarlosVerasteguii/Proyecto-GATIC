@@ -72,7 +72,7 @@ class StockAlertsTest extends TestCase
             ->get('/alerts/stock')
             ->assertOk()
             ->assertSee('Alertas de stock bajo')
-            ->assertSee('Productos por cantidad cuyo stock total está en o por debajo del umbral configurado');
+            ->assertSee('Identifica productos por cantidad que ya están en o por debajo del umbral configurado.');
     }
 
     public function test_stock_alerts_lists_low_stock_products(): void

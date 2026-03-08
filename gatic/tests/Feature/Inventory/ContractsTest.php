@@ -4,6 +4,7 @@ namespace Tests\Feature\Inventory;
 
 use App\Enums\UserRole;
 use App\Livewire\Inventory\Contracts\ContractForm;
+use App\Livewire\Inventory\Contracts\ContractsIndex;
 use App\Models\Asset;
 use App\Models\Category;
 use App\Models\Contract;
@@ -415,6 +416,22 @@ class ContractsTest extends TestCase
             'identifier' => 'CTR-UPDATE-NEW',
             'type' => Contract::TYPE_LEASE,
         ]);
+    }
+
+    public function test_contracts_index_can_clear_active_filters(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $supplier = Supplier::query()->create(['name' => 'Proveedor filtro']);
+
+        Livewire::actingAs($admin)
+            ->test(ContractsIndex::class)
+            ->set('search', 'CTR-2026')
+            ->set('typeFilter', Contract::TYPE_PURCHASE)
+            ->set('supplierFilter', (string) $supplier->id)
+            ->call('clearFilters')
+            ->assertSet('search', '')
+            ->assertSet('typeFilter', '')
+            ->assertSet('supplierFilter', '');
     }
 
     // ==================== ASSET LINKING TESTS ====================

@@ -68,6 +68,7 @@ class AssetAdjustmentForm extends Component
         }
 
         $this->assetModel = Asset::query()
+            ->with('location')
             ->where('product_id', $this->productId)
             ->findOrFail($this->assetId);
 

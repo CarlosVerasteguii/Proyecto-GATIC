@@ -1,0 +1,34 @@
+- generic [ref=e2]:
+  - main "GATIC" [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - heading "GATIC" [level=1] [ref=e6]
+        - paragraph [ref=e7]: Sistema de Gestión de Activos TI
+      - form "Formulario de inicio de sesión" [ref=e9]:
+        - generic [ref=e10]:
+          - generic: 
+          - textbox "Correo electrónico" [active] [ref=e11]:
+            - /placeholder: correo@ejemplo.com
+          - generic: Correo electrónico
+        - generic [ref=e12]:
+          - generic: 
+          - textbox "Contraseña" [ref=e13]
+          - generic: Contraseña
+        - generic [ref=e14]:
+          - checkbox "Mantener sesión iniciada No usar en equipos compartidos" [ref=e15] [cursor=pointer]
+          - generic [ref=e16] [cursor=pointer]:
+            - text: Mantener sesión iniciada
+            - generic [ref=e17]: No usar en equipos compartidos
+        - button "Iniciar sesión en GATIC" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]:
+            - generic [ref=e20]: 
+            - generic [ref=e21]: Iniciar sesión
+  - contentinfo [ref=e22]:
+    - generic [ref=e23]:
+      - generic [ref=e24]: "Imagen:"
+      - link "CFE" [ref=e25] [cursor=pointer]:
+        - /url: https://www.cfe.mx
+      - link "Creative Commons Atribución-NoComercial 4.0" [ref=e27] [cursor=pointer]:
+        - /url: https://creativecommons.org/licenses/by-nc/4.0/
+        - generic [ref=e28]: 
+      - generic [ref=e29]: CC BY-NC 4.0

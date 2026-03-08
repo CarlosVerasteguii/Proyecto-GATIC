@@ -58,6 +58,22 @@ class ContractsIndex extends Component
         $this->resetPage();
     }
 
+    public function clearFilters(): void
+    {
+        $this->search = '';
+        $this->typeFilter = '';
+        $this->supplierFilter = '';
+
+        $this->resetPage();
+    }
+
+    public function hasActiveFilters(): bool
+    {
+        return trim($this->search) !== ''
+            || $this->typeFilter !== ''
+            || $this->supplierFilter !== '';
+    }
+
     public function render(): View
     {
         Gate::authorize('inventory.manage');

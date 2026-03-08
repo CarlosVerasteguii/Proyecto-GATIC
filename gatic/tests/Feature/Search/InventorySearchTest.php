@@ -2,14 +2,17 @@
 
 namespace Tests\Feature\Search;
 
+use App\Actions\Search\SearchInventory;
 use App\Enums\UserRole;
 use App\Models\Asset;
 use App\Models\Category;
+use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
+use RuntimeException;
 use Tests\TestCase;
 
 class InventorySearchTest extends TestCase
@@ -72,16 +75,33 @@ class InventorySearchTest extends TestCase
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
         $category = Category::query()->create([
-            'name' => 'Laptops',
+            'name' => 'Equipo de Cómputo',
             'is_serialized' => true,
             'requires_asset_tag' => false,
         ]);
+        $location = Location::query()->create(['name' => 'Almacén central']);
 
-        Product::query()->create([
+        $product = Product::query()->create([
             'name' => 'Dell Latitude 5520',
             'category_id' => $category->id,
             'brand_id' => null,
             'qty_total' => null,
+        ]);
+
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SN-DELL-001',
+            'asset_tag' => 'AT-DELL-001',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SN-DELL-002',
+            'asset_tag' => 'AT-DELL-002',
+            'status' => Asset::STATUS_ASSIGNED,
         ]);
 
         Product::query()->create([
@@ -95,6 +115,8 @@ class InventorySearchTest extends TestCase
             ->get('/inventory/search?q=Dell')
             ->assertOk()
             ->assertSee('Dell Latitude 5520')
+            ->assertSee('Total 2')
+            ->assertSee('No disp. 1')
             ->assertDontSee('HP EliteBook 840');
     }
 
@@ -298,6 +320,10 @@ class InventorySearchTest extends TestCase
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);
         $location = Location::query()->create(['name' => 'Almacén']);
+        $employee = Employee::query()->create([
+            'rpe' => 'RPE-100',
+            'name' => 'Ana Soporte',
+        ]);
         $category = Category::query()->create([
             'name' => 'Laptops',
             'is_serialized' => true,
@@ -319,6 +345,7 @@ class InventorySearchTest extends TestCase
         Asset::query()->create([
             'product_id' => $product->id,
             'location_id' => $location->id,
+            'current_employee_id' => $employee->id,
             'serial' => 'SN-ABC-456',
             'asset_tag' => null,
             'status' => Asset::STATUS_ASSIGNED,
@@ -336,7 +363,30 @@ class InventorySearchTest extends TestCase
             ->assertOk()
             ->assertSee('SN-ABC-123')
             ->assertSee('SN-ABC-456')
+            ->assertSee('Ana Soporte')
+            ->assertSee('RPE-100')
             ->assertDontSee('SN-XYZ-789');
+    }
+
+    public function test_search_shows_inline_error_state_when_search_fails(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        $this->app->bind(SearchInventory::class, static function () {
+            return new class
+            {
+                public function execute(string $query): array
+                {
+                    throw new RuntimeException('Search failure');
+                }
+            };
+        });
+
+        $this->actingAs($admin)
+            ->get('/inventory/search?q=Dell')
+            ->assertOk()
+            ->assertSee('Ocurrió un error inesperado.')
+            ->assertSee('Reintentar búsqueda');
     }
 
     // =========================================================================

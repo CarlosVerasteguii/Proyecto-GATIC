@@ -34,6 +34,7 @@
     'subtitle' => null,
     'filtersCollapsible' => true,
     'filterId' => 'toolbar-filters',
+    'searchColClass' => 'col-12 col-md-3',
 ])
 
 <div {{ $attributes->merge(['class' => 'card']) }}>
@@ -66,7 +67,7 @@
                 <div class="row g-3 align-items-end">
                     {{-- Search (always visible) --}}
                     @if(isset($search))
-                        <div class="col-12 col-md-3">
+                        <div class="{{ $searchColClass }}">
                             {{ $search }}
                         </div>
                     @endif

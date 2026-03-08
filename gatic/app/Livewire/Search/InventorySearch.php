@@ -5,12 +5,14 @@ namespace App\Livewire\Search;
 use App\Actions\Search\SearchInventory;
 use App\Models\Asset;
 use App\Models\Product;
+use App\Support\Errors\ErrorReporter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Throwable;
 
 #[Layout('layouts.app')]
 class InventorySearch extends Component
@@ -34,6 +36,8 @@ class InventorySearch extends Component
 
     public bool $showNoResultsMessage = false;
 
+    public ?string $errorId = null;
+
     public function mount(): void
     {
         Gate::authorize('inventory.view');
@@ -56,39 +60,41 @@ class InventorySearch extends Component
         $this->performSearch();
     }
 
+    public function retrySearch(): void
+    {
+        $this->performSearch();
+    }
+
     private function performSearch(): void
     {
         Gate::authorize('inventory.view');
 
         $normalizedSearch = trim($this->search);
 
-        // Reset state
-        $this->products = collect();
-        $this->assets = collect();
-        $this->showMinCharsMessage = false;
-        $this->showNoResultsMessage = false;
+        $this->resetSearchState();
 
-        // Check minimum characters
         if ($normalizedSearch !== '' && mb_strlen($normalizedSearch) < self::MIN_CHARS) {
             $this->showMinCharsMessage = true;
 
             return;
         }
 
-        // Don't search if empty
         if ($normalizedSearch === '') {
             return;
         }
 
-        // Execute search
-        $searchAction = app(SearchInventory::class);
-        $results = $searchAction->execute($normalizedSearch);
+        try {
+            $results = app(SearchInventory::class)->execute($normalizedSearch);
+        } catch (Throwable $exception) {
+            $this->errorId = app(ErrorReporter::class)->report($exception, request());
+
+            return;
+        }
 
         $this->products = $results['products'];
         $this->assets = $results['assets'];
         $exactMatch = $results['exactMatch'];
 
-        // If exact match found, redirect to asset detail
         if ($exactMatch instanceof Asset) {
             $this->redirectRoute('inventory.products.assets.show', [
                 'product' => $exactMatch->product_id,
@@ -98,16 +104,31 @@ class InventorySearch extends Component
             return;
         }
 
-        // Show no results message if search was performed but nothing found
         if ($this->products->isEmpty() && $this->assets->isEmpty()) {
             $this->showNoResultsMessage = true;
         }
     }
 
+    private function resetSearchState(): void
+    {
+        $this->products = collect();
+        $this->assets = collect();
+        $this->showMinCharsMessage = false;
+        $this->showNoResultsMessage = false;
+        $this->errorId = null;
+    }
+
     public function render(): View
     {
+        $productsCount = $this->products->count();
+        $assetsCount = $this->assets->count();
+
         return view('livewire.search.inventory-search', [
             'minChars' => self::MIN_CHARS,
+            'hasSearch' => trim($this->search) !== '',
+            'productsCount' => $productsCount,
+            'assetsCount' => $assetsCount,
+            'totalResults' => $productsCount + $assetsCount,
         ]);
     }
 }

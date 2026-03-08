@@ -5,6 +5,7 @@ namespace App\Actions\Search;
 use App\Models\Asset;
 use App\Models\Product;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class SearchInventory
 {
@@ -80,7 +81,7 @@ class SearchInventory
         }
 
         return Asset::query()
-            ->with(['product', 'location'])
+            ->with(['product', 'location', 'currentEmployee'])
             ->where('asset_tag', $normalizedTag)
             ->first();
     }
@@ -100,7 +101,7 @@ class SearchInventory
         }
 
         return Asset::query()
-            ->with(['product', 'location'])
+            ->with(['product', 'location', 'currentEmployee'])
             ->where('serial', $normalizedSerial)
             ->orderBy('serial')
             ->get();
@@ -128,11 +129,12 @@ class SearchInventory
             return mb_strlen($token) >= self::FULLTEXT_MIN_TOKEN_CHARS;
         }));
 
+        $productsQuery = $this->buildProductsQuery();
+
         if (! app()->environment('testing') && $fullTextTokens !== []) {
             $booleanQuery = $this->buildFullTextBooleanQuery($fullTextTokens);
 
-            return Product::query()
-                ->with(['category', 'brand'])
+            return $productsQuery
                 ->whereRaw('match(products.name) against (? in boolean mode) > 0', [$booleanQuery])
                 ->orderByRaw('match(products.name) against (? in boolean mode) desc', [$booleanQuery])
                 ->orderBy('products.name')
@@ -145,8 +147,7 @@ class SearchInventory
         $escapedTokens = array_map(fn (string $token): string => $this->escapeLike($token), $tokens);
         $likePattern = implode('%', $escapedTokens).'%';
 
-        return Product::query()
-            ->with(['category', 'brand'])
+        return $productsQuery
             ->whereRaw("name like ? escape '\\\\'", [$likePattern])
             ->orderBy('name')
             ->limit(20)
@@ -196,7 +197,7 @@ class SearchInventory
         $likePattern = "{$escapedSearch}%";
 
         return Asset::query()
-            ->with(['product', 'location'])
+            ->with(['product', 'location', 'currentEmployee'])
             ->where(function ($q) use ($likePattern) {
                 $q->whereRaw("serial like ? escape '\\\\'", [$likePattern])
                     ->orWhereRaw("asset_tag like ? escape '\\\\'", [$likePattern]);
@@ -212,5 +213,35 @@ class SearchInventory
     private function escapeLike(string $value): string
     {
         return addcslashes($value, '\\%_');
+    }
+
+    private function buildProductsQuery()
+    {
+        return Product::query()
+            ->select('products.*')
+            ->leftJoinSub($this->buildAssetCountsSubquery(), 'asset_counts', function ($join) {
+                $join->on('asset_counts.product_id', '=', 'products.id');
+            })
+            ->addSelect(DB::raw('coalesce(asset_counts.assets_total, 0) as assets_total'))
+            ->addSelect(DB::raw('coalesce(asset_counts.assets_unavailable, 0) as assets_unavailable'))
+            ->with(['category', 'brand']);
+    }
+
+    private function buildAssetCountsSubquery()
+    {
+        $unavailableStatuses = Asset::UNAVAILABLE_STATUSES;
+        $unavailablePlaceholders = implode(',', array_fill(0, count($unavailableStatuses), '?'));
+
+        return Asset::query()
+            ->select('assets.product_id')
+            ->selectRaw(
+                'sum(case when assets.status <> ? then 1 else 0 end) as assets_total',
+                [Asset::STATUS_RETIRED]
+            )
+            ->selectRaw(
+                "sum(case when assets.status in ($unavailablePlaceholders) then 1 else 0 end) as assets_unavailable",
+                $unavailableStatuses
+            )
+            ->groupBy('assets.product_id');
     }
 }

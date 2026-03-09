@@ -58,6 +58,8 @@ Version BMAD (copia): `_bmad-output/project-context.md`.
 
 - Feature tests para flujos criticos: RBAC (Admin/Editor/Lector) + locks (claim/timeout/override) + movimientos.
 - Tests deterministas (sin dependencias externas); usar `RefreshDatabase` cuando aplique.
+- Durante iteraciones pequenas o cambios acotados de UI/Livewire/Blade: preferir validacion focalizada (`pint`, `phpstan`, tests del area tocada y smoke runtime/visual).
+- Reservar `php artisan test` completo para cambios transversales, cierres de checkpoint o antes de integrar a `main`/merge final.
 
 ### Code Quality & Style Rules
 

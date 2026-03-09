@@ -20,6 +20,8 @@
 - Levantar / bajar: `docker compose -f compose.yaml up -d` / `docker compose -f compose.yaml down`
 - Calidad: `./vendor/bin/pint --test`, `php artisan test`, `./vendor/bin/phpstan analyse --no-progress`
 - Nota: CI corre Pint + PHPUnit + Larastan
+- En iteraciones acotadas de UI/Blade/Livewire: preferir validación focalizada (`pint`, `phpstan`, tests del área y smoke runtime/visual).
+- Reservar `php artisan test` completo para cambios transversales, cierres de checkpoint o antes de integrar a `main`.
 
 ## Dónde buscar según tarea
 

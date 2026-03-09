@@ -1,124 +1,174 @@
 <div class="container position-relative">
+    @php
+        $assets = $contract->assets;
+        $totalAssets = (int) ($contract->assets_count ?? $assets->count());
+        $availableAssets = $assets->where('status', \App\Models\Asset::STATUS_AVAILABLE)->count();
+        $typeTone = $contract->type === \App\Models\Contract::TYPE_PURCHASE ? 'info' : 'warning';
+        $vigencyLabel = $contract->start_date || $contract->end_date
+            ? trim(($contract->start_date?->format('d/m/Y') ?? 'Sin inicio').' al '.($contract->end_date?->format('d/m/Y') ?? 'sin fin'))
+            : 'Sin fechas definidas';
+    @endphp
+
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-10">
-            <x-ui.detail-header :title="$contract->identifier" :subtitle="$contract->type_label">
+        <div class="col-12 col-xxl-11">
+            <x-ui.detail-header :title="$contract->identifier" :subtitle="$contract->supplier?->name ?? 'Sin proveedor asignado'">
                 <x-slot:breadcrumbs>
                     <x-ui.breadcrumbs :items="[
                         ['label' => 'Inicio', 'url' => route('dashboard')],
+                        ['label' => 'Inventario', 'url' => route('inventory.products.index')],
                         ['label' => 'Contratos', 'url' => auth()->user()?->can('inventory.manage') ? route('inventory.contracts.index') : null],
                         ['label' => $contract->identifier, 'url' => null],
                     ]" />
                 </x-slot:breadcrumbs>
 
                 <x-slot:status>
-                    <x-ui.badge tone="primary" variant="compact" :with-rail="false">{{ $contract->type_label }}</x-ui.badge>
+                    <x-ui.badge :tone="$typeTone" variant="compact" :with-rail="false">
+                        {{ $contract->type_label }}
+                    </x-ui.badge>
+                    @if ($contract->supplier?->name)
+                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
+                            {{ $contract->supplier->name }}
+                        </x-ui.badge>
+                    @endif
                 </x-slot:status>
 
+                <x-slot:kpis>
+                    <x-ui.detail-header-kpi label="Activos vinculados" :value="$totalAssets" />
+                    <x-ui.detail-header-kpi label="Disponibles" :value="$availableAssets" variant="success" />
+                </x-slot:kpis>
+
                 <x-slot:actions>
-                    @can('inventory.manage')
-                        <a class="btn btn-sm btn-primary" href="{{ route('inventory.contracts.edit', ['contract' => $contract->id]) }}">
-                            <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
+                    @if (auth()->user()?->can('inventory.manage'))
+                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('inventory.contracts.index') }}">
+                            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+                            Volver
                         </a>
-                    @endcan
+                        <a class="btn btn-sm btn-primary" href="{{ route('inventory.contracts.edit', ['contract' => $contract->id]) }}">
+                            <i class="bi bi-pencil me-1" aria-hidden="true"></i>
+                            Editar
+                        </a>
+                    @endif
                 </x-slot:actions>
             </x-ui.detail-header>
 
-            <div class="card">
-                <div class="card-header">
-                    Informacion del contrato
-                </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-3">Identificador</dt>
-                        <dd class="col-sm-9">{{ $contract->identifier }}</dd>
-
-                        <dt class="col-sm-3">Tipo</dt>
-                        <dd class="col-sm-9">{{ $contract->type_label }}</dd>
-
-                        <dt class="col-sm-3">Proveedor</dt>
-                        <dd class="col-sm-9">{{ $contract->supplier?->name ?? '-' }}</dd>
-
-                        <dt class="col-sm-3">Vigencia</dt>
-                        <dd class="col-sm-9">
-                            @if ($contract->start_date || $contract->end_date)
-                                <div class="d-flex align-items-center gap-2">
-                                    @if ($contract->start_date)
-                                        <span>
-                                            <i class="bi bi-calendar-event me-1 text-muted" aria-hidden="true"></i>
-                                            {{ $contract->start_date->format('d/m/Y') }}
-                                        </span>
-                                    @else
-                                        <span class="text-muted">Sin fecha de inicio</span>
-                                    @endif
-                                    <span class="text-muted">al</span>
-                                    @if ($contract->end_date)
-                                        <span>
-                                            <i class="bi bi-calendar-event me-1 text-muted" aria-hidden="true"></i>
-                                            {{ $contract->end_date->format('d/m/Y') }}
-                                        </span>
-                                    @else
-                                        <span class="text-muted">Sin fecha de fin</span>
-                                    @endif
-                                </div>
-                            @else
-                                <span class="text-muted">Sin fechas definidas</span>
-                            @endif
-                        </dd>
-
-                        @if ($contract->notes)
-                            <dt class="col-sm-3">Notas</dt>
-                            <dd class="col-sm-9">{{ $contract->notes }}</dd>
-                        @endif
-                    </dl>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Activos vinculados</span>
-                    <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $contract->assets->count() }}</x-ui.badge>
-                </div>
-                <div class="card-body">
-                    @if ($contract->assets->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-sm table-striped align-middle mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Serial</th>
-                                        <th>Producto</th>
-                                        <th>Estado</th>
-                                        <th class="text-end">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($contract->assets as $asset)
-                                        <tr>
-                                            <td>{{ $asset->serial }}</td>
-                                            <td>{{ $asset->product?->name ?? '-' }}</td>
-                                            <td>
-                                                <x-ui.status-badge :status="$asset->status" />
-                                            </td>
-                                            <td class="text-end">
-                                                <a
-                                                    href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id]) }}"
-                                                    class="btn btn-sm btn-outline-secondary"
-                                                >
-                                                    Ver activo
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+            <x-ui.section-card
+                title="Resumen del contrato"
+                subtitle="Contexto general para revisar vigencia, proveedor y alcance operativo."
+                icon="bi-journal-text"
+                class="mb-4"
+            >
+                <div class="row g-3">
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <div class="border rounded-3 h-100 p-3 bg-body-tertiary">
+                            <div class="small text-body-secondary text-uppercase fw-semibold">Identificador</div>
+                            <div class="fw-semibold mt-2">{{ $contract->identifier }}</div>
                         </div>
-                    @else
-                        <p class="text-muted mb-0">
-                            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
-                            No hay activos vinculados a este contrato.
-                        </p>
-                    @endif
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <div class="border rounded-3 h-100 p-3 bg-body-tertiary">
+                            <div class="small text-body-secondary text-uppercase fw-semibold">Tipo</div>
+                            <div class="mt-2">
+                                <x-ui.badge :tone="$typeTone" variant="compact" :with-rail="false">
+                                    {{ $contract->type_label }}
+                                </x-ui.badge>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <div class="border rounded-3 h-100 p-3 bg-body-tertiary">
+                            <div class="small text-body-secondary text-uppercase fw-semibold">Proveedor</div>
+                            <div class="fw-semibold mt-2">{{ $contract->supplier?->name ?? 'Sin proveedor asignado' }}</div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <div class="border rounded-3 h-100 p-3 bg-body-tertiary">
+                            <div class="small text-body-secondary text-uppercase fw-semibold">Vigencia</div>
+                            <div class="fw-semibold mt-2">{{ $vigencyLabel }}</div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="border rounded-3 h-100 p-3 bg-body-tertiary">
+                            <div class="small text-body-secondary text-uppercase fw-semibold">Notas</div>
+                            <div class="mt-2 text-body-secondary">
+                                {{ $contract->notes ?: 'Sin notas operativas registradas.' }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </x-ui.section-card>
+
+            <x-ui.section-card
+                title="Activos vinculados"
+                subtitle="Consulta los activos asociados al contrato y navega a su detalle cuando necesites más contexto."
+                icon="bi-hdd-stack"
+                bodyClass="p-0"
+            >
+                <x-slot:actions>
+                    <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
+                        {{ number_format($totalAssets) }}
+                    </x-ui.badge>
+                </x-slot:actions>
+
+                @if ($totalAssets === 0)
+                    <div class="p-4">
+                        <x-ui.empty-state
+                            icon="bi-link-45deg"
+                            title="Sin activos vinculados"
+                            description="Este contrato todavía no tiene activos asociados."
+                            compact
+                        />
+                    </div>
+                @else
+                    <div class="table-responsive-xl">
+                        <table class="table table-sm table-striped align-middle mb-0 table-gatic-head">
+                            <thead>
+                                <tr>
+                                    <th>Activo</th>
+                                    <th>Identificadores</th>
+                                    <th>Estado</th>
+                                    <th>Ubicación</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($assets as $asset)
+                                    <tr wire:key="contract-asset-{{ $asset->id }}">
+                                        <td class="min-w-0">
+                                            <div class="min-w-0">
+                                                <div class="fw-semibold text-truncate">{{ $asset->product?->name ?? 'Producto no disponible' }}</div>
+                                                <div class="small text-body-secondary">Activo ID {{ $asset->id }}</div>
+                                            </div>
+                                        </td>
+                                        <td class="text-nowrap">
+                                            <div class="fw-semibold">{{ $asset->serial }}</div>
+                                            <div class="small text-body-secondary">
+                                                Asset tag: {{ $asset->asset_tag ?? '—' }}
+                                            </div>
+                                        </td>
+                                        <td class="text-nowrap">
+                                            <x-ui.status-badge :status="$asset->status" />
+                                        </td>
+                                        <td>{{ $asset->location?->name ?? 'Sin ubicación' }}</td>
+                                        <td class="text-end">
+                                            <a
+                                                href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id]) }}"
+                                                class="btn btn-sm btn-outline-secondary"
+                                            >
+                                                <i class="bi bi-eye me-1" aria-hidden="true"></i>
+                                                Ver activo
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </x-ui.section-card>
         </div>
     </div>
 </div>

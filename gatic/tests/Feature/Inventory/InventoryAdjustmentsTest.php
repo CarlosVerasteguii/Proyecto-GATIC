@@ -34,6 +34,16 @@ class InventoryAdjustmentsTest extends TestCase
             ->assertSeeText('Historial de ajustes');
     }
 
+    public function test_adjustments_index_shows_empty_state_when_there_are_no_records(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        $this->actingAs($admin)
+            ->get('/inventory/adjustments')
+            ->assertOk()
+            ->assertSeeText('No hay ajustes registrados');
+    }
+
     public function test_editor_cannot_access_adjustments_index(): void
     {
         $editor = User::factory()->create(['role' => UserRole::Editor]);

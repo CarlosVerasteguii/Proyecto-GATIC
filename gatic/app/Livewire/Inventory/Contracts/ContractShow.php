@@ -26,7 +26,12 @@ class ContractShow extends Component
         $this->contractId = (int) $contract;
 
         $this->contractModel = Contract::query()
-            ->with(['supplier', 'assets.product'])
+            ->with([
+                'supplier',
+                'assets.location',
+                'assets.product' => static fn ($query) => $query->withTrashed(),
+            ])
+            ->withCount('assets')
             ->findOrFail($this->contractId);
     }
 

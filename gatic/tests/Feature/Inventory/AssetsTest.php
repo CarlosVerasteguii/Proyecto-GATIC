@@ -7,6 +7,7 @@ use App\Livewire\Inventory\Assets\AssetForm;
 use App\Livewire\Inventory\Assets\AssetShow;
 use App\Livewire\Inventory\Assets\AssetsIndex;
 use App\Models\Asset;
+use App\Models\AssetMovement;
 use App\Models\Category;
 use App\Models\Employee;
 use App\Models\Location;
@@ -1341,5 +1342,128 @@ class AssetsTest extends TestCase
             ->assertSee('Fecha estimada de reemplazo')
             ->assertSee(Carbon::today()->addDays(10)->format('d/m/Y'))
             ->assertSee('Por vencer');
+    }
+
+    public function test_assets_global_index_displays_operational_summary_cards(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 2, 6, 10, 0, 0));
+        config(['gatic.alerts.loans.due_soon_window_days_default' => 7]);
+
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-GLOBAL-1',
+            'status' => Asset::STATUS_AVAILABLE,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-GLOBAL-2',
+            'status' => Asset::STATUS_ASSIGNED,
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-GLOBAL-3',
+            'status' => Asset::STATUS_LOANED,
+            'loan_due_date' => Carbon::today()->addDays(3)->toDateString(),
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-GLOBAL-4',
+            'status' => Asset::STATUS_LOANED,
+            'loan_due_date' => Carbon::today()->subDay()->toDateString(),
+        ]);
+        Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'serial' => 'SER-GLOBAL-5',
+            'status' => Asset::STATUS_RETIRED,
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/inventory/assets')
+            ->assertOk()
+            ->assertSee('Activos visibles')
+            ->assertSee('Disponibles')
+            ->assertSee('No disponibles')
+            ->assertSee('Préstamos críticos')
+            ->assertSee('1 vencidos · 1 por vencer')
+            ->assertSee('Mostrando 4 activos');
+    }
+
+    public function test_asset_show_displays_summary_sections_and_traceability_counts(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $employee = Employee::factory()->create([
+            'rpe' => 'RPE-ASSET-001',
+            'name' => 'Empleado Asignado',
+        ]);
+        $location = Location::query()->create(['name' => 'Almacén']);
+        $category = Category::query()->create([
+            'name' => 'Laptops',
+            'is_serialized' => true,
+            'requires_asset_tag' => false,
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Dell X1',
+            'category_id' => $category->id,
+            'brand_id' => null,
+            'qty_total' => null,
+        ]);
+        $asset = Asset::query()->create([
+            'product_id' => $product->id,
+            'location_id' => $location->id,
+            'current_employee_id' => $employee->id,
+            'serial' => 'SER-SHOW-SUMMARY',
+            'status' => Asset::STATUS_ASSIGNED,
+        ]);
+
+        AssetMovement::factory()->create([
+            'asset_id' => $asset->id,
+            'employee_id' => $employee->id,
+            'actor_user_id' => $admin->id,
+        ]);
+
+        $asset->notes()->create([
+            'author_user_id' => $admin->id,
+            'body' => 'Nota operativa de prueba',
+        ]);
+
+        $asset->attachments()->create([
+            'uploaded_by_user_id' => $admin->id,
+            'original_name' => 'manual.pdf',
+            'disk' => 'local',
+            'path' => 'attachments/Asset/'.$asset->id.'/manual',
+            'mime_type' => 'application/pdf',
+            'size_bytes' => 1024,
+        ]);
+
+        $this->actingAs($admin)
+            ->get("/inventory/products/{$product->id}/assets/{$asset->id}")
+            ->assertOk()
+            ->assertSee('Resumen del activo')
+            ->assertSee('Cobertura y ciclo de vida')
+            ->assertSee('Trazabilidad')
+            ->assertSee('Movimientos')
+            ->assertSee('Notas')
+            ->assertSee('Adjuntos')
+            ->assertSee('RPE-ASSET-001')
+            ->assertSee('manual.pdf');
     }
 }

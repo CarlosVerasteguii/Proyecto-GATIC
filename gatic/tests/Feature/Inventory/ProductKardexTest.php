@@ -295,4 +295,25 @@ class ProductKardexTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('Ver kardex');
     }
+
+    public function test_kardex_preserves_products_filter_context_in_navigation_links(): void
+    {
+        $brand = \App\Models\Brand::query()->create(['name' => 'HP']);
+        $this->product->update(['brand_id' => $brand->id]);
+
+        $query = [
+            'q' => 'Toner',
+            'category' => $this->categoryQuantity->id,
+            'brand' => $brand->id,
+            'availability' => 'with_available',
+            'page' => 2,
+        ];
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('inventory.products.kardex', ['product' => $this->product->id] + $query))
+            ->assertOk();
+
+        $response->assertSeeHtml('href="'.e(route('inventory.products.index', $query)).'"');
+        $response->assertSeeHtml('href="'.e(route('inventory.products.show', ['product' => $this->product->id] + $query)).'"');
+    }
 }

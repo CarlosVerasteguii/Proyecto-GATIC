@@ -925,8 +925,14 @@ class ProductsTest extends TestCase
             ->get("/inventory/products/{$product->id}")
             ->assertOk();
 
-        $response->assertSee('Stock bajo:');
-        $response->assertSee('Umbral de stock bajo');
+        $response->assertSeeTextInOrder([
+            'Resumen del producto',
+            'Contexto operativo',
+            'Stock actual',
+            'Umbral de stock bajo',
+            'Registros en kardex',
+        ]);
+        $response->assertSee('Stock bajo');
     }
 
     public function test_product_show_does_not_display_low_stock_alert_when_above_threshold(): void
@@ -950,8 +956,8 @@ class ProductsTest extends TestCase
             ->get("/inventory/products/{$product->id}")
             ->assertOk();
 
-        $response->assertDontSee('Stock bajo:');
         $response->assertSee('Umbral de stock bajo');
+        $response->assertSee('Operativo');
     }
 
     public function test_product_show_does_not_display_threshold_for_serialized_products(): void
@@ -976,6 +982,38 @@ class ProductsTest extends TestCase
             ->assertOk();
 
         $response->assertDontSee('Umbral de stock bajo');
+    }
+
+    public function test_product_show_preserves_products_filter_context_in_back_and_kardex_links(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $category = Category::query()->create([
+            'name' => 'Consumibles',
+            'is_serialized' => false,
+            'requires_asset_tag' => false,
+        ]);
+        $brand = Brand::query()->create(['name' => 'HP']);
+        $product = Product::query()->create([
+            'name' => 'Toner HP',
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+            'qty_total' => 7,
+        ]);
+
+        $query = [
+            'q' => 'Toner',
+            'category' => $category->id,
+            'brand' => $brand->id,
+            'availability' => 'with_available',
+            'page' => 2,
+        ];
+
+        $response = $this->actingAs($admin)
+            ->get(route('inventory.products.show', ['product' => $product->id] + $query))
+            ->assertOk();
+
+        $response->assertSeeHtml('href="'.e(route('inventory.products.index', $query)).'"');
+        $response->assertSeeHtml('href="'.e(route('inventory.products.kardex', ['product' => $product->id] + $query)).'"');
     }
 
     public function test_product_form_prefills_name_from_prefill_query_parameter(): void

@@ -23,6 +23,10 @@ class ProductKardex extends Component
 
     public ?string $errorId = null;
 
+    public int $movementCount = 0;
+
+    public int $adjustmentCount = 0;
+
     public function mount(string $product): void
     {
         Gate::authorize('inventory.view');
@@ -40,6 +44,13 @@ class ProductKardex extends Component
         Gate::authorize('inventory.view');
 
         $product = $this->loadProductOrAbort();
+        $this->movementCount = ProductQuantityMovement::query()
+            ->where('product_id', $this->productId)
+            ->count();
+        $this->adjustmentCount = InventoryAdjustmentEntry::query()
+            ->where('subject_type', Product::class)
+            ->where('subject_id', $this->productId)
+            ->count();
 
         try {
             $kardexEntries = $this->getKardexEntries();
@@ -64,6 +75,9 @@ class ProductKardex extends Component
         return view('livewire.inventory.products.product-kardex', [
             'product' => $product,
             'entries' => $kardexEntries,
+            'headerSubtitle' => $this->buildHeaderSubtitle($product),
+            'summaryCards' => $this->buildSummaryCards($product),
+            'statusHighlights' => $this->buildStatusHighlights($product),
         ]);
     }
 
@@ -211,5 +225,101 @@ class ProductKardex extends Component
         }
 
         return $product;
+    }
+
+    private function buildHeaderSubtitle(Product $product): string
+    {
+        return collect([
+            $product->category?->name,
+            $product->brand?->name,
+            'Trazabilidad por cantidad',
+        ])->filter()->implode(' · ');
+    }
+
+    /**
+     * @return array<int, array{
+     *     label:string,
+     *     value:string,
+     *     description:string,
+     *     href:?string,
+     *     badge:?array{label:string, tone:string}
+     * }>
+     */
+    private function buildSummaryCards(Product $product): array
+    {
+        $totalRecords = $this->movementCount + $this->adjustmentCount;
+        $isLowStock = $product->low_stock_threshold !== null
+            && $product->qty_total !== null
+            && $product->qty_total <= $product->low_stock_threshold;
+
+        return [
+            [
+                'label' => 'Stock actual',
+                'value' => (string) ((int) ($product->qty_total ?? 0)),
+                'description' => 'Saldo visible del producto por cantidad al momento de abrir el kardex.',
+                'href' => Gate::allows('inventory.manage')
+                    ? route('inventory.products.movements.quantity', ['product' => $product->id])
+                    : null,
+                'badge' => $isLowStock
+                    ? ['label' => 'Stock bajo', 'tone' => 'warning']
+                    : ['label' => 'Operativo', 'tone' => 'success'],
+            ],
+            [
+                'label' => 'Registros totales',
+                'value' => (string) $totalRecords,
+                'description' => 'Suma movimientos y ajustes incluidos en la cronología.',
+                'href' => null,
+                'badge' => $totalRecords > 0
+                    ? ['label' => 'Con historial', 'tone' => 'info']
+                    : null,
+            ],
+            [
+                'label' => 'Movimientos',
+                'value' => (string) $this->movementCount,
+                'description' => 'Entradas y salidas capturadas por operación diaria.',
+                'href' => null,
+                'badge' => null,
+            ],
+            [
+                'label' => 'Ajustes',
+                'value' => (string) $this->adjustmentCount,
+                'description' => 'Correcciones administrativas aplicadas al inventario.',
+                'href' => Gate::allows('admin-only')
+                    ? route('inventory.products.adjust', ['product' => $product->id])
+                    : null,
+                'badge' => $this->adjustmentCount > 0
+                    ? ['label' => 'Auditable', 'tone' => 'warning']
+                    : null,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<int, array{label:string, tone:string}>
+     */
+    private function buildStatusHighlights(Product $product): array
+    {
+        $highlights = [
+            [
+                'label' => 'Por cantidad',
+                'tone' => 'warning',
+            ],
+        ];
+
+        if (is_string($product->brand?->name) && $product->brand->name !== '') {
+            $highlights[] = [
+                'label' => $product->brand->name,
+                'tone' => 'neutral',
+            ];
+        }
+
+        if ($product->low_stock_threshold !== null && $product->qty_total !== null && $product->qty_total <= $product->low_stock_threshold) {
+            $highlights[] = [
+                'label' => 'Stock bajo',
+                'tone' => 'warning',
+            ];
+        }
+
+        return $highlights;
     }
 }

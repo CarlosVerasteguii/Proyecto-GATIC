@@ -1,29 +1,127 @@
 <div class="container position-relative">
     <x-ui.long-request />
 
+    @php
+        $resultsCount = $assets->total();
+        $hasFilters = $this->hasActiveFilters();
+        $selectedAssetsCount = count($selectedAssetIds);
+        $activeFiltersCount = collect([
+            trim($search) !== '' ? 'search' : null,
+            $locationId !== null ? 'location' : null,
+            $categoryId !== null ? 'category' : null,
+            $brandId !== null ? 'brand' : null,
+            $status !== 'all' ? 'status' : null,
+        ])->filter()->count();
+
+        $selectedLocation = $locations->firstWhere('id', $locationId);
+        $selectedCategory = $categories->firstWhere('id', $categoryId);
+        $selectedBrand = $brands->firstWhere('id', $brandId);
+
+        $statusLabel = match ($status) {
+            'unavailable' => 'No disponibles',
+            'all' => 'Todos (sin retirados)',
+            default => $status,
+        };
+
+        $sortIcon = static function (string $key) use ($sort, $direction): string {
+            if ($sort !== $key) {
+                return 'bi-arrow-down-up';
+            }
+
+            return $direction === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down';
+        };
+
+        $ariaSort = static function (string $key) use ($sort, $direction): string {
+            if ($sort !== $key) {
+                return 'none';
+            }
+
+            return $direction === 'asc' ? 'ascending' : 'descending';
+        };
+
+        $returnToParams = array_filter([
+            'q' => $search !== '' ? $search : null,
+            'location' => $locationId,
+            'category' => $categoryId,
+            'brand' => $brandId,
+            'status' => $status !== 'all' ? $status : null,
+            'sort' => $sort !== 'serial' ? $sort : null,
+            'dir' => $direction !== 'asc' ? $direction : null,
+            'page' => $assets->currentPage() > 1 ? $assets->currentPage() : null,
+        ], static fn ($value): bool => $value !== null && $value !== '');
+
+        $returnToUrl = route('inventory.assets.index', $returnToParams);
+        $returnToPath = parse_url($returnToUrl, PHP_URL_PATH) ?: '/inventory/assets';
+        $returnToQuery = parse_url($returnToUrl, PHP_URL_QUERY);
+        $returnTo = is_string($returnToQuery) && $returnToQuery !== ''
+            ? "{$returnToPath}?{$returnToQuery}"
+            : $returnToPath;
+
+        $attentionTone = $summary['overdue_loans'] > 0 ? 'danger' : 'info';
+    @endphp
+
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-10">
-            <x-ui.toolbar title="Activos" filterId="assets-global-filters">
+        <div class="col-12 col-xxl-11">
+            <x-ui.toolbar
+                title="Activos"
+                subtitle="Supervisa activos serializados con filtros operativos, lectura rápida del estado actual y acciones por lote."
+                filterId="assets-global-filters"
+                searchColClass="col-12 col-lg-5"
+            >
                 <x-slot:breadcrumbs>
                     <x-ui.breadcrumbs :items="[
                         ['label' => 'Inicio', 'url' => route('dashboard')],
+                        ['label' => 'Inventario', 'url' => route('inventory.products.index')],
                         ['label' => 'Activos', 'url' => null],
                     ]" />
                 </x-slot:breadcrumbs>
 
                 <x-slot:actions>
+                    <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
+                        Activos <strong>{{ number_format($resultsCount) }}</strong>
+                    </x-ui.badge>
+
+                    @if ($activeFiltersCount > 0)
+                        <x-ui.badge tone="info" variant="compact" :with-rail="false">
+                            Filtros <strong>{{ $activeFiltersCount }}</strong>
+                        </x-ui.badge>
+                    @endif
+
+                    @if ($selectedAssetsCount > 0)
+                        <x-ui.badge tone="warning" variant="compact" :with-rail="false">
+                            Seleccionados <strong>{{ $selectedAssetsCount }}</strong>
+                        </x-ui.badge>
+                    @endif
+
                     <x-ui.column-manager table="inventory-assets-global" />
+
+                    <a href="{{ route('inventory.products.index') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-box-seam me-1" aria-hidden="true"></i>
+                        Productos
+                    </a>
                 </x-slot:actions>
 
                 <x-slot:search>
-                    <label for="assets-global-search" class="form-label">Buscar</label>
-                    <input
-                        id="assets-global-search"
-                        type="text"
-                        class="form-control"
-                        placeholder="Serial, asset tag o producto."
-                        wire:model.live.debounce.300ms="search"
-                    />
+                    <div>
+                        <label for="assets-global-search" class="form-label">Buscar por serial, asset tag o producto</label>
+                        <div class="input-group">
+                            <span class="input-group-text" aria-hidden="true">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input
+                                id="assets-global-search"
+                                type="search"
+                                class="form-control"
+                                placeholder="Ej: SN-DASH-1-0001 o Laptop Dell…"
+                                wire:model.live.debounce.300ms="search"
+                                autocomplete="off"
+                                spellcheck="false"
+                            />
+                        </div>
+                        <div class="form-text">
+                            Filtra activos sin salir del listado y conserva el contexto en la URL.
+                        </div>
+                    </div>
                 </x-slot:search>
 
                 <x-slot:filters>
@@ -33,7 +131,7 @@
                             id="filter-location"
                             class="form-select"
                             wire:model.live="locationId"
-                            aria-label="Filtrar por ubicación"
+                            aria-label="Filtrar activos por ubicación"
                         >
                             <option value="">Todas</option>
                             @foreach ($locations as $location)
@@ -48,7 +146,7 @@
                             id="filter-category"
                             class="form-select"
                             wire:model.live="categoryId"
-                            aria-label="Filtrar por categoría"
+                            aria-label="Filtrar activos por categoría"
                         >
                             <option value="">Todas</option>
                             @foreach ($categories as $category)
@@ -63,7 +161,7 @@
                             id="filter-brand"
                             class="form-select"
                             wire:model.live="brandId"
-                            aria-label="Filtrar por marca"
+                            aria-label="Filtrar activos por marca"
                         >
                             <option value="">Todas</option>
                             @foreach ($brands as $brand)
@@ -78,7 +176,7 @@
                             id="filter-status"
                             class="form-select"
                             wire:model.live="status"
-                            aria-label="Filtrar por estado"
+                            aria-label="Filtrar activos por estado"
                         >
                             <option value="all">Todos (sin Retirado)</option>
                             <option value="unavailable">No disponibles</option>
@@ -90,62 +188,116 @@
                 </x-slot:filters>
 
                 <x-slot:clearFilters>
-                    @if ($this->hasActiveFilters())
+                    @if ($hasFilters)
                         <button
                             type="button"
                             class="btn btn-outline-secondary w-100"
                             wire:click="clearFilters"
-                            aria-label="Limpiar todos los filtros"
+                            aria-label="Limpiar filtros de activos"
                         >
-                            <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Limpiar
+                            <i class="bi bi-x-lg me-1" aria-hidden="true"></i>
+                            Limpiar
                         </button>
                     @endif
                 </x-slot:clearFilters>
 
-                @php
-                    $sortIcon = static function (string $key) use ($sort, $direction): string {
-                        if ($sort !== $key) {
-                            return 'bi-arrow-down-up';
-                        }
+                <div class="row g-3 mb-4" aria-live="polite">
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <x-ui.kpi-card
+                            label="Activos visibles"
+                            :value="number_format($summary['total'])"
+                            description="Resultado actual con filtros y exclusión default de retirados."
+                            icon="bi-hdd-stack"
+                        />
+                    </div>
 
-                        return $direction === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down';
-                    };
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <x-ui.kpi-card
+                            label="Disponibles"
+                            :value="number_format($summary['available'])"
+                            description="Listos para asignar o prestar."
+                            variant="success"
+                            icon="bi-check2-circle"
+                        />
+                    </div>
 
-                    $ariaSort = static function (string $key) use ($sort, $direction): string {
-                        if ($sort !== $key) {
-                            return 'none';
-                        }
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <x-ui.kpi-card
+                            label="No disponibles"
+                            :value="number_format($summary['unavailable'])"
+                            description="Asignados, prestados o pendientes de retiro."
+                            variant="warning"
+                            icon="bi-person-workspace"
+                        />
+                    </div>
 
-                        return $direction === 'asc' ? 'ascending' : 'descending';
-                    };
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <x-ui.kpi-card
+                            label="Préstamos críticos"
+                            :value="number_format($summary['loans_attention'])"
+                            description="Vencidos o dentro de la ventana de {{ $loanWindowDays }} días."
+                            :variant="$attentionTone"
+                            icon="bi-alarm"
+                        >
+                            <div class="small text-body-secondary mt-2">
+                                {{ number_format($summary['overdue_loans']) }} vencidos · {{ number_format($summary['due_soon_loans']) }} por vencer
+                            </div>
+                        </x-ui.kpi-card>
+                    </div>
+                </div>
 
-                    $returnToParams = array_filter([
-                        'q' => $search !== '' ? $search : null,
-                        'location' => $locationId,
-                        'category' => $categoryId,
-                        'brand' => $brandId,
-                        'status' => $status !== 'all' ? $status : null,
-                        'sort' => $sort !== 'serial' ? $sort : null,
-                        'dir' => $direction !== 'asc' ? $direction : null,
-                        'page' => $assets->currentPage() > 1 ? $assets->currentPage() : null,
-                    ], static fn ($value): bool => $value !== null && $value !== '');
+                <div class="d-flex flex-column gap-3 mb-3">
+                    @if ($hasFilters)
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <span class="small text-body-secondary">Filtros activos:</span>
 
-                    $returnToUrl = route('inventory.assets.index', $returnToParams);
-                    $returnToPath = parse_url($returnToUrl, PHP_URL_PATH) ?: '/inventory/assets';
-                    $returnToQuery = parse_url($returnToUrl, PHP_URL_QUERY);
-                    $returnTo = is_string($returnToQuery) && $returnToQuery !== ''
-                        ? "{$returnToPath}?{$returnToQuery}"
-                        : $returnToPath;
-                @endphp
+                            @if (trim($search) !== '')
+                                <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
+                                    Búsqueda: {{ $search }}
+                                </x-ui.badge>
+                            @endif
+
+                            @if (is_string($selectedLocation?->name) && $selectedLocation->name !== '')
+                                <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
+                                    Ubicación: {{ $selectedLocation->name }}
+                                </x-ui.badge>
+                            @endif
+
+                            @if (is_string($selectedCategory?->name) && $selectedCategory->name !== '')
+                                <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
+                                    Categoría: {{ $selectedCategory->name }}
+                                </x-ui.badge>
+                            @endif
+
+                            @if (is_string($selectedBrand?->name) && $selectedBrand->name !== '')
+                                <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
+                                    Marca: {{ $selectedBrand->name }}
+                                </x-ui.badge>
+                            @endif
+
+                            @if ($status !== 'all')
+                                <x-ui.badge tone="info" variant="compact" :with-rail="false">
+                                    Estado: {{ $statusLabel }}
+                                </x-ui.badge>
+                            @endif
+                        </div>
+                    @endif
+
+                    <div class="small text-body-secondary">
+                        Detecta disponibilidad, responsable actual y vencimientos de préstamo antes de entrar al detalle.
+                    </div>
+                </div>
 
                 @can('inventory.manage')
-                    @if (count($selectedAssetIds) > 0)
+                    @if ($selectedAssetsCount > 0)
                         <div
                             class="alert alert-light border d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3"
                             data-testid="assets-bulk-bar"
+                            role="status"
+                            aria-live="polite"
                         >
                             <div class="small text-muted">
-                                Seleccionados: <strong>{{ count($selectedAssetIds) }}</strong>
+                                Seleccionados: <strong>{{ $selectedAssetsCount }}</strong>
                             </div>
 
                             <div class="d-flex flex-wrap gap-2">
@@ -181,52 +333,99 @@
                     @endif
                 @endcan
 
-                <div class="table-responsive-xl">
-                    <table class="table table-sm table-striped align-middle mb-0" data-column-table="inventory-assets-global">
+                <div class="small text-body-secondary mb-2">
+                    Mostrando {{ number_format($resultsCount) }} activo{{ $resultsCount === 1 ? '' : 's' }}.
+                </div>
+
+                <div class="table-responsive-xl border rounded-3">
+                    <table class="table table-sm table-striped align-middle mb-0 table-gatic-head" data-column-table="inventory-assets-global">
                         <thead>
                             <tr>
                                 @can('inventory.manage')
-                                    <th data-column-key="select" data-column-required="true" style="width: 44px;">
+                                    <th scope="col" data-column-key="select" data-column-required="true" style="width: 44px;">
                                         <span class="visually-hidden">Seleccionar</span>
                                     </th>
                                 @endcan
-                                <th data-column-key="product" aria-sort="{{ $ariaSort('product') }}">
-                                    <button type="button" class="btn btn-link p-0 text-reset text-decoration-none" wire:click="sortBy('product')">
+                                <th scope="col" data-column-key="product" aria-sort="{{ $ariaSort('product') }}">
+                                    <button
+                                        type="button"
+                                        class="btn btn-link p-0 text-reset text-decoration-none"
+                                        wire:click="sortBy('product')"
+                                        aria-label="Ordenar por producto"
+                                    >
                                         Producto
                                         <i class="bi {{ $sortIcon('product') }} small ms-1" aria-hidden="true"></i>
                                     </button>
                                 </th>
-                                <th data-column-key="serial" data-column-required="true" aria-sort="{{ $ariaSort('serial') }}">
-                                    <button type="button" class="btn btn-link p-0 text-reset text-decoration-none" wire:click="sortBy('serial')">
+                                <th scope="col" data-column-key="serial" data-column-required="true" aria-sort="{{ $ariaSort('serial') }}">
+                                    <button
+                                        type="button"
+                                        class="btn btn-link p-0 text-reset text-decoration-none"
+                                        wire:click="sortBy('serial')"
+                                        aria-label="Ordenar por serial"
+                                    >
                                         Serial
                                         <i class="bi {{ $sortIcon('serial') }} small ms-1" aria-hidden="true"></i>
                                     </button>
                                 </th>
-                                <th data-column-key="asset_tag" aria-sort="{{ $ariaSort('asset_tag') }}">
-                                    <button type="button" class="btn btn-link p-0 text-reset text-decoration-none" wire:click="sortBy('asset_tag')">
+                                <th scope="col" data-column-key="asset_tag" aria-sort="{{ $ariaSort('asset_tag') }}">
+                                    <button
+                                        type="button"
+                                        class="btn btn-link p-0 text-reset text-decoration-none"
+                                        wire:click="sortBy('asset_tag')"
+                                        aria-label="Ordenar por asset tag"
+                                    >
                                         Asset tag
                                         <i class="bi {{ $sortIcon('asset_tag') }} small ms-1" aria-hidden="true"></i>
                                     </button>
                                 </th>
-                                <th data-column-key="status" aria-sort="{{ $ariaSort('status') }}">
-                                    <button type="button" class="btn btn-link p-0 text-reset text-decoration-none" wire:click="sortBy('status')">
+                                <th scope="col" data-column-key="status" aria-sort="{{ $ariaSort('status') }}">
+                                    <button
+                                        type="button"
+                                        class="btn btn-link p-0 text-reset text-decoration-none"
+                                        wire:click="sortBy('status')"
+                                        aria-label="Ordenar por estado"
+                                    >
                                         Estado
                                         <i class="bi {{ $sortIcon('status') }} small ms-1" aria-hidden="true"></i>
                                     </button>
                                 </th>
-                                <th data-column-key="location" aria-sort="{{ $ariaSort('location') }}">
-                                    <button type="button" class="btn btn-link p-0 text-reset text-decoration-none" wire:click="sortBy('location')">
+                                <th scope="col" data-column-key="location" aria-sort="{{ $ariaSort('location') }}">
+                                    <button
+                                        type="button"
+                                        class="btn btn-link p-0 text-reset text-decoration-none"
+                                        wire:click="sortBy('location')"
+                                        aria-label="Ordenar por ubicación"
+                                    >
                                         Ubicación
                                         <i class="bi {{ $sortIcon('location') }} small ms-1" aria-hidden="true"></i>
                                     </button>
                                 </th>
-                                <th data-column-key="employee">Empleado</th>
-                                <th data-column-key="loan_due_date">Vence</th>
-                                <th data-column-key="actions" data-column-required="true" class="text-end">Acciones</th>
+                                <th scope="col" data-column-key="employee">Responsable</th>
+                                <th scope="col" data-column-key="loan_due_date">Vencimiento</th>
+                                <th scope="col" data-column-key="actions" data-column-required="true" class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($assets as $asset)
+                                @php
+                                    $employeeName = $asset->currentEmployee?->name;
+                                    $employeeRpe = $asset->currentEmployee?->rpe;
+                                    $loanDueDate = $asset->loan_due_date;
+                                    $loanBadge = null;
+
+                                    if ($loanDueDate) {
+                                        $today = \Illuminate\Support\Carbon::today();
+
+                                        if ($loanDueDate->lt($today)) {
+                                            $loanBadge = ['label' => 'Vencido', 'tone' => 'danger'];
+                                        } elseif ($loanDueDate->lte($today->copy()->addDays($loanWindowDays))) {
+                                            $loanBadge = ['label' => 'Por vencer', 'tone' => 'warning'];
+                                        } else {
+                                            $loanBadge = ['label' => 'En tiempo', 'tone' => 'success'];
+                                        }
+                                    }
+                                @endphp
                                 <tr wire:key="assets-global-{{ $asset->id }}">
                                     @can('inventory.manage')
                                         <td>
@@ -237,55 +436,81 @@
                                                     value="{{ $asset->id }}"
                                                     wire:model.live="selectedAssetIds"
                                                     data-testid="assets-row-checkbox"
-                                                    aria-label="Seleccionar activo"
+                                                    aria-label="Seleccionar activo {{ $asset->serial }}"
                                                 >
                                             </div>
                                         </td>
                                     @endcan
-                                    <td>
-                                        <a
-                                            href="{{ route('inventory.products.show', ['product' => $asset->product_id]) }}"
-                                            class="text-decoration-none fw-medium"
-                                        >
-                                            {{ $asset->product?->name ?? '—' }}
-                                        </a>
-                                        @if ($asset->product?->category?->name)
-                                            <div class="small text-muted">{{ $asset->product->category->name }}</div>
+                                    <td class="min-w-0">
+                                        <div class="min-w-0">
+                                            <a
+                                                href="{{ route('inventory.products.show', ['product' => $asset->product_id]) }}"
+                                                class="text-decoration-none fw-semibold d-inline-block text-truncate mw-100"
+                                            >
+                                                {{ $asset->product?->name ?? 'Producto no disponible' }}
+                                            </a>
+                                            <div class="small text-body-secondary text-truncate">
+                                                {{ $asset->product?->category?->name ?? 'Sin categoría' }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <div class="fw-semibold">{{ $asset->serial }}</div>
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <div>{{ $asset->asset_tag ?? '—' }}</div>
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <x-ui.status-badge :status="$asset->status" />
+                                    </td>
+                                    <td class="min-w-0">
+                                        <div class="text-truncate">{{ $asset->location?->name ?? 'Sin ubicación' }}</div>
+                                    </td>
+                                    <td class="min-w-0">
+                                        @if ($asset->currentEmployee)
+                                            <a
+                                                href="{{ route('employees.show', ['employee' => $asset->currentEmployee->id]) }}"
+                                                class="text-decoration-none d-inline-flex flex-column min-w-0"
+                                            >
+                                                <span class="fw-semibold text-truncate">{{ $employeeRpe }}</span>
+                                                <span class="small text-body-secondary text-truncate">{{ $employeeName }}</span>
+                                            </a>
+                                        @else
+                                            <span class="text-body-secondary">Sin responsable</span>
                                         @endif
                                     </td>
-                                    <td>{{ $asset->serial }}</td>
-                                    <td>{{ $asset->asset_tag ?? '-' }}</td>
-                                    <td><x-ui.status-badge :status="$asset->status" /></td>
-                                    <td>{{ $asset->location?->name ?? '-' }}</td>
-                                    <td>{{ $asset->currentEmployee?->full_name ?? '-' }}</td>
-                                    <td>
-                                        @if ($asset->loan_due_date)
-                                            <small class="text-muted">
-                                                <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
-                                                {{ $asset->loan_due_date->format('d/m/Y') }}
-                                            </small>
+                                    <td class="text-nowrap">
+                                        @if ($loanDueDate)
+                                            <div class="fw-semibold">{{ $loanDueDate->format('d/m/Y') }}</div>
+                                            @if ($loanBadge)
+                                                <div class="mt-1">
+                                                    <x-ui.badge :tone="$loanBadge['tone']" variant="compact" :with-rail="false">
+                                                        {{ $loanBadge['label'] }}
+                                                    </x-ui.badge>
+                                                </div>
+                                            @endif
                                         @else
-                                            <span class="text-muted">—</span>
+                                            <span class="text-body-secondary">Sin vencimiento</span>
                                         @endif
                                     </td>
                                     <td class="text-end">
-                                        <div class="d-flex gap-2 justify-content-end align-items-center">
+                                        <div class="d-inline-flex flex-wrap justify-content-end gap-2">
                                             <x-ui.quick-action-dropdown :asset="$asset" :productId="$asset->product_id" :returnTo="$returnTo" />
 
                                             <a
                                                 class="btn btn-sm btn-outline-secondary"
                                                 href="{{ route('inventory.products.assets.show', ['product' => $asset->product_id, 'asset' => $asset->id, 'returnTo' => $returnTo]) }}"
-                                                style="min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;"
+                                                aria-label="Ver detalle del activo {{ $asset->serial }}"
                                             >
                                                 <i class="bi bi-eye me-1" aria-hidden="true"></i>
-                                                Ver
+                                                Ver detalle
                                             </a>
 
                                             @can('inventory.manage')
                                                 <a
                                                     class="btn btn-sm btn-outline-primary"
                                                     href="{{ route('inventory.products.assets.edit', ['product' => $asset->product_id, 'asset' => $asset->id]) }}"
-                                                    style="min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;"
+                                                    aria-label="Editar activo {{ $asset->serial }}"
                                                 >
                                                     <i class="bi bi-pencil me-1" aria-hidden="true"></i>
                                                     Editar
@@ -301,20 +526,18 @@
                                     @else
                                         <td colspan="8">
                                     @endcan
-                                        @if ($this->hasActiveFilters())
-                                            <x-ui.empty-state
-                                                variant="filter"
-                                                compact
-                                            />
+                                        @if ($hasFilters)
+                                            <x-ui.empty-state variant="filter" compact />
                                         @else
                                             <x-ui.empty-state
                                                 icon="bi-hdd"
                                                 title="No hay activos"
-                                                description="Registra activos desde un producto serializado."
+                                                description="Registra activos desde un producto serializado para empezar a operar el inventario."
                                                 compact
                                             >
                                                 <a href="{{ route('inventory.products.index') }}" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-box-seam me-1" aria-hidden="true"></i>Ver productos
+                                                    <i class="bi bi-box-seam me-1" aria-hidden="true"></i>
+                                                    Ver productos
                                                 </a>
                                             </x-ui.empty-state>
                                         @endif
@@ -340,7 +563,7 @@
                             <div class="modal-dialog modal-lg">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Asignar por lote</h5>
+                                        <h2 class="modal-title h5 mb-0">Asignar por lote</h2>
                                         <button
                                             type="button"
                                             class="btn-close"
@@ -352,7 +575,7 @@
                                     <form wire:submit="bulkAssign">
                                         <div class="modal-body">
                                             @error('selectedAssetIds')
-                                                <div class="alert alert-danger py-2">
+                                                <div class="alert alert-danger py-2" role="alert">
                                                     <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
                                                     {{ $message }}
                                                 </div>
@@ -365,7 +588,7 @@
                                                 <livewire:ui.employee-combobox wire:model.live="bulkEmployeeId" />
                                                 @error('bulkEmployeeId')
                                                     <div class="invalid-feedback d-block mt-1">
-                                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                                        <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>{{ $message }}
                                                     </div>
                                                 @enderror
                                             </div>
@@ -379,12 +602,12 @@
                                                     class="form-control @error('bulkNote') is-invalid @enderror"
                                                     wire:model.live="bulkNote"
                                                     rows="3"
-                                                    placeholder="Motivo de la asignación (mínimo 5 caracteres)"
+                                                    placeholder="Motivo de la asignación (mínimo 5 caracteres)…"
                                                     maxlength="1000"
                                                 ></textarea>
                                                 @error('bulkNote')
                                                     <div class="invalid-feedback">
-                                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                                                        <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>{{ $message }}
                                                     </div>
                                                 @enderror
                                             </div>
@@ -407,7 +630,7 @@
                                                 <span wire:loading.remove wire:target="bulkAssign">Asignar</span>
                                                 <span wire:loading.inline wire:target="bulkAssign">
                                                     <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
-                                                    Asignando...
+                                                    Asignando…
                                                 </span>
                                             </button>
                                         </div>

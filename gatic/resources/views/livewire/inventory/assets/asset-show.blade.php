@@ -4,10 +4,22 @@
             request()->only(['q', 'page']),
             static fn ($value): bool => $value !== null && $value !== ''
         );
+
+        $backUrl = is_string($returnTo) && $returnTo !== ''
+            ? $returnTo
+            : route('inventory.products.assets.index', ['product' => $product->id] + $returnQuery);
+
+        $backLabel = 'Volver a activos';
+
+        if (str_starts_with($backUrl, '/inventory/search')) {
+            $backLabel = 'Volver a búsqueda';
+        } elseif (str_starts_with($backUrl, '/inventory/assets')) {
+            $backLabel = 'Volver a activos globales';
+        }
     @endphp
+
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-10">
-            {{-- Detail Header --}}
+        <div class="col-12 col-xxl-11">
             <x-ui.detail-header :title="$asset->serial" :subtitle="$product->name">
                 <x-slot:breadcrumbs>
                     @if (is_string($returnTo) && $returnTo !== '')
@@ -38,29 +50,63 @@
 
                 <x-slot:status>
                     <x-ui.status-badge :status="$asset->status" solid />
+                    <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
+                        {{ $asset->location?->name ?? 'Sin ubicación' }}
+                    </x-ui.badge>
+                    @if ($asset->asset_tag)
+                        <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
+                            Asset tag {{ $asset->asset_tag }}
+                        </x-ui.badge>
+                    @endif
+                    @foreach ($statusHighlights as $highlight)
+                        <x-ui.badge :tone="$highlight['tone']" variant="compact" :with-rail="false">
+                            {{ $highlight['label'] }}
+                        </x-ui.badge>
+                    @endforeach
                 </x-slot:status>
 
+                <x-slot:kpis>
+                    <x-ui.detail-header-kpi label="Movimientos" :value="$headerCounts['movements']" />
+                    <x-ui.detail-header-kpi label="Notas" :value="$headerCounts['notes']" variant="info" />
+                    @if ($headerCounts['attachments'] !== null)
+                        <x-ui.detail-header-kpi label="Adjuntos" :value="$headerCounts['attachments']" variant="warning" />
+                    @endif
+                </x-slot:kpis>
+
                 <x-slot:actions>
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ $backUrl }}">
+                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+                        {{ $backLabel }}
+                    </a>
+
                     @can('inventory.manage')
                         @if (\App\Support\Assets\AssetStatusTransitions::canAssign($asset->status))
                             <a class="btn btn-sm btn-success" href="{{ route('inventory.products.assets.assign', ['product' => $product->id, 'asset' => $asset->id] + (is_string($returnTo) && $returnTo !== '' ? ['returnTo' => $returnTo] : [])) }}">
-                                <i class="bi bi-person-check me-1" aria-hidden="true"></i>Asignar
+                                <i class="bi bi-person-check me-1" aria-hidden="true"></i>
+                                Asignar
                             </a>
                         @endif
+
                         @if (\App\Support\Assets\AssetStatusTransitions::canLoan($asset->status))
                             <a class="btn btn-sm btn-info text-dark" href="{{ route('inventory.products.assets.loan', ['product' => $product->id, 'asset' => $asset->id] + (is_string($returnTo) && $returnTo !== '' ? ['returnTo' => $returnTo] : [])) }}">
-                                <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>Prestar
+                                <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>
+                                Prestar
                             </a>
                         @endif
+
                         @if (\App\Support\Assets\AssetStatusTransitions::canReturn($asset->status))
                             <a class="btn btn-sm btn-info text-dark" href="{{ route('inventory.products.assets.return', ['product' => $product->id, 'asset' => $asset->id] + (is_string($returnTo) && $returnTo !== '' ? ['returnTo' => $returnTo] : [])) }}">
-                                <i class="bi bi-arrow-return-left me-1" aria-hidden="true"></i>Devolver
+                                <i class="bi bi-arrow-return-left me-1" aria-hidden="true"></i>
+                                Devolver
                             </a>
                         @endif
+
                         <a class="btn btn-sm btn-primary" href="{{ route('inventory.products.assets.edit', ['product' => $product->id, 'asset' => $asset->id]) }}">
-                            <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
+                            <i class="bi bi-pencil me-1" aria-hidden="true"></i>
+                            Editar
                         </a>
                     @endcan
+
                     @can('admin-only')
                         <a class="btn btn-sm btn-warning" href="{{ route('inventory.products.assets.adjust', ['product' => $product->id, 'asset' => $asset->id] + $returnQuery) }}">
                             Ajustar
@@ -69,237 +115,101 @@
                 </x-slot:actions>
             </x-ui.detail-header>
 
-            <div class="card">
-                <div class="card-header">
-                    Información del activo
-                </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-3">Serial</dt>
-                        <dd class="col-sm-9">{{ $asset->serial }}</dd>
-
-                        <dt class="col-sm-3">Asset tag</dt>
-                        <dd class="col-sm-9">{{ $asset->asset_tag ?? '-' }}</dd>
-
-                        <dt class="col-sm-3">Estado</dt>
-                        <dd class="col-sm-9">
-                            <x-ui.status-badge :status="$asset->status" />
-                        </dd>
-
-                        <dt class="col-sm-3">Ubicación</dt>
-                        <dd class="col-sm-9">{{ $asset->location?->name ?? '-' }}</dd>
-
-                        <dt class="col-sm-3">Costo de adquisición</dt>
-                        <dd class="col-sm-9">
-                            @if ($asset->acquisition_cost !== null)
-                                @php
-                                    $settingsStore = app(\App\Support\Settings\SettingsStore::class);
-                                    $defaultCurrency = $settingsStore->getString('gatic.inventory.money.default_currency', 'MXN');
-                                    $currency = is_string($asset->acquisition_currency) && $asset->acquisition_currency !== ''
-                                        ? $asset->acquisition_currency
-                                        : ($defaultCurrency !== '' ? $defaultCurrency : 'MXN');
-                                @endphp
-                                {{ number_format((float) $asset->acquisition_cost, 2) }} {{ $currency }}
-                            @else
-                                —
-                            @endif
-                        </dd>
-
-                        <dt class="col-sm-3">Vida útil (meses)</dt>
-                        <dd class="col-sm-9">
-                            @php
-                                $effectiveUsefulLifeMonths = $asset->useful_life_months ?? $product->category?->default_useful_life_months;
-                            @endphp
-                            {{ $effectiveUsefulLifeMonths ?? '—' }}
-                        </dd>
-
-                        <dt class="col-sm-3">Fecha estimada de reemplazo</dt>
-                        <dd class="col-sm-9">
-                            @if ($asset->expected_replacement_date)
-                                {{ $asset->expected_replacement_date->format('d/m/Y') }}
-                                @php
-                                    $today = \Illuminate\Support\Carbon::today();
-                                    $renewalStore = app(\App\Support\Settings\SettingsStore::class);
-                                    $allowedOptions = $renewalStore->getIntList('gatic.alerts.renewals.due_soon_window_days_options', [30, 60, 90, 180]);
-                                    if ($allowedOptions === []) {
-                                        $allowedOptions = [30, 60, 90, 180];
-                                    }
-                                    sort($allowedOptions);
-
-                                    $renewalWindowDays = $renewalStore->getInt('gatic.alerts.renewals.due_soon_window_days_default', $allowedOptions[0] ?? 90);
-                                    if (! in_array($renewalWindowDays, $allowedOptions, true)) {
-                                        $renewalWindowDays = (int) ($allowedOptions[0] ?? 90);
-                                    }
-
-                                    $isOverdue = $asset->expected_replacement_date->lt($today);
-                                    $isDueSoon = ! $isOverdue && $asset->expected_replacement_date->lte($today->copy()->addDays($renewalWindowDays));
-                                @endphp
-                                @if ($isOverdue)
-                                    <x-ui.badge tone="danger" variant="compact" :with-rail="false" class="ms-1">Vencido</x-ui.badge>
-                                @elseif ($isDueSoon)
-                                    <x-ui.badge tone="warning" variant="compact" :with-rail="false" class="ms-1">Por vencer</x-ui.badge>
+            <x-ui.section-card
+                title="Resumen del activo"
+                subtitle="Contexto operativo para ubicar responsable, producto y cobertura sin recorrer toda la pantalla."
+                icon="bi-hdd-stack"
+                class="mb-4"
+            >
+                <div class="row g-3">
+                    @foreach ($overviewCards as $card)
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="border rounded-3 h-100 p-3 bg-body-tertiary">
+                                <div class="small text-body-secondary text-uppercase fw-semibold">{{ $card['label'] }}</div>
+                                @if ($card['href'])
+                                    <a href="{{ $card['href'] }}" class="fw-semibold mt-2 d-inline-block text-decoration-none">
+                                        {{ $card['value'] }}
+                                    </a>
                                 @else
-                                    <x-ui.badge tone="success" variant="compact" :with-rail="false" class="ms-1">En tiempo</x-ui.badge>
+                                    <div class="fw-semibold mt-2">{{ $card['value'] }}</div>
                                 @endif
-                            @else
-                                —
-                            @endif
-                        </dd>
-                    </dl>
-                </div>
-            </div>
 
-            <div class="card mt-3">
-                <div class="card-header">
-                    Tenencia actual
-                </div>
-                <div class="card-body">
-                    @php
-                        $hasHolder = in_array($asset->status, [\App\Models\Asset::STATUS_ASSIGNED, \App\Models\Asset::STATUS_LOANED], true);
-                    @endphp
+                                @if ($card['badge'])
+                                    <div class="mt-2">
+                                        <x-ui.badge :tone="$card['badge']['tone']" variant="compact" :with-rail="false">
+                                            {{ $card['badge']['label'] }}
+                                        </x-ui.badge>
+                                    </div>
+                                @endif
 
-                    @if (! $hasHolder)
-                        <p class="mb-0 text-muted">N/A — El activo está disponible</p>
-                    @else
-                        @if ($asset->currentEmployee)
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <x-ui.status-badge :status="$asset->status" />
-                                <a href="{{ route('employees.show', ['employee' => $asset->currentEmployee->id]) }}" class="text-decoration-none">
-                                    <strong>{{ $asset->currentEmployee->rpe }}</strong> — {{ $asset->currentEmployee->name }}
-                                </a>
+                                <div class="small text-body-secondary mt-2">
+                                    {{ $card['description'] }}
+                                </div>
                             </div>
-                        @else
-                            <div class="d-flex align-items-center gap-2 text-warning">
-                                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-                                <span>Sin tenencia registrada (estado legacy o ajuste manual)</span>
+                        </div>
+                    @endforeach
+                </div>
+            </x-ui.section-card>
+
+            <x-ui.section-card
+                title="Cobertura y ciclo de vida"
+                subtitle="Reúne costo, vida útil, renovación y garantía con el mismo lenguaje visual del resto del sistema."
+                icon="bi-shield-check"
+                class="mb-4"
+            >
+                <div class="row g-3">
+                    @foreach ($lifecycleCards as $card)
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="border rounded-3 h-100 p-3 bg-body-tertiary">
+                                <div class="small text-body-secondary text-uppercase fw-semibold">{{ $card['label'] }}</div>
+                                <div class="fw-semibold mt-2">{{ $card['value'] }}</div>
+
+                                @if ($card['badge'])
+                                    <div class="mt-2">
+                                        <x-ui.badge :tone="$card['badge']['tone']" variant="compact" :with-rail="false">
+                                            {{ $card['badge']['label'] }}
+                                        </x-ui.badge>
+                                    </div>
+                                @endif
+
+                                <div class="small text-body-secondary mt-2">
+                                    {{ $card['description'] }}
+                                </div>
                             </div>
-                        @endif
-
-                        @if ($asset->status === \App\Models\Asset::STATUS_LOANED && $asset->loan_due_date)
-                            <div class="mt-2">
-                                <small class="text-muted">
-                                    <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
-                                    <strong>Vence:</strong> {{ $asset->loan_due_date->format('d/m/Y') }}
-                                </small>
-                            </div>
-                        @endif
-                    @endif
+                        </div>
+                    @endforeach
                 </div>
+            </x-ui.section-card>
+
+            <div class="mb-3">
+                <h2 class="h5 mb-1">Trazabilidad</h2>
+                <p class="small text-body-secondary mb-0">
+                    Revisa historial, notas y adjuntos sin perder el resumen operativo del activo.
+                </p>
             </div>
 
-            {{-- Contract card --}}
-            <div class="card mt-3">
-                <div class="card-header">
-                    Contrato
+            <div class="row g-4">
+                <div class="col-12 col-xl-7">
+                    <livewire:ui.timeline-panel
+                        :entity-type="\App\Models\Asset::class"
+                        :entity-id="$asset->id"
+                    />
                 </div>
-                <div class="card-body">
-                    @if ($asset->contract)
-                        <dl class="row mb-0">
-                            <dt class="col-sm-3">Identificador</dt>
-                            <dd class="col-sm-9">
-                                <a href="{{ route('inventory.contracts.show', ['contract' => $asset->contract->id]) }}" class="text-decoration-none">
-                                    {{ $asset->contract->identifier }}
-                                </a>
-                            </dd>
 
-                            <dt class="col-sm-3">Tipo</dt>
-                            <dd class="col-sm-9">{{ $asset->contract->type_label }}</dd>
+                <div class="col-12 col-xl-5">
+                    <livewire:ui.notes-panel
+                        :noteable-type="\App\Models\Asset::class"
+                        :noteable-id="$asset->id"
+                    />
 
-                            @if ($asset->contract->supplier)
-                                <dt class="col-sm-3">Proveedor</dt>
-                                <dd class="col-sm-9">{{ $asset->contract->supplier->name }}</dd>
-                            @endif
-
-                            @if ($asset->contract->start_date || $asset->contract->end_date)
-                                <dt class="col-sm-3">Vigencia</dt>
-                                <dd class="col-sm-9">
-                                    {{ $asset->contract->start_date?->format('d/m/Y') ?? '—' }}
-                                    al
-                                    {{ $asset->contract->end_date?->format('d/m/Y') ?? '—' }}
-                                </dd>
-                            @endif
-                        </dl>
-                    @else
-                        <p class="mb-0 text-muted">N/A — Sin contrato vinculado</p>
-                    @endif
+                    @can('attachments.view')
+                        <livewire:ui.attachments-panel
+                            :attachable-type="\App\Models\Asset::class"
+                            :attachable-id="$asset->id"
+                        />
+                    @endcan
                 </div>
             </div>
-
-            {{-- Warranty card --}}
-            <div class="card mt-3">
-                <div class="card-header">
-                    Garantía
-                </div>
-                <div class="card-body">
-                    @php
-                        $hasWarranty = $asset->warranty_start_date || $asset->warranty_end_date || $asset->warranty_supplier_id || $asset->warranty_notes;
-                    @endphp
-
-                    @if ($hasWarranty)
-                        <dl class="row mb-0">
-                            @if ($asset->warranty_start_date || $asset->warranty_end_date)
-                                <dt class="col-sm-3">Vigencia</dt>
-                                <dd class="col-sm-9">
-                                    {{ $asset->warranty_start_date?->format('d/m/Y') ?? '—' }}
-                                    al
-                                    {{ $asset->warranty_end_date?->format('d/m/Y') ?? '—' }}
-                                    @if ($asset->warranty_end_date)
-                                        @php
-                                            $today = \Illuminate\Support\Carbon::today();
-                                            $isExpired = $asset->warranty_end_date->lt($today);
-                                            $warrantyStore = app(\App\Support\Settings\SettingsStore::class);
-                                            $dueSoonDays = $warrantyStore->getInt('gatic.alerts.warranties.due_soon_window_days_default', 30);
-                                            if ($dueSoonDays <= 0) {
-                                                $dueSoonDays = 30;
-                                            }
-                                            $isDueSoon = ! $isExpired && $asset->warranty_end_date->lte($today->copy()->addDays($dueSoonDays));
-                                        @endphp
-                                        @if ($isExpired)
-                                            <x-ui.badge tone="danger" variant="compact" :with-rail="false" class="ms-1">Vencida</x-ui.badge>
-                                        @elseif ($isDueSoon)
-                                            <x-ui.badge tone="warning" variant="compact" :with-rail="false" class="ms-1">Por vencer</x-ui.badge>
-                                        @else
-                                            <x-ui.badge tone="success" variant="compact" :with-rail="false" class="ms-1">Vigente</x-ui.badge>
-                                        @endif
-                                    @endif
-                                </dd>
-                            @endif
-
-                            @if ($asset->warrantySupplier)
-                                <dt class="col-sm-3">Proveedor</dt>
-                                <dd class="col-sm-9">{{ $asset->warrantySupplier->name }}</dd>
-                            @endif
-
-                            @if ($asset->warranty_notes)
-                                <dt class="col-sm-3">Notas</dt>
-                                <dd class="col-sm-9">{{ $asset->warranty_notes }}</dd>
-                            @endif
-                        </dl>
-                    @else
-                        <p class="mb-0 text-muted">N/A — Sin garantía registrada</p>
-                    @endif
-                </div>
-            </div>
-
-            {{-- Timeline panel --}}
-            <livewire:ui.timeline-panel
-                :entity-type="\App\Models\Asset::class"
-                :entity-id="$asset->id"
-            />
-
-            {{-- Notes panel --}}
-            <livewire:ui.notes-panel
-                :noteable-type="\App\Models\Asset::class"
-                :noteable-id="$asset->id"
-            />
-
-            {{-- Attachments panel (Admin/Editor only) --}}
-            @can('attachments.view')
-                <livewire:ui.attachments-panel
-                    :attachable-type="\App\Models\Asset::class"
-                    :attachable-id="$asset->id"
-                />
-            @endcan
         </div>
     </div>
 </div>

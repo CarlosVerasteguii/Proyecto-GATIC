@@ -11,7 +11,10 @@ use App\Models\Category;
 use App\Models\Location;
 use App\Models\UndoToken;
 use App\Support\Errors\ErrorReporter;
+use App\Support\Settings\SettingsStore;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -27,6 +30,10 @@ class AssetsGlobalIndex extends Component
 {
     use InteractsWithToasts;
     use WithPagination;
+
+    private const DEFAULT_SORT = 'serial';
+
+    private const DEFAULT_DIRECTION = 'asc';
 
     private const STATUS_ALL = 'all';
 
@@ -320,51 +327,18 @@ class AssetsGlobalIndex extends Component
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $query = Asset::query()
-            ->select('assets.*')
-            ->join('products', function ($join) {
-                $join->on('products.id', '=', 'assets.product_id')
-                    ->whereNull('products.deleted_at');
-            })
-            ->leftJoin('locations', function ($join) {
-                $join->on('locations.id', '=', 'assets.location_id')
-                    ->whereNull('locations.deleted_at');
-            })
-            ->with(['product.category', 'location', 'currentEmployee'])
-            ->when($escapedSearch, function ($query) use ($escapedSearch) {
-                $query->where(function ($query) use ($escapedSearch) {
-                    $query->whereRaw("assets.serial like ? escape '\\\\'", ["%{$escapedSearch}%"])
-                        ->orWhereRaw("assets.asset_tag like ? escape '\\\\'", ["%{$escapedSearch}%"])
-                        ->orWhereRaw("products.name like ? escape '\\\\'", ["%{$escapedSearch}%"])
-                        ->orWhereRaw("locations.name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
-                });
-            })
-            ->when($this->locationId !== null, function ($query) {
-                $query->where('assets.location_id', $this->locationId);
-            })
-            ->when($this->categoryId !== null, function ($query) {
-                $query->where('products.category_id', $this->categoryId);
-            })
-            ->when($this->brandId !== null, function ($query) {
-                $query->where('products.brand_id', $this->brandId);
-            });
-
-        if ($this->status === self::STATUS_ALL) {
-            $query->where('assets.status', '!=', Asset::STATUS_RETIRED);
-        } elseif ($this->status === self::STATUS_UNAVAILABLE) {
-            $query->whereIn('assets.status', Asset::UNAVAILABLE_STATUSES);
-        } else {
-            $query->where('assets.status', $this->status);
-        }
-
         $sortColumn = self::SORT_COLUMNS[$this->sort] ?? self::SORT_COLUMNS['serial'];
+        $assetsQuery = $this->buildAssetsQuery($escapedSearch, withRelations: true);
+        $summary = $this->buildSummary($escapedSearch);
 
         return view('livewire.inventory.assets.assets-global-index', [
             'locations' => $locations,
             'categories' => $categories,
             'brands' => $brands,
             'assetStatuses' => Asset::STATUSES,
-            'assets' => $query
+            'summary' => $summary,
+            'loanWindowDays' => $this->getLoanDueSoonWindowDays(),
+            'assets' => $assetsQuery
                 ->orderBy($sortColumn, $this->direction)
                 ->orderBy('assets.id')
                 ->paginate(config('gatic.ui.pagination.per_page', 15)),
@@ -387,7 +361,7 @@ class AssetsGlobalIndex extends Component
     {
         $normalized = trim($sort);
         if ($normalized === '' || ! array_key_exists($normalized, self::SORT_COLUMNS)) {
-            return 'serial';
+            return self::DEFAULT_SORT;
         }
 
         return $normalized;
@@ -397,12 +371,149 @@ class AssetsGlobalIndex extends Component
     {
         $normalized = strtolower(trim($direction));
 
-        return in_array($normalized, ['asc', 'desc'], true) ? $normalized : 'asc';
+        return in_array($normalized, ['asc', 'desc'], true) ? $normalized : self::DEFAULT_DIRECTION;
     }
 
     private function escapeLike(string $value): string
     {
         return addcslashes($value, '\\%_');
+    }
+
+    private function buildAssetsQuery(?string $escapedSearch, bool $withRelations): Builder
+    {
+        $query = Asset::query()
+            ->join('products', function ($join) {
+                $join->on('products.id', '=', 'assets.product_id')
+                    ->whereNull('products.deleted_at');
+            })
+            ->leftJoin('locations', function ($join) {
+                $join->on('locations.id', '=', 'assets.location_id')
+                    ->whereNull('locations.deleted_at');
+            });
+
+        if ($withRelations) {
+            $query->select('assets.*')
+                ->with(['product.category', 'location', 'currentEmployee']);
+        }
+
+        $this->applyFilters($query, $escapedSearch);
+
+        return $query;
+    }
+
+    private function applyFilters(Builder $query, ?string $escapedSearch): void
+    {
+        $query
+            ->when($escapedSearch, function (Builder $query) use ($escapedSearch) {
+                $query->where(function (Builder $query) use ($escapedSearch) {
+                    $query->whereRaw("assets.serial like ? escape '\\\\'", ["%{$escapedSearch}%"])
+                        ->orWhereRaw("assets.asset_tag like ? escape '\\\\'", ["%{$escapedSearch}%"])
+                        ->orWhereRaw("products.name like ? escape '\\\\'", ["%{$escapedSearch}%"])
+                        ->orWhereRaw("locations.name like ? escape '\\\\'", ["%{$escapedSearch}%"]);
+                });
+            })
+            ->when($this->locationId !== null, function (Builder $query) {
+                $query->where('assets.location_id', $this->locationId);
+            })
+            ->when($this->categoryId !== null, function (Builder $query) {
+                $query->where('products.category_id', $this->categoryId);
+            })
+            ->when($this->brandId !== null, function (Builder $query) {
+                $query->where('products.brand_id', $this->brandId);
+            });
+
+        if ($this->status === self::STATUS_ALL) {
+            $query->where('assets.status', '!=', Asset::STATUS_RETIRED);
+
+            return;
+        }
+
+        if ($this->status === self::STATUS_UNAVAILABLE) {
+            $query->whereIn('assets.status', Asset::UNAVAILABLE_STATUSES);
+
+            return;
+        }
+
+        $query->where('assets.status', $this->status);
+    }
+
+    /**
+     * @return array{
+     *     total:int,
+     *     available:int,
+     *     unavailable:int,
+     *     overdue_loans:int,
+     *     due_soon_loans:int,
+     *     loans_attention:int
+     * }
+     */
+    private function buildSummary(?string $escapedSearch): array
+    {
+        $today = Carbon::today();
+        $windowEnd = $today->copy()->addDays($this->getLoanDueSoonWindowDays());
+
+        $summary = $this->buildAssetsQuery($escapedSearch, withRelations: false)
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw(
+                'SUM(CASE WHEN assets.status = ? THEN 1 ELSE 0 END) as available_count',
+                [Asset::STATUS_AVAILABLE]
+            )
+            ->selectRaw(
+                'SUM(CASE WHEN assets.status IN (?, ?, ?) THEN 1 ELSE 0 END) as unavailable_count',
+                Asset::UNAVAILABLE_STATUSES
+            )
+            ->selectRaw(
+                'SUM(CASE WHEN assets.status = ? AND assets.loan_due_date IS NOT NULL AND assets.loan_due_date < ? THEN 1 ELSE 0 END) as overdue_loans_count',
+                [Asset::STATUS_LOANED, $today->toDateString()]
+            )
+            ->selectRaw(
+                'SUM(CASE WHEN assets.status = ? AND assets.loan_due_date IS NOT NULL AND assets.loan_due_date >= ? AND assets.loan_due_date <= ? THEN 1 ELSE 0 END) as due_soon_loans_count',
+                [Asset::STATUS_LOANED, $today->toDateString(), $windowEnd->toDateString()]
+            )
+            ->toBase()
+            ->first();
+
+        if ($summary === null) {
+            return [
+                'total' => 0,
+                'available' => 0,
+                'unavailable' => 0,
+                'overdue_loans' => 0,
+                'due_soon_loans' => 0,
+                'loans_attention' => 0,
+            ];
+        }
+
+        $overdueLoans = (int) $summary->overdue_loans_count;
+        $dueSoonLoans = (int) $summary->due_soon_loans_count;
+
+        return [
+            'total' => (int) $summary->total,
+            'available' => (int) $summary->available_count,
+            'unavailable' => (int) $summary->unavailable_count,
+            'overdue_loans' => $overdueLoans,
+            'due_soon_loans' => $dueSoonLoans,
+            'loans_attention' => $overdueLoans + $dueSoonLoans,
+        ];
+    }
+
+    private function getLoanDueSoonWindowDays(): int
+    {
+        $store = app(SettingsStore::class);
+        $options = $store->getIntList('gatic.alerts.loans.due_soon_window_days_options', [7, 14, 30]);
+
+        if ($options === []) {
+            $options = [7, 14, 30];
+        }
+
+        $options = array_values(array_unique($options));
+        sort($options);
+
+        $default = $store->getInt('gatic.alerts.loans.due_soon_window_days_default', $options[0]);
+
+        return in_array($default, $options, true)
+            ? $default
+            : $options[0];
     }
 
     private function mapBulkActionErrors(ValidationException $e): void

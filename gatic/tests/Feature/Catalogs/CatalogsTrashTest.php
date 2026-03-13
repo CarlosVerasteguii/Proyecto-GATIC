@@ -7,6 +7,7 @@ use App\Livewire\Catalogs\Trash\CatalogsTrash;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Location;
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -118,6 +119,55 @@ class CatalogsTrashTest extends TestCase
             ->get('/catalogs/locations')
             ->assertOk()
             ->assertSee('Bodega Central');
+    }
+
+    public function test_admin_can_restore_soft_deleted_supplier(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $supplier = Supplier::query()->create([
+            'name' => 'Proveedor Demo',
+            'contact' => 'Demo Contacto',
+        ]);
+        $supplier->delete();
+
+        $this->assertSoftDeleted('suppliers', ['id' => $supplier->id]);
+
+        Livewire::actingAs($admin)
+            ->test(CatalogsTrash::class)
+            ->call('setTab', 'suppliers')
+            ->call('restore', 'suppliers', $supplier->id)
+            ->assertDispatched('ui:toast', type: 'success');
+
+        $this->assertDatabaseHas('suppliers', [
+            'id' => $supplier->id,
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_editor_can_purge_soft_deleted_brand(): void
+    {
+        $editor = User::factory()->create(['role' => UserRole::Editor]);
+        $brand = Brand::query()->create(['name' => 'Marca Legacy']);
+        $brandId = $brand->id;
+        $brand->delete();
+
+        Livewire::actingAs($editor)
+            ->test(CatalogsTrash::class)
+            ->call('setTab', 'brands')
+            ->call('purge', 'brands', $brandId)
+            ->assertDispatched('ui:toast', type: 'success');
+
+        $this->assertDatabaseMissing('brands', ['id' => $brandId]);
+    }
+
+    public function test_catalogs_trash_honors_tab_query_string(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        Livewire::withQueryParams(['tab' => 'suppliers'])
+            ->actingAs($admin)
+            ->test(CatalogsTrash::class)
+            ->assertSet('tab', 'suppliers');
     }
 
     public function test_lector_cannot_execute_restore_action(): void

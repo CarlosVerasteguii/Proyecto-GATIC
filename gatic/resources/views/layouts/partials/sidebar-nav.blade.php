@@ -2,6 +2,7 @@
     $currentUser = auth()->user();
     $dashboardActive = request()->routeIs('dashboard');
     $adminUsersActive = request()->routeIs('admin.users.*');
+    $adminAuditActive = request()->routeIs('admin.audit.*');
     $adminTrashActive = request()->routeIs('admin.trash.*');
     $adminErrorReportsActive = request()->routeIs('admin.error-reports.*');
     $adminSettingsActive = request()->routeIs('admin.settings.*');
@@ -108,6 +109,12 @@
                     'route' => route('admin.users.index'),
                     'icon' => 'bi bi-people',
                     'active' => $adminUsersActive,
+                ] : null,
+                ($currentUser?->can('admin-only') ?? false) ? [
+                    'label' => 'Auditoría',
+                    'route' => route('admin.audit.index'),
+                    'icon' => 'bi bi-journal-text',
+                    'active' => $adminAuditActive,
                 ] : null,
                 ($currentUser?->can('admin-only') ?? false) ? [
                     'label' => 'Papelera',

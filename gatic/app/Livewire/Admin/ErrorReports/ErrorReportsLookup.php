@@ -6,11 +6,13 @@ use App\Models\ErrorReport;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
 class ErrorReportsLookup extends Component
 {
+    #[Url(as: 'error')]
     public string $errorId = '';
 
     public bool $searched = false;
@@ -20,25 +22,46 @@ class ErrorReportsLookup extends Component
     public function mount(): void
     {
         Gate::authorize('admin-only');
+
+        $this->errorId = trim($this->errorId);
+
+        if ($this->errorId !== '') {
+            $this->search();
+        }
     }
 
     public function search(): void
     {
         Gate::authorize('admin-only');
 
+        $this->errorId = trim($this->errorId);
+        $this->validate([
+            'errorId' => ['required', 'string', 'max:100'],
+        ], [
+            'errorId.required' => 'Ingresa un error ID para realizar la búsqueda.',
+        ]);
+
         $this->searched = true;
         $this->reportId = null;
 
-        $errorId = trim($this->errorId);
-        if ($errorId === '') {
-            return;
-        }
-
         $report = ErrorReport::query()
-            ->where('error_id', $errorId)
+            ->where('error_id', $this->errorId)
             ->first();
 
         $this->reportId = $report?->id;
+    }
+
+    public function updatedErrorId(): void
+    {
+        $this->resetValidation('errorId');
+        $this->searched = false;
+        $this->reportId = null;
+    }
+
+    public function clearLookup(): void
+    {
+        $this->reset(['errorId', 'searched', 'reportId']);
+        $this->resetValidation();
     }
 
     public function render(): View

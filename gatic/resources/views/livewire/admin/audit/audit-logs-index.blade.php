@@ -1,161 +1,260 @@
-<div class="container position-relative">
+<div class="container position-relative admin-audit-page">
     <x-ui.long-request />
 
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <a class="btn btn-sm btn-outline-secondary" href="{{ route('dashboard') }}">
-                    Volver al Dashboard
-                </a>
-            </div>
+    @php
+        $resultsCount = $logs->total();
+        $hasFilters = $this->hasActiveFilters();
+    @endphp
 
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-3">
-                        <span>Registro de Auditoría</span>
-                        <x-ui.freshness-indicator :updated-at="now()" />
+    <div class="row justify-content-center">
+        <div class="col-12 col-xxl-11">
+            <x-ui.toolbar
+                title="Registro de Auditoría"
+                subtitle="Reconstruye acciones administrativas con filtros por actor, fecha, acción y entidad."
+                filterId="admin-audit-filters"
+                :filtersCollapsible="false"
+            >
+                <x-slot:breadcrumbs>
+                    <x-ui.breadcrumbs :items="[
+                        ['label' => 'Inicio', 'url' => route('dashboard')],
+                        ['label' => 'Administración', 'url' => route('admin.audit.index')],
+                        ['label' => 'Auditoría', 'url' => null],
+                    ]" />
+                </x-slot:breadcrumbs>
+
+                <x-slot:actions>
+                    <x-ui.badge tone="neutral" variant="compact" :with-rail="false">
+                        Resultados <strong>{{ number_format($resultsCount) }}</strong>
+                    </x-ui.badge>
+                    @if ($hasFilters)
+                        <x-ui.badge tone="warning" variant="compact" :with-rail="false">
+                            Filtros activos
+                        </x-ui.badge>
+                    @endif
+                </x-slot:actions>
+
+                <x-slot:filters>
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label for="audit-date-from" class="form-label">Desde</label>
+                        <input
+                            id="audit-date-from"
+                            type="date"
+                            class="form-control"
+                            wire:model.live.debounce.300ms="dateFrom"
+                            autocomplete="off"
+                        />
                     </div>
-                    @if($this->hasActiveFilters())
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label for="audit-date-to" class="form-label">Hasta</label>
+                        <input
+                            id="audit-date-to"
+                            type="date"
+                            class="form-control"
+                            wire:model.live.debounce.300ms="dateTo"
+                            autocomplete="off"
+                        />
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-2">
+                        <label for="audit-actor" class="form-label">Actor</label>
+                        <select
+                            id="audit-actor"
+                            class="form-select"
+                            wire:model.live="actorId"
+                        >
+                            <option value="">Todos</option>
+                            @foreach ($actors as $actor)
+                                <option value="{{ $actor->id }}">{{ $actor->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label for="audit-action" class="form-label">Acción</label>
+                        <select
+                            id="audit-action"
+                            class="form-select"
+                            wire:model.live="action"
+                        >
+                            <option value="">Todas</option>
+                            @foreach ($actions as $actionValue)
+                                <option value="{{ $actionValue }}">{{ $actionLabels[$actionValue] ?? $actionValue }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label for="audit-subject-type" class="form-label">Entidad</label>
+                        <select
+                            id="audit-subject-type"
+                            class="form-select"
+                            wire:model.live="subjectType"
+                        >
+                            <option value="">Todas</option>
+                            @foreach ($subjectTypes as $type)
+                                <option value="{{ $type['value'] }}">{{ $type['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </x-slot:filters>
+
+                <x-slot:clearFilters>
+                    @if ($hasFilters)
                         <button type="button" class="btn btn-sm btn-outline-secondary" wire:click="clearFilters">
-                            Limpiar filtros
+                            <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Limpiar
                         </button>
                     @endif
+                </x-slot:clearFilters>
+
+                <div class="small text-body-secondary mb-2">
+                    Mostrando {{ number_format($resultsCount) }} registro{{ $resultsCount === 1 ? '' : 's' }}.
                 </div>
 
-                <div class="card-body">
-                    {{-- Filters --}}
-                    <div class="row g-2 mb-3">
-                        <div class="col-12 col-md-6 col-lg-2">
-                            <label class="form-label small mb-1">Desde</label>
-                            <input type="date" class="form-control form-control-sm" wire:model.live.debounce.300ms="dateFrom">
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-2">
-                            <label class="form-label small mb-1">Hasta</label>
-                            <input type="date" class="form-control form-control-sm" wire:model.live.debounce.300ms="dateTo">
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-2">
-                            <label class="form-label small mb-1">Actor</label>
-                            <select class="form-select form-select-sm" wire:model.live="actorId">
-                                <option value="">Todos</option>
-                                @foreach($actors as $actor)
-                                    <option value="{{ $actor->id }}">{{ $actor->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <label class="form-label small mb-1">Acción</label>
-                            <select class="form-select form-select-sm" wire:model.live="action">
-                                <option value="">Todas</option>
-                                @foreach($actions as $actionValue)
-                                    <option value="{{ $actionValue }}">{{ $actionLabels[$actionValue] ?? $actionValue }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <label class="form-label small mb-1">Entidad</label>
-                            <select class="form-select form-select-sm" wire:model.live="subjectType">
-                                <option value="">Todas</option>
-                                @foreach($subjectTypes as $type)
-                                    <option value="{{ $type['value'] }}">{{ $type['label'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    {{-- Table --}}
-                    <div class="table-responsive">
-                        <table class="table table-striped table-sm align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th style="width: 140px;">Fecha</th>
-                                    <th style="width: 120px;">Actor</th>
-                                    <th>Acción</th>
-                                    <th style="width: 140px;">Entidad</th>
-                                    <th style="width: 80px;">ID</th>
-                                    <th style="width: 80px;"></th>
+                <div class="table-responsive-xl border rounded-3">
+                    <table class="table table-sm table-striped align-middle mb-0 table-gatic-head">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Actor</th>
+                                <th>Acción</th>
+                                <th>Entidad</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($logs as $log)
+                                <tr wire:key="audit-log-{{ $log->id }}">
+                                    <td class="text-nowrap">
+                                        <div class="fw-semibold">{{ $log->created_at?->format('d/m/Y') ?? '—' }}</div>
+                                        <div class="small text-body-secondary">{{ $log->created_at?->format('H:i:s') ?? '—' }}</div>
+                                    </td>
+                                    <td class="min-w-0">
+                                        <div class="fw-semibold text-truncate">{{ $log->actor?->name ?? 'Sistema' }}</div>
+                                        <div class="small text-body-secondary text-truncate">
+                                            {{ $log->actor_user_id ? 'ID '.$log->actor_user_id : 'Sin actor asociado' }}
+                                        </div>
+                                    </td>
+                                    <td class="min-w-0">
+                                        <div class="d-flex flex-column gap-1 min-w-0">
+                                            <div>
+                                                <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $log->action_label }}</x-ui.badge>
+                                            </div>
+                                            <code class="small text-body-secondary text-truncate">{{ $log->action }}</code>
+                                        </div>
+                                    </td>
+                                    <td class="min-w-0">
+                                        <div class="fw-semibold text-truncate">{{ $log->subject_type_short }}</div>
+                                        <div class="small text-body-secondary text-truncate">
+                                            ID {{ $log->subject_id }} · {{ $log->subject_type }}
+                                        </div>
+                                    </td>
+                                    <td class="text-end">
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-outline-primary"
+                                            wire:click="showDetail({{ $log->id }})"
+                                            aria-label="Ver detalle del registro de auditoría {{ $log->id }}"
+                                        >
+                                            <i class="bi bi-eye me-1" aria-hidden="true"></i>Ver detalle
+                                        </button>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($logs as $log)
-                                    <tr>
-                                        <td class="text-nowrap small">
-                                            {{ $log->created_at?->format('Y-m-d H:i') ?? '-' }}
-                                        </td>
-                                        <td class="small">
-                                            {{ $log->actor?->name ?? '-' }}
-                                        </td>
-                                        <td class="small">
-                                            <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $log->action_label }}</x-ui.badge>
-                                        </td>
-                                        <td class="small text-nowrap">
-                                            {{ $log->subject_type_short }}
-                                        </td>
-                                        <td class="small">
-                                            {{ $log->subject_id }}
-                                        </td>
-                                        <td class="text-end">
-                                            <button type="button" class="btn btn-sm btn-outline-primary" wire:click="showDetail({{ $log->id }})">
-                                                Ver
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-muted">
-                                            No hay registros de auditoría.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="mt-3">
-                        {{ $logs->links() }}
-                    </div>
+                            @empty
+                                <tr>
+                                    <td colspan="5">
+                                        @if ($hasFilters)
+                                            <x-ui.empty-state variant="filter" compact />
+                                        @else
+                                            <x-ui.empty-state
+                                                icon="bi-journal-text"
+                                                title="No hay registros de auditoría"
+                                                description="Cuando existan eventos auditables, aparecerán aquí para soporte y diagnóstico."
+                                                compact
+                                            />
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
-            </div>
+
+                <div class="mt-3">
+                    {{ $logs->links() }}
+                </div>
+            </x-ui.toolbar>
         </div>
     </div>
 
-    {{-- Detail Modal --}}
-    @if($selectedLog)
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-            <div class="modal-dialog modal-lg">
+    @if ($selectedLog)
+        <div
+            class="modal fade show d-block"
+            tabindex="-1"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="auditLogDetailTitle"
+            wire:keydown.escape.window="closeDetail"
+            style="background-color: rgba(0,0,0,0.5);"
+        >
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Detalle de Auditoría #{{ $selectedLog->id }}</h5>
-                        <button type="button" class="btn-close" wire:click="closeDetail"></button>
-                    </div>
-                    <div class="modal-body">
-                        <dl class="row mb-0">
-                            <dt class="col-sm-3">Fecha</dt>
-                            <dd class="col-sm-9">{{ $selectedLog->created_at?->format('Y-m-d H:i:s') ?? '-' }}</dd>
-
-                            <dt class="col-sm-3">Actor</dt>
-                            <dd class="col-sm-9">{{ $selectedLog->actor?->name ?? '-' }} (ID: {{ $selectedLog->actor_user_id ?? '-' }})</dd>
-
-                            <dt class="col-sm-3">Acción</dt>
-                            <dd class="col-sm-9">
+                        <div>
+                            <h2 class="modal-title h5 mb-1" id="auditLogDetailTitle">Detalle de Auditoría #{{ $selectedLog->id }}</h2>
+                            <div class="d-flex flex-wrap gap-2">
                                 <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $selectedLog->action_label }}</x-ui.badge>
-                                <code class="ms-2 small">{{ $selectedLog->action }}</code>
-                            </dd>
-
-                            <dt class="col-sm-3">Entidad</dt>
-                            <dd class="col-sm-9">
-                                {{ $selectedLog->subject_type_short }} (ID: {{ $selectedLog->subject_id }})
-                                <br>
-                                <code class="small text-muted">{{ $selectedLog->subject_type }}</code>
-                            </dd>
-
-                            @if($selectedLog->context)
-                                <dt class="col-sm-3">Contexto</dt>
-                                <dd class="col-sm-9">
-                                    <pre class="bg-light p-2 rounded small mb-0" style="max-height: 300px; overflow-y: auto;">{{ json_encode($selectedLog->context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
-                                </dd>
-                            @endif
-                        </dl>
+                                <x-ui.badge tone="info" variant="compact" :with-rail="false">{{ $selectedLog->subject_type_short }}</x-ui.badge>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" aria-label="Cerrar detalle de auditoría" wire:click="closeDetail"></button>
                     </div>
+
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-5">
+                                <x-ui.section-card title="Resumen" icon="bi-journal-text" class="h-100">
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Fecha</dt>
+                                        <dd class="col-sm-8">{{ $selectedLog->created_at?->format('d/m/Y H:i:s') ?? '—' }}</dd>
+
+                                        <dt class="col-sm-4">Actor</dt>
+                                        <dd class="col-sm-8">
+                                            <div>{{ $selectedLog->actor?->name ?? 'Sistema' }}</div>
+                                            <div class="small text-body-secondary">
+                                                {{ $selectedLog->actor_user_id ? 'ID '.$selectedLog->actor_user_id : 'Sin actor asociado' }}
+                                            </div>
+                                        </dd>
+
+                                        <dt class="col-sm-4">Acción</dt>
+                                        <dd class="col-sm-8">
+                                            <div>{{ $selectedLog->action_label }}</div>
+                                            <code class="small text-body-secondary">{{ $selectedLog->action }}</code>
+                                        </dd>
+
+                                        <dt class="col-sm-4">Entidad</dt>
+                                        <dd class="col-sm-8">
+                                            <div>{{ $selectedLog->subject_type_short }} #{{ $selectedLog->subject_id }}</div>
+                                            <code class="small text-body-secondary">{{ $selectedLog->subject_type }}</code>
+                                        </dd>
+                                    </dl>
+                                </x-ui.section-card>
+                            </div>
+
+                            <div class="col-12 col-lg-7">
+                                <x-ui.section-card title="Contexto técnico" icon="bi-braces" class="h-100" bodyClass="p-0">
+                                    @if ($selectedLog->context)
+                                        <pre class="mb-0 p-3 small overflow-auto bg-body-tertiary" style="max-height: 28rem;">{{ json_encode($selectedLog->context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                                    @else
+                                        <div class="p-3 text-body-secondary small">
+                                            Este evento no registró contexto adicional.
+                                        </div>
+                                    @endif
+                                </x-ui.section-card>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeDetail">Cerrar</button>
                     </div>

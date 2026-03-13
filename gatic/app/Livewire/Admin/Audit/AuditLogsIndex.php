@@ -112,7 +112,7 @@ class AuditLogsIndex extends Component
         Gate::authorize('admin-only');
 
         $logs = AuditLog::query()
-            ->with('actor')
+            ->with('actor:id,name')
             ->when($this->dateFrom !== '', function (Builder $query) {
                 $query->where('created_at', '>=', $this->dateFrom.' 00:00:00');
             })
@@ -131,17 +131,18 @@ class AuditLogsIndex extends Component
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        // Get unique actors for filter dropdown
         $actors = User::query()
-            ->whereIn('id', AuditLog::query()->distinct()->pluck('actor_user_id')->filter())
-            ->orderBy('name')
-            ->get(['id', 'name']);
-
-        // Get unique subject types for filter dropdown
-        $subjectTypes = AuditLog::query()
+            ->select('users.id', 'users.name')
+            ->join('audit_logs', 'audit_logs.actor_user_id', '=', 'users.id')
             ->distinct()
+            ->orderBy('name')
+            ->get();
+
+        $subjectTypes = AuditLog::query()
+            ->whereNotNull('subject_type')
+            ->distinct()
+            ->orderBy('subject_type')
             ->pluck('subject_type')
-            ->filter()
             ->map(fn (string $type) => [
                 'value' => $type,
                 'label' => class_basename($type),
@@ -149,10 +150,9 @@ class AuditLogsIndex extends Component
             ->sortBy('label')
             ->values();
 
-        // Load selected log for detail view
         $selectedLog = null;
         if ($this->selectedLogId !== null) {
-            $selectedLog = AuditLog::with('actor')->find($this->selectedLogId);
+            $selectedLog = AuditLog::with('actor:id,name')->find($this->selectedLogId);
         }
 
         return view('livewire.admin.audit.audit-logs-index', [

@@ -1,44 +1,52 @@
 @extends('layouts.guest')
 
 @section('content')
-<div class="container">
+<div class="container guest-view">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Confirm Password') }}</div>
-
-                <div class="card-body">
-                    <div class="mb-3">
-                        {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}
+        <div class="col-12 col-md-10 col-lg-7 col-xl-6">
+            <section class="guest-surface" aria-labelledby="confirm-password-title">
+                <div class="guest-surface__header">
+                    <div class="guest-surface__eyebrow">
+                        <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                        Área segura
                     </div>
+                    <h1 class="guest-surface__title" id="confirm-password-title">Confirma tu contraseña</h1>
+                    <p class="guest-surface__subtitle">
+                        Antes de continuar con esta acción, valida tu identidad con la contraseña actual de tu cuenta.
+                    </p>
+                </div>
 
-                    <form method="POST" action="{{ route('password.confirm') }}">
+                <div class="guest-surface__body">
+                    <form method="POST" action="{{ route('password.confirm') }}" class="vstack gap-3">
                         @csrf
 
-                        <div class="row mb-3">
-                            <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
+                        <div>
+                            <label for="password" class="form-label">Contraseña actual</label>
+                            <input
+                                id="password"
+                                type="password"
+                                class="form-control @error('password') is-invalid @enderror"
+                                name="password"
+                                required
+                                autocomplete="current-password"
+                                autofocus
+                            >
 
-                            <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="current-password">
-
-                                @error('password')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
+                            @error('password')
+                                <div class="invalid-feedback d-block" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                         </div>
 
-                        <div class="row mb-0">
-                            <div class="col-md-5 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Confirm') }}
-                                </button>
-                            </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                Confirmar y continuar
+                            </button>
                         </div>
                     </form>
                 </div>
-            </div>
+            </section>
         </div>
     </div>
 </div>

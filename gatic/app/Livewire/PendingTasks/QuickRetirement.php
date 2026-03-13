@@ -44,7 +44,7 @@ class QuickRetirement extends Component
         $this->resetForm();
     }
 
-    public function open(): void
+    public function openModal(): void
     {
         Gate::authorize('inventory.manage');
 
@@ -52,7 +52,7 @@ class QuickRetirement extends Component
         $this->resetErrorBag();
     }
 
-    public function close(): void
+    public function closeModal(): void
     {
         $this->showModal = false;
         $this->resetForm();
@@ -190,7 +190,7 @@ class QuickRetirement extends Component
             return;
         }
 
-        $this->close();
+        $this->closeModal();
 
         $this->toast(
             type: 'success',

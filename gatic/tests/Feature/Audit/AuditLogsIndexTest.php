@@ -222,6 +222,8 @@ class AuditLogsIndexTest extends TestCase
             ->call('showDetail', $log->id)
             ->assertSet('selectedLogId', $log->id)
             ->assertSee('Detalle de Auditoría')
+            ->assertSeeHtml('data-manual-dialog')
+            ->assertSeeHtml('data-manual-dialog-restore-id="audit-log-detail-trigger-'.$log->id.'"')
             ->assertSee('Lock liberado (admin)')
             ->assertSee('PendingTask')
             ->assertSee('previous_locked_by')

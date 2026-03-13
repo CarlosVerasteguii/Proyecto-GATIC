@@ -17,6 +17,8 @@ class PasswordConfirmationTest extends TestCase
         $response = $this->actingAs($user)->get('/confirm-password');
 
         $response->assertStatus(200);
+        $response->assertSee('Confirma tu contraseña');
+        $response->assertSee('Área segura');
     }
 
     public function test_password_can_be_confirmed(): void

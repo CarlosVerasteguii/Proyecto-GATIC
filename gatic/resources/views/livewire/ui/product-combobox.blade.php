@@ -5,7 +5,7 @@
         suppressOpenOnFocus: false,
         highlightedIndex: -1,
         activeDescendantId: '',
-        open: $wire.$entangle('showDropdown', true),
+        open: $wire.entangle('showDropdown'),
         updateMinCharsHint() {
             const value = (this.$refs.input?.value ?? '').trim().replace(/\\s+/g, ' ');
             this.minCharsHintVisible = this.open && value.length > 0 && value.length < 2;

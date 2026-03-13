@@ -1,8 +1,14 @@
 <div class="d-inline-block">
+    @php
+        $modalId = 'quickStockInModal-'.$this->getId();
+        $triggerId = 'quickStockInTrigger-'.$this->getId();
+    @endphp
+
     <button
+        id="{{ $triggerId }}"
         type="button"
         class="btn btn-sm btn-outline-primary"
-        wire:click="open"
+        wire:click="openModal"
         aria-haspopup="dialog"
         aria-expanded="{{ $showModal ? 'true' : 'false' }}"
         aria-controls="quickStockInModal-{{ $this->getId() }}"
@@ -12,7 +18,6 @@
 
     @if ($showModal)
         @php
-            $modalId = 'quickStockInModal-'.$this->getId();
             $titleId = 'quickStockInModalTitle-'.$this->getId();
             $descriptionId = 'quickStockInModalDescription-'.$this->getId();
             $previewCount = is_array($serialPreview) ? (int) ($serialPreview['count'] ?? 0) : 0;
@@ -28,8 +33,10 @@
             aria-modal="true"
             aria-labelledby="{{ $titleId }}"
             aria-describedby="{{ $descriptionId }}"
-            wire:keydown.escape="close"
             style="background: rgba(0,0,0,0.5);"
+            data-manual-dialog
+            data-manual-dialog-close-method="closeModal"
+            data-manual-dialog-restore-id="{{ $triggerId }}"
         >
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
@@ -44,7 +51,7 @@
                                 Captura el mínimo necesario para crear una tarea pendiente sin salir del flujo operativo.
                             </p>
                         </div>
-                        <button type="button" class="btn-close" wire:click="close" aria-label="Cerrar"></button>
+                        <button type="button" class="btn-close" aria-label="Cerrar" data-manual-dialog-close></button>
                     </div>
 
                     <form wire:submit="save" novalidate>
@@ -77,6 +84,7 @@
                                                     name="product_mode"
                                                     value="existing"
                                                     wire:model.live="productMode"
+                                                    data-manual-dialog-initial-focus
                                                 >
                                                 <span>
                                                     <span class="fw-semibold d-block">Producto existente</span>
@@ -346,7 +354,7 @@
                         </div>
 
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-secondary" wire:click="close" wire:loading.attr="disabled" wire:target="save">
+                            <button type="button" class="btn btn-outline-secondary" wire:loading.attr="disabled" wire:target="save" data-manual-dialog-close>
                                 Cancelar
                             </button>
                             <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="save">

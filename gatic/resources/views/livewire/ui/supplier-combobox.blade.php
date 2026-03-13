@@ -170,6 +170,8 @@
                                 wire:click="openCreateSupplierModal"
                                 wire:loading.attr="disabled"
                                 wire:target="openCreateSupplierModal"
+                                aria-haspopup="dialog"
+                                aria-controls="{{ $createModalId }}"
                                 x-on:mouseenter="
                                     const items = $refs.listbox?.querySelectorAll('[role=option]');
                                     highlightedIndex = items ? Array.from(items).indexOf($el) : -1;
@@ -223,12 +225,14 @@
             aria-labelledby="{{ $createModalTitleId }}"
             x-on:click.self="$wire.closeCreateSupplierModal()"
             x-on:keydown.escape.stop.prevent="$wire.closeCreateSupplierModal()"
+            data-manual-dialog
+            data-manual-dialog-restore-selector="#{{ $inputId }}"
         >
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="{{ $createModalTitleId }}">Crear proveedor</h5>
-                        <button type="button" class="btn-close" wire:click="closeCreateSupplierModal" aria-label="Cerrar"></button>
+                        <button type="button" class="btn-close" wire:click="closeCreateSupplierModal" aria-label="Cerrar" data-manual-dialog-close></button>
                     </div>
 
                     <form wire:submit="createSupplier">
@@ -264,6 +268,7 @@
                                     class="form-control @error('createName') is-invalid @enderror"
                                     wire:model="createName"
                                     maxlength="255"
+                                    data-manual-dialog-initial-focus
                                 />
                                 @error('createName')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -306,6 +311,7 @@
                                 wire:click="closeCreateSupplierModal"
                                 wire:loading.attr="disabled"
                                 wire:target="createSupplier"
+                                data-manual-dialog-close
                             >
                                 Cancelar
                             </button>

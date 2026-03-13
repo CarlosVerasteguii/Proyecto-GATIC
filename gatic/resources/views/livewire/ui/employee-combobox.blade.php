@@ -145,6 +145,8 @@
                                     wire:loading.attr="disabled"
                                     wire:target="openCreateEmployeeModal"
                                     role="option"
+                                    aria-haspopup="dialog"
+                                    aria-controls="{{ $createModalId }}"
                                 >
                                     <i class="bi bi-person-plus" aria-hidden="true"></i>
                                     <span>Crear empleado</span>
@@ -190,12 +192,14 @@
             aria-labelledby="{{ $createModalTitleId }}"
             x-on:click.self="$wire.closeCreateEmployeeModal()"
             x-on:keydown.escape.stop.prevent="$wire.closeCreateEmployeeModal()"
+            data-manual-dialog
+            data-manual-dialog-restore-selector="#{{ $inputId }}"
         >
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="{{ $createModalTitleId }}">Crear empleado</h5>
-                        <button type="button" class="btn-close" wire:click="closeCreateEmployeeModal" aria-label="Cerrar"></button>
+                        <button type="button" class="btn-close" wire:click="closeCreateEmployeeModal" aria-label="Cerrar" data-manual-dialog-close></button>
                     </div>
 
                     <form wire:submit="createEmployee">
@@ -214,6 +218,7 @@
                                     class="form-control @error('createRpe') is-invalid @enderror"
                                     wire:model="createRpe"
                                     maxlength="255"
+                                    data-manual-dialog-initial-focus
                                 >
                                 @error('createRpe')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -244,6 +249,7 @@
                                 wire:click="closeCreateEmployeeModal"
                                 wire:loading.attr="disabled"
                                 wire:target="createEmployee"
+                                data-manual-dialog-close
                             >
                                 Cancelar
                             </button>

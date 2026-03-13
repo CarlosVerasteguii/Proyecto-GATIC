@@ -148,14 +148,18 @@ class QuickStockIn extends Component
 
         $this->validate();
 
-        $isSerialized = $this->resolveIsSerialized();
+        $selectedExistingProduct = $this->productMode === 'existing'
+            ? $this->findSelectedExistingProduct()
+            : null;
+
+        $isSerialized = $this->resolveIsSerialized($selectedExistingProduct);
         if ($isSerialized === null) {
             throw ValidationException::withMessages([
                 'productId' => ['Completa el tipo de producto para continuar.'],
             ]);
         }
 
-        $product = $this->resolveProduct();
+        $product = $this->resolveProduct($selectedExistingProduct);
         $productName = $product['name'];
 
         $payload = [
@@ -232,7 +236,7 @@ class QuickStockIn extends Component
     /**
      * @return array{id: int|null, name: string}
      */
-    private function resolveProduct(): array
+    private function resolveProduct(?Product $existingProduct = null): array
     {
         if ($this->productMode === 'placeholder') {
             return [
@@ -241,7 +245,7 @@ class QuickStockIn extends Component
             ];
         }
 
-        $product = $this->findSelectedExistingProduct();
+        $product = $existingProduct ?? $this->findSelectedExistingProduct();
         if ($product === null) {
             throw ValidationException::withMessages([
                 'productId' => ['Selecciona un producto válido.'],
@@ -254,7 +258,7 @@ class QuickStockIn extends Component
         ];
     }
 
-    private function resolveIsSerialized(): ?bool
+    private function resolveIsSerialized(?Product $existingProduct = null): ?bool
     {
         if ($this->productMode === 'placeholder') {
             if ($this->placeholderIsSerialized !== '0' && $this->placeholderIsSerialized !== '1') {
@@ -268,7 +272,7 @@ class QuickStockIn extends Component
             return null;
         }
 
-        $product = $this->findSelectedExistingProduct();
+        $product = $existingProduct ?? $this->findSelectedExistingProduct();
         if ($product === null) {
             return null;
         }
@@ -344,26 +348,46 @@ class QuickStockIn extends Component
         $this->resetErrorBag();
     }
 
+    /**
+     * @return array{count: int, duplicates: int, duplicate_sample: list<string>}
+     */
+    private function buildSerialPreview(string $input): array
+    {
+        $serials = $this->parseSerials($input);
+        $duplicates = array_keys(array_filter(
+            array_count_values($serials),
+            static fn (int $count): bool => $count > 1
+        ));
+
+        return [
+            'count' => count($serials),
+            'duplicates' => count($duplicates),
+            'duplicate_sample' => array_slice($duplicates, 0, 3),
+        ];
+    }
+
     public function render(): View
     {
         Gate::authorize('inventory.manage');
 
-        $resolved = $this->resolveIsSerialized();
+        $selectedExistingProduct = $this->productMode === 'existing' && $this->productId !== null
+            ? $this->findSelectedExistingProduct()
+            : null;
+
+        $resolved = $this->resolveIsSerialized($selectedExistingProduct);
         $selected = null;
-        if ($this->productMode === 'existing' && $this->productId !== null) {
-            $product = $this->findSelectedExistingProduct();
-            if ($product !== null) {
-                $selected = [
-                    'id' => (int) $product->id,
-                    'name' => (string) $product->name,
-                    'is_serialized' => (bool) $product->category->is_serialized,
-                ];
-            }
+        if ($selectedExistingProduct !== null) {
+            $selected = [
+                'id' => (int) $selectedExistingProduct->id,
+                'name' => (string) $selectedExistingProduct->name,
+                'is_serialized' => (bool) $selectedExistingProduct->category->is_serialized,
+            ];
         }
 
         return view('livewire.pending-tasks.quick-stock-in', [
             'resolvedIsSerialized' => $resolved,
             'selectedProduct' => $selected,
+            'serialPreview' => $resolved === true ? $this->buildSerialPreview($this->serialsInput) : null,
         ]);
     }
 

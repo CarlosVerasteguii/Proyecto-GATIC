@@ -6,18 +6,26 @@ use App\Models\InventoryAdjustmentEntry;
 use App\Models\Product;
 use App\Models\ProductQuantityMovement;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Throwable;
 
 #[Layout('layouts.app')]
 class ProductKardex extends Component
 {
+    use WithPagination;
+
     private const PAGE_NAME = 'kardex_page';
+
+    private const PER_PAGE = 15;
+
+    protected string $paginationTheme = 'bootstrap';
 
     public int $productId;
 
@@ -36,7 +44,6 @@ class ProductKardex extends Component
         }
 
         $this->productId = (int) $product;
-        $this->loadProductOrAbort();
     }
 
     public function render(): View
@@ -69,7 +76,7 @@ class ProductKardex extends Component
                 errorId: $this->errorId,
             );
 
-            $kardexEntries = $this->emptyPaginator(15);
+            $kardexEntries = $this->emptyPaginator(self::PER_PAGE);
         }
 
         return view('livewire.inventory.products.product-kardex', [
@@ -88,107 +95,145 @@ class ProductKardex extends Component
      */
     private function getKardexEntries(): LengthAwarePaginator
     {
-        // Get quantity movements
-        $movements = ProductQuantityMovement::query()
-            ->where('product_id', $this->productId)
-            ->with(['actorUser', 'employee'])
-            ->get()
-            ->map(fn (ProductQuantityMovement $m): array => $this->normalizeMovement($m))
-            ->toBase();
+        $page = DB::query()
+            ->fromSub($this->buildKardexEntriesQuery(), 'kardex_entries')
+            ->orderByDesc('entry_date')
+            ->orderByDesc('source_priority')
+            ->orderByDesc('source_id')
+            ->paginate(self::PER_PAGE, ['*'], self::PAGE_NAME);
 
-        // Get inventory adjustment entries for this product
-        $adjustments = InventoryAdjustmentEntry::query()
-            ->where('subject_type', Product::class)
-            ->where('subject_id', $this->productId)
-            ->with(['adjustment.actor'])
-            ->get()
-            ->map(fn (InventoryAdjustmentEntry $e): array => $this->normalizeAdjustment($e))
-            ->toBase();
-
-        // Combine and sort by date descending (most recent first)
-        /** @var Collection<int, array<string, mixed>> $combined */
-        $combined = $movements->merge($adjustments)
-            ->sortByDesc(static function (array $entry): int {
-                $date = $entry['date'] ?? null;
-
-                return $date instanceof \DateTimeInterface ? $date->getTimestamp() : 0;
-            })
-            ->values();
-
-        return $this->paginateCollection($combined, 15);
+        return $page->through(fn (object $entry): array => $this->normalizeEntry($entry));
     }
 
     /**
-     * Normalize a quantity movement to a common format.
-     *
+     * @phpstan-return QueryBuilder
+     */
+    private function buildKardexEntriesQuery(): QueryBuilder
+    {
+        $movements = DB::table('product_quantity_movements')
+            ->leftJoin('users as actor_users', 'actor_users.id', '=', 'product_quantity_movements.actor_user_id')
+            ->leftJoin('employees', 'employees.id', '=', 'product_quantity_movements.employee_id')
+            ->where('product_quantity_movements.product_id', $this->productId)
+            ->selectRaw('? as source_type', ['movement'])
+            ->selectRaw('product_quantity_movements.id as source_id')
+            ->selectRaw('product_quantity_movements.created_at as entry_date')
+            ->selectRaw('2 as source_priority')
+            ->selectRaw('product_quantity_movements.direction as movement_direction')
+            ->selectRaw('product_quantity_movements.qty as qty')
+            ->selectRaw('product_quantity_movements.qty_before as qty_before')
+            ->selectRaw('product_quantity_movements.qty_after as qty_after')
+            ->selectRaw('coalesce(actor_users.name, ?) as actor_name', ['-'])
+            ->selectRaw('employees.name as employee_name')
+            ->selectRaw('product_quantity_movements.note as note')
+            ->selectRaw('null as before_payload')
+            ->selectRaw('null as after_payload');
+
+        return DB::table('inventory_adjustment_entries')
+            ->leftJoin('inventory_adjustments', 'inventory_adjustments.id', '=', 'inventory_adjustment_entries.inventory_adjustment_id')
+            ->leftJoin('users as adjustment_actors', 'adjustment_actors.id', '=', 'inventory_adjustments.actor_user_id')
+            ->where('inventory_adjustment_entries.subject_type', Product::class)
+            ->where('inventory_adjustment_entries.subject_id', $this->productId)
+            ->selectRaw('? as source_type', ['adjustment'])
+            ->selectRaw('inventory_adjustment_entries.id as source_id')
+            ->selectRaw('inventory_adjustment_entries.created_at as entry_date')
+            ->selectRaw('1 as source_priority')
+            ->selectRaw('null as movement_direction')
+            ->selectRaw('null as qty')
+            ->selectRaw('null as qty_before')
+            ->selectRaw('null as qty_after')
+            ->selectRaw('coalesce(adjustment_actors.name, ?) as actor_name', ['-'])
+            ->selectRaw('null as employee_name')
+            ->selectRaw('inventory_adjustments.reason as note')
+            ->selectRaw('inventory_adjustment_entries.before as before_payload')
+            ->selectRaw('inventory_adjustment_entries.after as after_payload')
+            ->unionAll($movements);
+    }
+
+    /**
      * @return array<string, mixed>
      */
-    private function normalizeMovement(ProductQuantityMovement $movement): array
+    private function normalizeEntry(object $entry): array
     {
-        $isOut = $movement->direction === ProductQuantityMovement::DIRECTION_OUT;
+        if ($entry->source_type === 'adjustment') {
+            return $this->normalizeAdjustmentEntry($entry);
+        }
+
+        return $this->normalizeMovementEntry($entry);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function normalizeMovementEntry(object $entry): array
+    {
+        $isOut = $entry->movement_direction === ProductQuantityMovement::DIRECTION_OUT;
 
         return [
             'type' => $isOut ? 'out' : 'in',
             'type_label' => $isOut ? 'Salida' : 'Entrada',
-            'qty' => $movement->qty,
-            'date' => $movement->created_at ?? Carbon::now(),
-            'actor_name' => $movement->actorUser !== null ? $movement->actorUser->name : '-',
-            'employee_name' => $movement->employee?->name,
-            'note' => $movement->note,
-            'qty_before' => $movement->qty_before,
-            'qty_after' => $movement->qty_after,
+            'qty' => (int) ($entry->qty ?? 0),
+            'date' => $this->normalizeEntryDate($entry->entry_date ?? null),
+            'actor_name' => is_string($entry->actor_name ?? null) && $entry->actor_name !== '' ? $entry->actor_name : '-',
+            'employee_name' => is_string($entry->employee_name ?? null) && $entry->employee_name !== '' ? $entry->employee_name : null,
+            'note' => is_string($entry->note ?? null) && $entry->note !== '' ? $entry->note : null,
+            'qty_before' => (int) ($entry->qty_before ?? 0),
+            'qty_after' => (int) ($entry->qty_after ?? 0),
         ];
     }
 
     /**
-     * Normalize an adjustment entry to a common format.
-     *
      * @return array<string, mixed>
      */
-    private function normalizeAdjustment(InventoryAdjustmentEntry $entry): array
+    private function normalizeAdjustmentEntry(object $entry): array
     {
-        $before = $entry->before['qty_total'] ?? 0;
-        $after = $entry->after['qty_total'] ?? 0;
-        $delta = (int) $after - (int) $before;
+        $before = $this->extractQtyTotal($entry->before_payload ?? null);
+        $after = $this->extractQtyTotal($entry->after_payload ?? null);
 
         return [
             'type' => 'adjustment',
             'type_label' => 'Ajuste',
-            'qty' => abs($delta),
-            'date' => $entry->created_at ?? Carbon::now(),
-            'actor_name' => ($actor = $entry->adjustment?->actor) !== null ? $actor->name : '-',
+            'qty' => abs($after - $before),
+            'date' => $this->normalizeEntryDate($entry->entry_date ?? null),
+            'actor_name' => is_string($entry->actor_name ?? null) && $entry->actor_name !== '' ? $entry->actor_name : '-',
             'employee_name' => null,
-            'note' => $entry->adjustment?->reason,
-            'qty_before' => (int) $before,
-            'qty_after' => (int) $after,
+            'note' => is_string($entry->note ?? null) && $entry->note !== '' ? $entry->note : null,
+            'qty_before' => $before,
+            'qty_after' => $after,
         ];
     }
 
-    /**
-     * Paginate a collection manually.
-     *
-     * @param  Collection<int, array<string, mixed>>  $items
-     * @return LengthAwarePaginator<int, array<string, mixed>>
-     */
-    private function paginateCollection(Collection $items, int $perPage): LengthAwarePaginator
+    private function normalizeEntryDate(mixed $value): Carbon
     {
-        $page = request()->input(self::PAGE_NAME, 1);
-        $offset = ((int) $page - 1) * $perPage;
+        if ($value instanceof Carbon) {
+            return $value;
+        }
 
-        $query = request()->query();
-        unset($query[self::PAGE_NAME]);
+        if ($value instanceof \DateTimeInterface) {
+            return Carbon::instance($value);
+        }
 
-        return new LengthAwarePaginator(
-            $items->slice($offset, $perPage)->values(),
-            $items->count(),
-            $perPage,
-            (int) $page,
-            [
-                'path' => request()->url(),
-                'query' => $query,
-                'pageName' => self::PAGE_NAME,
-            ]
-        );
+        if (is_string($value) && $value !== '') {
+            return Carbon::parse($value);
+        }
+
+        return Carbon::now();
+    }
+
+    private function extractQtyTotal(mixed $payload): int
+    {
+        if (is_array($payload)) {
+            return (int) ($payload['qty_total'] ?? 0);
+        }
+
+        if (is_string($payload) && $payload !== '') {
+            $decoded = json_decode($payload, true);
+
+            if (is_array($decoded)) {
+                return (int) ($decoded['qty_total'] ?? 0);
+            }
+        }
+
+        return 0;
     }
 
     /**

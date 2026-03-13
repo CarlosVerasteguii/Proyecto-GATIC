@@ -23,6 +23,7 @@ class ProductionUnhandledExceptionTest extends TestCase
         $response = $this->get('/__test/boom');
         $response->assertStatus(500);
         $response->assertSee('Error inesperado');
+        $response->assertSee('Comparte el identificador con TI');
         $response->assertSee('data-testid="error-alert-with-id"', false);
         $response->assertDontSee('Boom');
         $response->assertDontSee('RuntimeException');

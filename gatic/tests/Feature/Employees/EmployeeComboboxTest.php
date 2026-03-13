@@ -255,6 +255,18 @@ class EmployeeComboboxTest extends TestCase
         $component->assertSet('employeeId', $created->id);
     }
 
+    public function test_create_employee_modal_uses_manual_dialog_contract(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin]);
+
+        Livewire::actingAs($admin)
+            ->test(EmployeeCombobox::class)
+            ->call('openCreateEmployeeModal')
+            ->assertSeeHtml('data-manual-dialog')
+            ->assertSeeHtml('data-manual-dialog-restore-selector="#employee-input-')
+            ->assertSeeHtml('data-manual-dialog-initial-focus');
+    }
+
     public function test_create_employee_shows_validation_error_for_duplicate_rpe(): void
     {
         $admin = User::factory()->create(['role' => UserRole::Admin]);

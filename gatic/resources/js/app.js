@@ -14,6 +14,7 @@ import { registerDensityToggle } from './ui/density-toggle';
 import { registerThemeToggle } from './ui/theme-toggle';
 import { registerColumnManager } from './ui/column-manager';
 import { registerDropdownPopperFix } from './ui/dropdown-popper-fix';
+import { registerManualDialog } from './ui/manual-dialog';
 
 registerToasts();
 registerFreshness();
@@ -29,6 +30,7 @@ registerDensityToggle();
 registerThemeToggle();
 registerColumnManager();
 registerDropdownPopperFix();
+registerManualDialog();
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!document.querySelector('[data-page="dashboard"]')) return;

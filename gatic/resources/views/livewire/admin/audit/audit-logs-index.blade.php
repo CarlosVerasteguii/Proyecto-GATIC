@@ -153,6 +153,7 @@
                                         <button
                                             type="button"
                                             class="btn btn-sm btn-outline-primary"
+                                            id="audit-log-detail-trigger-{{ $log->id }}"
                                             wire:click="showDetail({{ $log->id }})"
                                             aria-label="Ver detalle del registro de auditoría {{ $log->id }}"
                                         >
@@ -188,26 +189,41 @@
     </div>
 
     @if ($selectedLog)
+        @php
+            $detailModalId = 'audit-log-detail-modal-'.$selectedLog->id;
+            $detailTitleId = 'audit-log-detail-title-'.$selectedLog->id;
+        @endphp
+
         <div
+            id="{{ $detailModalId }}"
             class="modal fade show d-block"
             tabindex="-1"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="auditLogDetailTitle"
+            aria-labelledby="{{ $detailTitleId }}"
             wire:keydown.escape.window="closeDetail"
             style="background-color: rgba(0,0,0,0.5);"
+            data-manual-dialog
+            data-manual-dialog-restore-id="audit-log-detail-trigger-{{ $selectedLog->id }}"
         >
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
                         <div>
-                            <h2 class="modal-title h5 mb-1" id="auditLogDetailTitle">Detalle de Auditoría #{{ $selectedLog->id }}</h2>
+                            <h2 class="modal-title h5 mb-1" id="{{ $detailTitleId }}">Detalle de Auditoría #{{ $selectedLog->id }}</h2>
                             <div class="d-flex flex-wrap gap-2">
                                 <x-ui.badge tone="neutral" variant="compact" :with-rail="false">{{ $selectedLog->action_label }}</x-ui.badge>
                                 <x-ui.badge tone="info" variant="compact" :with-rail="false">{{ $selectedLog->subject_type_short }}</x-ui.badge>
                             </div>
                         </div>
-                        <button type="button" class="btn-close" aria-label="Cerrar detalle de auditoría" wire:click="closeDetail"></button>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            aria-label="Cerrar detalle de auditoría"
+                            wire:click="closeDetail"
+                            data-manual-dialog-close
+                            data-manual-dialog-initial-focus
+                        ></button>
                     </div>
 
                     <div class="modal-body">
@@ -256,7 +272,7 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" wire:click="closeDetail">Cerrar</button>
+                        <button type="button" class="btn btn-secondary" wire:click="closeDetail" data-manual-dialog-close>Cerrar</button>
                     </div>
                 </div>
             </div>

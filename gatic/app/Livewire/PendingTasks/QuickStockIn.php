@@ -50,7 +50,7 @@ class QuickStockIn extends Component
         $this->resetForm();
     }
 
-    public function open(): void
+    public function openModal(): void
     {
         Gate::authorize('inventory.manage');
 
@@ -58,7 +58,7 @@ class QuickStockIn extends Component
         $this->resetErrorBag();
     }
 
-    public function close(): void
+    public function closeModal(): void
     {
         $this->showModal = false;
         $this->resetForm();
@@ -217,7 +217,7 @@ class QuickStockIn extends Component
             return;
         }
 
-        $this->close();
+        $this->closeModal();
 
         $this->toast(
             type: 'success',

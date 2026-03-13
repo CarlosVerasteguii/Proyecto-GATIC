@@ -43,16 +43,37 @@ class Fp03QuickCaptureTest extends TestCase
 
         Livewire::actingAs($editor)
             ->test(QuickStockIn::class)
-            ->call('open')
+            ->call('openModal')
             ->assertSeeHtml('id="qs-productId"')
             ->assertDontSeeHtml('wire:model.live="productId"');
 
         Livewire::actingAs($editor)
             ->test(QuickRetirement::class)
-            ->call('open')
+            ->call('openModal')
             ->set('mode', 'product_quantity')
             ->assertSeeHtml('id="qr-productId"')
             ->assertDontSeeHtml('wire:model.live="productId"');
+    }
+
+    public function test_quick_capture_modals_delegate_close_interactions_to_manual_dialog_controller(): void
+    {
+        $editor = User::factory()->create(['role' => 'Editor']);
+
+        Livewire::actingAs($editor)
+            ->test(QuickStockIn::class)
+            ->call('openModal')
+            ->assertSeeHtml('data-manual-dialog-close-method="closeModal"')
+            ->assertDontSeeHtml('wire:keydown.escape')
+            ->assertDontSeeHtml('x-on:keydown.escape.window')
+            ->assertDontSeeHtml('x-on:click="$wire.closeModal()"');
+
+        Livewire::actingAs($editor)
+            ->test(QuickRetirement::class)
+            ->call('openModal')
+            ->assertSeeHtml('data-manual-dialog-close-method="closeModal"')
+            ->assertDontSeeHtml('wire:keydown.escape')
+            ->assertDontSeeHtml('x-on:keydown.escape.window')
+            ->assertDontSeeHtml('x-on:click="$wire.closeModal()"');
     }
 
     public function test_quick_stock_in_modal_shows_preview_summary_for_serial_capture(): void
@@ -61,12 +82,14 @@ class Fp03QuickCaptureTest extends TestCase
 
         Livewire::actingAs($editor)
             ->test(QuickStockIn::class)
-            ->call('open')
+            ->call('openModal')
             ->set('productMode', 'placeholder')
             ->set('placeholderProductName', 'Laptop temporal')
             ->set('placeholderIsSerialized', '1')
             ->set('serialsInput', "SER-001\nSER-001")
             ->assertSeeHtml('role="dialog"')
+            ->assertSeeHtml('data-manual-dialog')
+            ->assertSeeHtml('data-manual-dialog-initial-focus')
             ->assertSee('Resumen antes de crear')
             ->assertSee('Seriales detectados')
             ->assertSee('Duplicados');
@@ -227,9 +250,10 @@ class Fp03QuickCaptureTest extends TestCase
 
         Livewire::actingAs($editor)
             ->test(QuickRetirement::class)
-            ->call('open')
+            ->call('openModal')
             ->set('mode', 'product_quantity')
             ->set('productId', $product->id)
+            ->assertSeeHtml('data-manual-dialog')
             ->assertSee('Este producto no puede retirarse en modo “Producto + cantidad”.')
             ->assertSee('Cambia al modo “Por seriales” para continuar.');
     }

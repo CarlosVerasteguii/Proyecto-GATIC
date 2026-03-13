@@ -1,8 +1,14 @@
 <div class="d-inline-block">
+    @php
+        $modalId = 'quickRetirementModal-'.$this->getId();
+        $triggerId = 'quickRetirementTrigger-'.$this->getId();
+    @endphp
+
     <button
+        id="{{ $triggerId }}"
         type="button"
         class="btn btn-sm btn-outline-danger"
-        wire:click="open"
+        wire:click="openModal"
         aria-haspopup="dialog"
         aria-expanded="{{ $showModal ? 'true' : 'false' }}"
         aria-controls="quickRetirementModal-{{ $this->getId() }}"
@@ -12,7 +18,6 @@
 
     @if ($showModal)
         @php
-            $modalId = 'quickRetirementModal-'.$this->getId();
             $titleId = 'quickRetirementModalTitle-'.$this->getId();
             $descriptionId = 'quickRetirementModalDescription-'.$this->getId();
             $previewCount = is_array($serialPreview) ? (int) ($serialPreview['count'] ?? 0) : 0;
@@ -28,8 +33,10 @@
             aria-modal="true"
             aria-labelledby="{{ $titleId }}"
             aria-describedby="{{ $descriptionId }}"
-            wire:keydown.escape="close"
             style="background: rgba(0,0,0,0.5);"
+            data-manual-dialog
+            data-manual-dialog-close-method="closeModal"
+            data-manual-dialog-restore-id="{{ $triggerId }}"
         >
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
@@ -44,7 +51,7 @@
                                 Captura un retiro mínimo para dejar trazabilidad inmediata y terminar de procesarlo después.
                             </p>
                         </div>
-                        <button type="button" class="btn-close" wire:click="close" aria-label="Cerrar"></button>
+                        <button type="button" class="btn-close" aria-label="Cerrar" data-manual-dialog-close></button>
                     </div>
 
                     <form wire:submit="save" novalidate>
@@ -77,6 +84,7 @@
                                                     name="mode"
                                                     value="serials"
                                                     wire:model.live="mode"
+                                                    data-manual-dialog-initial-focus
                                                 >
                                                 <span>
                                                     <span class="fw-semibold d-block">Por seriales</span>
@@ -284,7 +292,7 @@
                         </div>
 
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-secondary" wire:click="close" wire:loading.attr="disabled" wire:target="save">
+                            <button type="button" class="btn btn-outline-secondary" wire:loading.attr="disabled" wire:target="save" data-manual-dialog-close>
                                 Cancelar
                             </button>
                             <button type="submit" class="btn btn-danger" wire:loading.attr="disabled" wire:target="save">

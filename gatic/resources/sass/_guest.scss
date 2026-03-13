@@ -1,0 +1,110 @@
+.guest-layout {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(0, 142, 90, 0.18), transparent 38%),
+    linear-gradient(180deg, rgba(0, 77, 51, 0.06), transparent 22%),
+    var(--bs-body-bg);
+}
+
+.guest-layout__nav {
+  background: linear-gradient(135deg, #006b47 0%, #004d33 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.guest-layout__brand {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.guest-layout__main {
+  min-height: calc(100vh - 72px);
+  display: flex;
+  align-items: center;
+  padding: clamp(1.5rem, 2vw + 1rem, 3rem) 0;
+}
+
+.guest-view {
+  width: 100%;
+}
+
+.guest-surface {
+  background: rgba(var(--bs-body-bg-rgb), 0.96);
+  border: 1px solid var(--bs-border-color-translucent);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.08),
+    0 18px 50px -24px rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.guest-surface__header {
+  padding: 1.5rem 1.5rem 1rem;
+  background:
+    linear-gradient(135deg, rgba(0, 142, 90, 0.12), rgba(0, 107, 71, 0.04)),
+    rgba(var(--bs-tertiary-bg-rgb), 0.92);
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+
+.guest-surface__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(0, 142, 90, 0.12);
+  color: var(--cfe-green-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.guest-surface__eyebrow--danger {
+  background: rgba(220, 53, 69, 0.12);
+  color: #b42318;
+}
+
+.guest-surface__title {
+  margin: 0;
+  font-size: clamp(1.55rem, 2vw + 1rem, 2rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.guest-surface__subtitle {
+  margin: 0.75rem 0 0;
+  max-width: 40rem;
+  color: var(--bs-secondary-color);
+  line-height: 1.6;
+}
+
+.guest-surface__body {
+  padding: 1.5rem;
+}
+
+.guest-surface__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0 1.5rem 1.5rem;
+}
+
+@media (max-width: 575.98px) {
+  .guest-layout__main {
+    align-items: flex-start;
+    padding-top: 1.25rem;
+  }
+
+  .guest-surface__header,
+  .guest-surface__body,
+  .guest-surface__actions {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .guest-surface__actions {
+    padding-bottom: 1rem;
+  }
+}

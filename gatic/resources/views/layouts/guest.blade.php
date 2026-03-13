@@ -36,11 +36,11 @@
 
     @livewireStyles
 </head>
-<body>
+<body class="guest-layout">
     <div id="app">
-        <nav class="navbar navbar-expand-md navbar-dark bg-primary shadow-sm">
+        <nav class="navbar navbar-expand-md navbar-dark shadow-sm guest-layout__nav">
             <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
+                <a class="navbar-brand guest-layout__brand" href="{{ auth()->check() ? route('dashboard') : route('login') }}">
                     {{ config('app.name', 'GATIC') }}
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Alternar navegaci&oacute;n">
@@ -60,7 +60,7 @@
                 </div>
             </div>
         </nav>        
-        <main class="py-4">
+        <main class="guest-layout__main">
             {{ $slot ?? '' }}
             @yield('content')
         </main>

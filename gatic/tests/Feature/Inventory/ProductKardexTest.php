@@ -229,6 +229,55 @@ class ProductKardexTest extends TestCase
             ->assertSeeInOrder(['Ajuste', 'Salida']);
     }
 
+    public function test_kardex_paginates_chronology_across_pages(): void
+    {
+        $employee = Employee::query()->create([
+            'rpe' => 'EMP001',
+            'name' => 'Juan Pérez',
+            'department' => 'IT',
+        ]);
+
+        $baseNow = now();
+
+        for ($i = 1; $i <= 16; $i++) {
+            $this->travelTo($baseNow->copy()->subMinutes(16 - $i));
+            $label = str_pad((string) $i, 2, '0', STR_PAD_LEFT);
+
+            ProductQuantityMovement::query()->create([
+                'product_id' => $this->product->id,
+                'employee_id' => $employee->id,
+                'actor_user_id' => $this->admin->id,
+                'direction' => ProductQuantityMovement::DIRECTION_OUT,
+                'qty' => 1,
+                'qty_before' => 200 - $i + 1,
+                'qty_after' => 200 - $i,
+                'note' => "Movimiento [{$label}]",
+            ]);
+        }
+
+        $this->travelBack();
+
+        $firstPage = $this->actingAs($this->admin)
+            ->get(route('inventory.products.kardex', ['product' => $this->product->id]))
+            ->assertOk();
+
+        $firstPage
+            ->assertSeeInOrder(['Movimiento [16]', 'Movimiento [15]'])
+            ->assertSee('Movimiento [02]')
+            ->assertDontSee('Movimiento [01]');
+
+        $secondPage = $this->actingAs($this->admin)
+            ->get(route('inventory.products.kardex', [
+                'product' => $this->product->id,
+                'kardex_page' => 2,
+            ]))
+            ->assertOk();
+
+        $secondPage
+            ->assertSee('Movimiento [01]')
+            ->assertDontSee('Movimiento [16]');
+    }
+
     // =====================
     // Empty state
     // =====================

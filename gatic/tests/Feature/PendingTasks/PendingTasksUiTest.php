@@ -137,4 +137,18 @@ class PendingTasksUiTest extends TestCase
             ->assertDontSee('Eliminar')
             ->assertDontSee('Marcar como lista');
     }
+
+    public function test_create_pending_task_page_exposes_manual_and_quick_capture_entry_points(): void
+    {
+        $editor = User::factory()->create(['role' => UserRole::Editor]);
+
+        $this->actingAs($editor)
+            ->get(route('pending-tasks.create'))
+            ->assertOk()
+            ->assertSee('Crear tarea manual')
+            ->assertSee('Referencia rápida')
+            ->assertSee('Atajos operativos')
+            ->assertSee('Carga rápida')
+            ->assertSee('Retiro rápido');
+    }
 }

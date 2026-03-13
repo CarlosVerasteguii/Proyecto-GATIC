@@ -55,6 +55,23 @@ class Fp03QuickCaptureTest extends TestCase
             ->assertDontSeeHtml('wire:model.live="productId"');
     }
 
+    public function test_quick_stock_in_modal_shows_preview_summary_for_serial_capture(): void
+    {
+        $editor = User::factory()->create(['role' => 'Editor']);
+
+        Livewire::actingAs($editor)
+            ->test(QuickStockIn::class)
+            ->call('open')
+            ->set('productMode', 'placeholder')
+            ->set('placeholderProductName', 'Laptop temporal')
+            ->set('placeholderIsSerialized', '1')
+            ->set('serialsInput', "SER-001\nSER-001")
+            ->assertSeeHtml('role="dialog"')
+            ->assertSee('Resumen antes de crear')
+            ->assertSee('Seriales detectados')
+            ->assertSee('Duplicados');
+    }
+
     public function test_quick_stock_in_serialized_creates_draft_pending_task_with_expected_payload(): void
     {
         $editor = User::factory()->create(['role' => 'Editor']);
@@ -200,6 +217,21 @@ class Fp03QuickCaptureTest extends TestCase
         $this->assertSame(['RET001', 'RET002'], $task->payload['items']['serials'] ?? null);
         $this->assertSame('Equipo dañado', $task->payload['reason'] ?? null);
         $this->assertSame('Se retira hoy', $task->payload['note'] ?? null);
+    }
+
+    public function test_quick_retirement_warns_when_quantity_mode_uses_serialized_product(): void
+    {
+        $editor = User::factory()->create(['role' => 'Editor']);
+        $category = Category::factory()->create(['is_serialized' => true]);
+        $product = Product::factory()->create(['category_id' => $category->id, 'name' => 'Laptop protegida']);
+
+        Livewire::actingAs($editor)
+            ->test(QuickRetirement::class)
+            ->call('open')
+            ->set('mode', 'product_quantity')
+            ->set('productId', $product->id)
+            ->assertSee('Este producto no puede retirarse en modo “Producto + cantidad”.')
+            ->assertSee('Cambia al modo “Por seriales” para continuar.');
     }
 
     public function test_pending_task_show_blocks_edit_and_process_actions_for_quick_capture_tasks(): void

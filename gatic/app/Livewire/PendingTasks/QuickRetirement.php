@@ -273,6 +273,24 @@ class QuickRetirement extends Component
         $this->resetErrorBag();
     }
 
+    /**
+     * @return array{count: int, duplicates: int, duplicate_sample: list<string>}
+     */
+    private function buildSerialPreview(string $input): array
+    {
+        $serials = $this->parseSerials($input);
+        $duplicates = array_keys(array_filter(
+            array_count_values($serials),
+            static fn (int $count): bool => $count > 1
+        ));
+
+        return [
+            'count' => count($serials),
+            'duplicates' => count($duplicates),
+            'duplicate_sample' => array_slice($duplicates, 0, 3),
+        ];
+    }
+
     public function render(): View
     {
         Gate::authorize('inventory.manage');
@@ -291,6 +309,10 @@ class QuickRetirement extends Component
 
         return view('livewire.pending-tasks.quick-retirement', [
             'selectedProduct' => $selected,
+            'quantityModeSerializedConflict' => $this->mode === 'product_quantity'
+                && is_array($selected)
+                && ($selected['is_serialized'] === true),
+            'serialPreview' => $this->mode === 'serials' ? $this->buildSerialPreview($this->serialsInput) : null,
         ]);
     }
 

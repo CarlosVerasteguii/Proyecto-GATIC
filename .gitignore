@@ -99,3 +99,5 @@ Context Chats
 artifacts/
 admin-settings-mobile-after-summary.png
 New Era.txt
+/.playwright-cli/
+/_smoke_evidence/

@@ -85,7 +85,15 @@ class RecordAuditLog implements ShouldQueue
 
         /** @var mixed $subjectId */
         $subjectId = $this->payload['subject_id'];
-        if (! is_int($subjectId) || $subjectId <= 0) {
+        if (! is_int($subjectId)) {
+            throw new \InvalidArgumentException('subject_id must be an integer');
+        }
+
+        if ($subjectId === 0 && $this->payload['subject_type'] === 'system') {
+            return;
+        }
+
+        if ($subjectId <= 0) {
             throw new \InvalidArgumentException('subject_id must be a positive integer');
         }
     }

@@ -44,6 +44,11 @@ class AuditRecorder
         'attachment_id',
         'summary',
         'reason',
+        'changed_keys',
+        'old',
+        'new',
+        'action',
+        'removed_overrides',
     ];
 
     private const MAX_TEXT_LENGTH = 255;
@@ -53,7 +58,8 @@ class AuditRecorder
      *
      * @param  string  $action  One of AuditLog::ACTION_* constants
      * @param  string  $subjectType  The model class name (e.g., AssetMovement::class)
-     * @param  int  $subjectId  The primary key of the subject
+     * @param  int  $subjectId  The primary key of the subject. `0` is allowed only for the singleton
+     *                          `system` subject used by global settings audit entries.
      * @param  int|null  $actorUserId  The user who performed the action
      * @param  array<string, mixed>|null  $context  Additional context for debugging
      */
@@ -104,7 +110,8 @@ class AuditRecorder
      *
      * @param  string  $action  One of AuditLog::ACTION_* constants
      * @param  string  $subjectType  The model class name
-     * @param  int  $subjectId  The primary key of the subject
+     * @param  int  $subjectId  The primary key of the subject. `0` is allowed only for the singleton
+     *                          `system` subject used by global settings audit entries.
      * @param  int|null  $actorUserId  The user who performed the action
      * @param  array<string, mixed>|null  $context  Additional context
      */
@@ -145,7 +152,7 @@ class AuditRecorder
      * Reduce context to a scalar allowlist and trim overly-long text values.
      *
      * @param  array<string, mixed>|null  $context
-     * @return array<string, int|string|bool|float|null>|null
+     * @return array<string, mixed>|null
      */
     private static function sanitizeContext(?array $context): ?array
     {
@@ -163,27 +170,50 @@ class AuditRecorder
             /** @var mixed $value */
             $value = $context[$key];
 
-            if (is_string($value)) {
-                $value = trim($value);
+            $sanitizedValue = self::sanitizeContextValue($value);
+            if ($sanitizedValue !== null) {
+                $sanitized[$key] = $sanitizedValue;
+            }
+        }
 
-                if ($value === '') {
-                    $sanitized[$key] = '';
+        return $sanitized === [] ? null : $sanitized;
+    }
 
-                    continue;
-                }
+    private static function sanitizeContextValue(mixed $value): mixed
+    {
+        if (is_string($value)) {
+            $value = trim($value);
 
-                $value = Str::limit($value, self::MAX_TEXT_LENGTH, '...');
+            if ($value === '') {
+                return '';
+            }
 
-                $sanitized[$key] = $value;
+            return Str::limit($value, self::MAX_TEXT_LENGTH, '...');
+        }
+
+        if (is_int($value) || is_bool($value) || is_float($value) || $value === null) {
+            return $value;
+        }
+
+        if (! is_array($value) || $value === []) {
+            return null;
+        }
+
+        $sanitized = [];
+
+        foreach ($value as $key => $item) {
+            $sanitizedItem = self::sanitizeContextValue($item);
+            if ($sanitizedItem === null) {
+                continue;
+            }
+
+            if (is_int($key)) {
+                $sanitized[] = $sanitizedItem;
 
                 continue;
             }
 
-            if (is_int($value) || is_bool($value) || is_float($value) || $value === null) {
-                $sanitized[$key] = $value;
-
-                continue;
-            }
+            $sanitized[(string) $key] = $sanitizedItem;
         }
 
         return $sanitized === [] ? null : $sanitized;

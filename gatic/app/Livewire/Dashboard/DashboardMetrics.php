@@ -7,21 +7,41 @@ use App\Models\AssetMovement;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Location;
-use App\Models\PendingTask;
 use App\Models\Product;
 use App\Models\ProductQuantityMovement;
+use App\Support\Dashboard\AlertComparativePeriodResolver;
+use App\Support\Dashboard\AlertsSnapshotBuilder;
+use App\Support\Dashboard\AlertWindowConfigResolver;
+use App\Support\Dashboard\ComparativeAlertCountsReader;
+use App\Support\Dashboard\CriticalQueuePreviewItemsBuilder;
+use App\Support\Dashboard\DeltaBadgeBuilder;
+use App\Support\Dashboard\InventoryValuePayloadBuilder;
+use App\Support\Dashboard\InventoryValueReader;
+use App\Support\Dashboard\MovementTrendPayloadBuilder;
+use App\Support\Dashboard\MovementTrendRowsReader;
+use App\Support\Dashboard\PendingTaskCountsReader;
 use App\Support\Dashboard\RecentActivityBuilder;
 use App\Support\Errors\ErrorReporter;
 use App\Support\Settings\SettingsStore;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Throwable;
 
+/**
+ * @phpstan-import-type ComparativeAlertPeriod from \App\Support\Dashboard\AlertComparativePeriodResolver
+ * @phpstan-import-type AlertWindowConfig from \App\Support\Dashboard\AlertWindowConfigResolver
+ * @phpstan-import-type ComparativeAlertCounts from \App\Support\Dashboard\ComparativeAlertCountsReader
+ * @phpstan-import-type InventoryValuePayload from \App\Support\Dashboard\InventoryValuePayloadBuilder
+ * @phpstan-import-type InventoryValueReadResult from \App\Support\Dashboard\InventoryValueReader
+ * @phpstan-import-type MovementTrendPayload from \App\Support\Dashboard\MovementTrendPayloadBuilder
+ * @phpstan-import-type MovementTrendRows from \App\Support\Dashboard\MovementTrendRowsReader
+ * @phpstan-import-type PendingTaskCounts from \App\Support\Dashboard\PendingTaskCountsReader
+ * @phpstan-import-type RecentActivityItem from \App\Support\Dashboard\RecentActivityBuilder
+ */
 #[Layout('layouts.app')]
 class DashboardMetrics extends Component
 {
@@ -140,7 +160,7 @@ class DashboardMetrics extends Component
     public array $valueByBrand = [];
 
     /**
-     * @var list<array{type: string, icon: string, label: string, title: string, summary: string, actor: string|null, occurred_at: string, occurred_at_human: string, route: string|null}>
+     * @var list<RecentActivityItem>
      */
     public array $recentActivity = [];
 
@@ -310,20 +330,13 @@ class DashboardMetrics extends Component
 
     private function loadLoanDueDateAlertCounts(): void
     {
-        $today = Carbon::today();
-        $yesterday = Carbon::yesterday();
-
-        $store = app(SettingsStore::class);
-        $allowedOptions = $store->getIntList('gatic.alerts.loans.due_soon_window_days_options', [7, 14, 30]);
-        if ($allowedOptions === []) {
-            $allowedOptions = [7, 14, 30];
-        }
-
-        $fallbackWindowDays = $allowedOptions[0];
-        $defaultWindowDays = $store->getInt('gatic.alerts.loans.due_soon_window_days_default', $fallbackWindowDays);
-        if (! in_array($defaultWindowDays, $allowedOptions, true)) {
-            $defaultWindowDays = $fallbackWindowDays;
-        }
+        $windowConfig = $this->resolveAlertWindowConfig(
+            optionsKey: 'gatic.alerts.loans.due_soon_window_days_options',
+            defaultKey: 'gatic.alerts.loans.due_soon_window_days_default',
+            fallbackOptions: [7, 14, 30],
+        );
+        $defaultWindowDays = $windowConfig['defaultWindowDays'];
+        $comparativePeriod = $this->resolveAlertComparativePeriod($defaultWindowDays);
 
         $this->loanDueSoonWindowDays = $defaultWindowDays;
 
@@ -333,13 +346,15 @@ class DashboardMetrics extends Component
             ->where('status', Asset::STATUS_LOANED)
             ->whereNotNull('loan_due_date');
 
-        $this->loansOverdueCount = (clone $baseQuery)
-            ->where('loan_due_date', '<', $today->toDateString())
-            ->count();
+        /** @var ComparativeAlertCounts $counts */
+        $counts = app(ComparativeAlertCountsReader::class)->get(
+            baseQuery: $baseQuery,
+            dateColumn: 'loan_due_date',
+            comparativePeriod: $comparativePeriod,
+        );
 
-        $loansOverdueYesterday = (clone $baseQuery)
-            ->where('loan_due_date', '<', $yesterday->toDateString())
-            ->count();
+        $this->loansOverdueCount = $counts['currentOverdue'];
+        $loansOverdueYesterday = $counts['previousOverdue'];
 
         [$this->loansOverdueDeltaLabel, $this->loansOverdueDeltaVariant] = $this->buildDeltaBadge(
             current: $this->loansOverdueCount,
@@ -349,17 +364,8 @@ class DashboardMetrics extends Component
             decreaseVariant: 'success',
         );
 
-        $windowEnd = $today->copy()->addDays($defaultWindowDays);
-
-        $this->loansDueSoonCount = (clone $baseQuery)
-            ->whereBetween('loan_due_date', [$today->toDateString(), $windowEnd->toDateString()])
-            ->count();
-
-        $windowEndYesterday = $yesterday->copy()->addDays($defaultWindowDays);
-
-        $loansDueSoonYesterday = (clone $baseQuery)
-            ->whereBetween('loan_due_date', [$yesterday->toDateString(), $windowEndYesterday->toDateString()])
-            ->count();
+        $this->loansDueSoonCount = $counts['currentDueSoon'];
+        $loansDueSoonYesterday = $counts['previousDueSoon'];
 
         [$this->loansDueSoonDeltaLabel, $this->loansDueSoonDeltaVariant] = $this->buildDeltaBadge(
             current: $this->loansDueSoonCount,
@@ -381,20 +387,13 @@ class DashboardMetrics extends Component
 
     private function loadWarrantyAlertCounts(): void
     {
-        $today = Carbon::today();
-        $yesterday = Carbon::yesterday();
-
-        $store = app(SettingsStore::class);
-        $allowedOptions = $store->getIntList('gatic.alerts.warranties.due_soon_window_days_options', [7, 14, 30]);
-        if ($allowedOptions === []) {
-            $allowedOptions = [7, 14, 30];
-        }
-
-        $fallbackWindowDays = $allowedOptions[0];
-        $defaultWindowDays = $store->getInt('gatic.alerts.warranties.due_soon_window_days_default', $fallbackWindowDays);
-        if (! in_array($defaultWindowDays, $allowedOptions, true)) {
-            $defaultWindowDays = $fallbackWindowDays;
-        }
+        $windowConfig = $this->resolveAlertWindowConfig(
+            optionsKey: 'gatic.alerts.warranties.due_soon_window_days_options',
+            defaultKey: 'gatic.alerts.warranties.due_soon_window_days_default',
+            fallbackOptions: [7, 14, 30],
+        );
+        $defaultWindowDays = $windowConfig['defaultWindowDays'];
+        $comparativePeriod = $this->resolveAlertComparativePeriod($defaultWindowDays);
 
         $this->warrantyDueSoonWindowDays = $defaultWindowDays;
 
@@ -404,13 +403,15 @@ class DashboardMetrics extends Component
             ->whereNotNull('warranty_end_date')
             ->where('status', '!=', Asset::STATUS_RETIRED);
 
-        $this->warrantiesExpiredCount = (clone $baseQuery)
-            ->where('warranty_end_date', '<', $today->toDateString())
-            ->count();
+        /** @var ComparativeAlertCounts $counts */
+        $counts = app(ComparativeAlertCountsReader::class)->get(
+            baseQuery: $baseQuery,
+            dateColumn: 'warranty_end_date',
+            comparativePeriod: $comparativePeriod,
+        );
 
-        $warrantiesExpiredYesterday = (clone $baseQuery)
-            ->where('warranty_end_date', '<', $yesterday->toDateString())
-            ->count();
+        $this->warrantiesExpiredCount = $counts['currentOverdue'];
+        $warrantiesExpiredYesterday = $counts['previousOverdue'];
 
         [$this->warrantiesExpiredDeltaLabel, $this->warrantiesExpiredDeltaVariant] = $this->buildDeltaBadge(
             current: $this->warrantiesExpiredCount,
@@ -420,17 +421,8 @@ class DashboardMetrics extends Component
             decreaseVariant: 'success',
         );
 
-        $windowEnd = $today->copy()->addDays($defaultWindowDays);
-
-        $this->warrantiesDueSoonCount = (clone $baseQuery)
-            ->whereBetween('warranty_end_date', [$today->toDateString(), $windowEnd->toDateString()])
-            ->count();
-
-        $windowEndYesterday = $yesterday->copy()->addDays($defaultWindowDays);
-
-        $warrantiesDueSoonYesterday = (clone $baseQuery)
-            ->whereBetween('warranty_end_date', [$yesterday->toDateString(), $windowEndYesterday->toDateString()])
-            ->count();
+        $this->warrantiesDueSoonCount = $counts['currentDueSoon'];
+        $warrantiesDueSoonYesterday = $counts['previousDueSoon'];
 
         [$this->warrantiesDueSoonDeltaLabel, $this->warrantiesDueSoonDeltaVariant] = $this->buildDeltaBadge(
             current: $this->warrantiesDueSoonCount,
@@ -443,20 +435,13 @@ class DashboardMetrics extends Component
 
     private function loadRenewalAlertCounts(): void
     {
-        $today = Carbon::today();
-        $yesterday = Carbon::yesterday();
-
-        $store = app(SettingsStore::class);
-        $allowedOptions = $store->getIntList('gatic.alerts.renewals.due_soon_window_days_options', [30, 60, 90, 180]);
-        if ($allowedOptions === []) {
-            $allowedOptions = [30, 60, 90, 180];
-        }
-
-        $fallbackWindowDays = $allowedOptions[0];
-        $defaultWindowDays = $store->getInt('gatic.alerts.renewals.due_soon_window_days_default', $fallbackWindowDays);
-        if (! in_array($defaultWindowDays, $allowedOptions, true)) {
-            $defaultWindowDays = $fallbackWindowDays;
-        }
+        $windowConfig = $this->resolveAlertWindowConfig(
+            optionsKey: 'gatic.alerts.renewals.due_soon_window_days_options',
+            defaultKey: 'gatic.alerts.renewals.due_soon_window_days_default',
+            fallbackOptions: [30, 60, 90, 180],
+        );
+        $defaultWindowDays = $windowConfig['defaultWindowDays'];
+        $comparativePeriod = $this->resolveAlertComparativePeriod($defaultWindowDays);
 
         $this->renewalDueSoonWindowDays = $defaultWindowDays;
 
@@ -466,13 +451,15 @@ class DashboardMetrics extends Component
             ->whereNotNull('expected_replacement_date')
             ->where('status', '!=', Asset::STATUS_RETIRED);
 
-        $this->renewalsOverdueCount = (clone $baseQuery)
-            ->where('expected_replacement_date', '<', $today->toDateString())
-            ->count();
+        /** @var ComparativeAlertCounts $counts */
+        $counts = app(ComparativeAlertCountsReader::class)->get(
+            baseQuery: $baseQuery,
+            dateColumn: 'expected_replacement_date',
+            comparativePeriod: $comparativePeriod,
+        );
 
-        $renewalsOverdueYesterday = (clone $baseQuery)
-            ->where('expected_replacement_date', '<', $yesterday->toDateString())
-            ->count();
+        $this->renewalsOverdueCount = $counts['currentOverdue'];
+        $renewalsOverdueYesterday = $counts['previousOverdue'];
 
         [$this->renewalsOverdueDeltaLabel, $this->renewalsOverdueDeltaVariant] = $this->buildDeltaBadge(
             current: $this->renewalsOverdueCount,
@@ -482,17 +469,8 @@ class DashboardMetrics extends Component
             decreaseVariant: 'success',
         );
 
-        $windowEnd = $today->copy()->addDays($defaultWindowDays);
-
-        $this->renewalsDueSoonCount = (clone $baseQuery)
-            ->whereBetween('expected_replacement_date', [$today->toDateString(), $windowEnd->toDateString()])
-            ->count();
-
-        $windowEndYesterday = $yesterday->copy()->addDays($defaultWindowDays);
-
-        $renewalsDueSoonYesterday = (clone $baseQuery)
-            ->whereBetween('expected_replacement_date', [$yesterday->toDateString(), $windowEndYesterday->toDateString()])
-            ->count();
+        $this->renewalsDueSoonCount = $counts['currentDueSoon'];
+        $renewalsDueSoonYesterday = $counts['previousDueSoon'];
 
         [$this->renewalsDueSoonDeltaLabel, $this->renewalsDueSoonDeltaVariant] = $this->buildDeltaBadge(
             current: $this->renewalsDueSoonCount,
@@ -513,33 +491,23 @@ class DashboardMetrics extends Component
         string $increaseVariant,
         string $decreaseVariant,
     ): array {
-        if ($current === $previous) {
-            return [null, null];
-        }
-
-        $delta = $current - $previous;
-        if ($previous > 0) {
-            $pct = ($delta / $previous) * 100;
-            $label = sprintf('%+.1f%% %s', $pct, $suffix);
-        } else {
-            $label = sprintf('%+d %s', $delta, $suffix);
-        }
-
-        $variant = $delta > 0 ? $increaseVariant : $decreaseVariant;
-
-        return [$label, $variant];
+        return app(DeltaBadgeBuilder::class)->build(
+            current: $current,
+            previous: $previous,
+            suffix: $suffix,
+            increaseVariant: $increaseVariant,
+            decreaseVariant: $decreaseVariant,
+        );
     }
 
     private function loadPendingTasksCounts(): void
     {
-        $counts = PendingTask::query()
-            ->selectRaw('status, count(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status');
+        /** @var PendingTaskCounts $counts */
+        $counts = app(PendingTaskCountsReader::class)->get();
 
-        $this->pendingTasksReadyCount = (int) ($counts['ready'] ?? 0);
-        $this->pendingTasksProcessingCount = (int) ($counts['processing'] ?? 0);
-        $this->pendingTasksActiveCount = $this->pendingTasksReadyCount + $this->pendingTasksProcessingCount;
+        $this->pendingTasksReadyCount = $counts['ready'];
+        $this->pendingTasksProcessingCount = $counts['processing'];
+        $this->pendingTasksActiveCount = $counts['active'];
     }
 
     private function resetPendingTasksCounts(): void
@@ -558,6 +526,36 @@ class DashboardMetrics extends Component
         }
         $this->valueByCategory = [];
         $this->valueByBrand = [];
+    }
+
+    /**
+     * @param  non-empty-list<int>  $fallbackOptions
+     * @return AlertWindowConfig
+     */
+    private function resolveAlertWindowConfig(
+        string $optionsKey,
+        string $defaultKey,
+        array $fallbackOptions,
+    ): array {
+        /** @var AlertWindowConfig $windowConfig */
+        $windowConfig = app(AlertWindowConfigResolver::class)->resolve(
+            optionsKey: $optionsKey,
+            defaultKey: $defaultKey,
+            fallbackOptions: $fallbackOptions,
+        );
+
+        return $windowConfig;
+    }
+
+    /**
+     * @return ComparativeAlertPeriod
+     */
+    private function resolveAlertComparativePeriod(int $windowDays): array
+    {
+        /** @var ComparativeAlertPeriod $comparativePeriod */
+        $comparativePeriod = app(AlertComparativePeriodResolver::class)->resolve(windowDays: $windowDays);
+
+        return $comparativePeriod;
     }
 
     private function normalizeTrendRangeDays(int $value): int
@@ -581,93 +579,29 @@ class DashboardMetrics extends Component
     }
 
     /**
-     * @return array{labels: list<string>, datasets: list<array{key: string, label: string, data: list<int>}>}
+     * @return MovementTrendPayload
      */
     private function buildMovementTrend(int $rangeDays): array
     {
         $rangeDays = $this->normalizeTrendRangeDays($rangeDays);
+        $today = Carbon::today();
+        $start = $today->copy()->subDays($rangeDays - 1)->startOfDay();
+        $end = $today->copy()->endOfDay();
 
-        $start = Carbon::today()->subDays($rangeDays - 1)->startOfDay();
-        $end = Carbon::today()->endOfDay();
+        /** @var MovementTrendRows $trendRows */
+        $trendRows = app(MovementTrendRowsReader::class)->get(
+            assetMovementsQuery: $this->buildAssetMovementsQuery(),
+            quantityMovementsQuery: $this->buildQuantityMovementsQuery(),
+            start: $start,
+            end: $end,
+        );
 
-        $days = [];
-        $dayIndex = [];
-        $cursor = $start->copy();
-        $i = 0;
-        while ($cursor->lte($end)) {
-            $key = $cursor->toDateString();
-            $days[] = $key;
-            $dayIndex[$key] = $i;
-            $i++;
-            $cursor->addDay();
-        }
-
-        $assignedOps = array_fill(0, count($days), 0);
-        $loanOps = array_fill(0, count($days), 0);
-        $qtyInOps = array_fill(0, count($days), 0);
-        $qtyOutOps = array_fill(0, count($days), 0);
-
-        $assetRows = $this->buildAssetMovementsQuery()
-            ->selectRaw('DATE(asset_movements.created_at) as day, asset_movements.type as type, COUNT(*) as total')
-            ->whereBetween('asset_movements.created_at', [$start, $end])
-            ->whereIn('asset_movements.type', AssetMovement::TYPES)
-            ->groupByRaw('DATE(asset_movements.created_at), asset_movements.type')
-            ->get();
-
-        foreach ($assetRows as $row) {
-            $day = (string) ($row->day ?? '');
-            if ($day === '' || ! array_key_exists($day, $dayIndex)) {
-                continue;
-            }
-
-            $idx = (int) $dayIndex[$day];
-            $type = (string) ($row->type ?? '');
-            $total = (int) ($row->total ?? 0);
-
-            if ($type === AssetMovement::TYPE_ASSIGN || $type === AssetMovement::TYPE_UNASSIGN) {
-                $assignedOps[$idx] += $total;
-            }
-
-            if ($type === AssetMovement::TYPE_LOAN || $type === AssetMovement::TYPE_RETURN) {
-                $loanOps[$idx] += $total;
-            }
-        }
-
-        $qtyRows = $this->buildQuantityMovementsQuery()
-            ->selectRaw('DATE(product_quantity_movements.created_at) as day, product_quantity_movements.direction as direction, COUNT(*) as total')
-            ->whereBetween('product_quantity_movements.created_at', [$start, $end])
-            ->whereIn('product_quantity_movements.direction', ProductQuantityMovement::DIRECTIONS)
-            ->groupByRaw('DATE(product_quantity_movements.created_at), product_quantity_movements.direction')
-            ->get();
-
-        foreach ($qtyRows as $row) {
-            $day = (string) ($row->day ?? '');
-            if ($day === '' || ! array_key_exists($day, $dayIndex)) {
-                continue;
-            }
-
-            $idx = (int) $dayIndex[$day];
-            $direction = (string) ($row->direction ?? '');
-            $total = (int) ($row->total ?? 0);
-
-            if ($direction === ProductQuantityMovement::DIRECTION_IN) {
-                $qtyInOps[$idx] += $total;
-            }
-
-            if ($direction === ProductQuantityMovement::DIRECTION_OUT) {
-                $qtyOutOps[$idx] += $total;
-            }
-        }
-
-        return [
-            'labels' => $days,
-            'datasets' => [
-                ['key' => 'assets_assigned_ops', 'label' => 'Asignaciones', 'data' => $assignedOps],
-                ['key' => 'assets_loan_ops', 'label' => 'Préstamos', 'data' => $loanOps],
-                ['key' => 'qty_out_ops', 'label' => 'Cantidad salida', 'data' => $qtyOutOps],
-                ['key' => 'qty_in_ops', 'label' => 'Cantidad entrada', 'data' => $qtyInOps],
-            ],
-        ];
+        return app(MovementTrendPayloadBuilder::class)->build(
+            rangeDays: $rangeDays,
+            assetRows: $trendRows['assetRows'],
+            quantityRows: $trendRows['quantityRows'],
+            today: $today,
+        );
     }
 
     /**
@@ -675,79 +609,22 @@ class DashboardMetrics extends Component
      */
     private function buildAlertsSnapshot(): array
     {
-        $canManage = Gate::allows('inventory.manage');
-        $filters = $this->buildFilterParams();
-        $productFilters = $this->buildProductFilterParams();
-
-        $items = [
-            [
-                'key' => 'loans_overdue',
-                'label' => 'Préstamos vencidos',
-                'value' => $this->loansOverdueCount,
-                'href' => $canManage ? route('alerts.loans.index', array_merge(['type' => 'overdue'], $filters)) : null,
-                'variant' => 'danger',
-            ],
-            [
-                'key' => 'loans_due_soon',
-                'label' => 'Préstamos por vencer',
-                'value' => $this->loansDueSoonCount,
-                'href' => $canManage
-                    ? route('alerts.loans.index', array_merge(['type' => 'due-soon', 'windowDays' => $this->loanDueSoonWindowDays], $filters))
-                    : null,
-                'variant' => 'warning',
-            ],
-            [
-                'key' => 'warranties_expired',
-                'label' => 'Garantías vencidas',
-                'value' => $this->warrantiesExpiredCount,
-                'href' => $canManage ? route('alerts.warranties.index', array_merge(['type' => 'expired'], $filters)) : null,
-                'variant' => 'danger',
-            ],
-            [
-                'key' => 'warranties_due_soon',
-                'label' => 'Garantías por vencer',
-                'value' => $this->warrantiesDueSoonCount,
-                'href' => $canManage
-                    ? route('alerts.warranties.index', array_merge(['type' => 'due-soon', 'windowDays' => $this->warrantyDueSoonWindowDays], $filters))
-                    : null,
-                'variant' => 'warning',
-            ],
-            [
-                'key' => 'low_stock',
-                'label' => 'Stock bajo',
-                'value' => $this->lowStockProductsCount,
-                'href' => $canManage ? route('alerts.stock.index', $productFilters) : null,
-                'variant' => 'warning',
-            ],
-            [
-                'key' => 'renewals_overdue',
-                'label' => 'Renovaciones vencidas',
-                'value' => $this->renewalsOverdueCount,
-                'href' => $canManage ? route('alerts.renewals.index', array_merge(['type' => 'overdue'], $filters)) : null,
-                'variant' => 'danger',
-            ],
-            [
-                'key' => 'renewals_due_soon',
-                'label' => 'Renovaciones por vencer',
-                'value' => $this->renewalsDueSoonCount,
-                'href' => $canManage
-                    ? route('alerts.renewals.index', array_merge(['type' => 'due-soon', 'windowDays' => $this->renewalDueSoonWindowDays], $filters))
-                    : null,
-                'variant' => 'warning',
-            ],
-        ];
-
-        if ($canManage) {
-            $items[] = [
-                'key' => 'pending_tasks',
-                'label' => 'Tareas pendientes',
-                'value' => $this->pendingTasksActiveCount,
-                'href' => route('pending-tasks.index'),
-                'variant' => 'info',
-            ];
-        }
-
-        return $items;
+        return app(AlertsSnapshotBuilder::class)->build([
+            'canManage' => Gate::allows('inventory.manage'),
+            'filters' => $this->buildFilterParams(),
+            'productFilters' => $this->buildProductFilterParams(),
+            'loansOverdueCount' => $this->loansOverdueCount,
+            'loansDueSoonCount' => $this->loansDueSoonCount,
+            'loanDueSoonWindowDays' => $this->loanDueSoonWindowDays,
+            'warrantiesExpiredCount' => $this->warrantiesExpiredCount,
+            'warrantiesDueSoonCount' => $this->warrantiesDueSoonCount,
+            'warrantyDueSoonWindowDays' => $this->warrantyDueSoonWindowDays,
+            'lowStockProductsCount' => $this->lowStockProductsCount,
+            'renewalsOverdueCount' => $this->renewalsOverdueCount,
+            'renewalsDueSoonCount' => $this->renewalsDueSoonCount,
+            'renewalDueSoonWindowDays' => $this->renewalDueSoonWindowDays,
+            'pendingTasksActiveCount' => $this->pendingTasksActiveCount,
+        ]);
     }
 
     private function loadInventoryValue(): void
@@ -755,94 +632,28 @@ class DashboardMetrics extends Component
         $topN = (int) config('gatic.dashboard.value.top_n', 5);
         $this->valueBreakdownTopN = $topN > 0 ? $topN : 5;
 
-        $baseValueQuery = DB::table('assets')
-            ->join('products', 'assets.product_id', '=', 'products.id')
-            ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->where('assets.status', '!=', Asset::STATUS_RETIRED)
-            ->whereNotNull('assets.acquisition_cost')
-            ->whereNull('assets.deleted_at')
-            ->whereNull('products.deleted_at')
-            ->whereNull('categories.deleted_at');
+        /** @var InventoryValueReadResult $inventoryValueReadResult */
+        $inventoryValueReadResult = app(InventoryValueReader::class)->get(
+            locationId: $this->locationId,
+            categoryId: $this->categoryId,
+            brandId: $this->brandId,
+            defaultCurrency: $this->defaultCurrency,
+            topN: $this->valueBreakdownTopN,
+        );
 
-        if ($this->locationId !== null) {
-            $baseValueQuery->where('assets.location_id', '=', $this->locationId);
-        }
+        /** @var InventoryValuePayload $inventoryValue */
+        $inventoryValue = app(InventoryValuePayloadBuilder::class)->build(
+            totalValue: $inventoryValueReadResult['totalValue'],
+            categoryRows: $inventoryValueReadResult['categoryRows'],
+            categoriesCount: $inventoryValueReadResult['categoriesCount'],
+            brandRows: $inventoryValueReadResult['brandRows'],
+            brandsCount: $inventoryValueReadResult['brandsCount'],
+            topN: $this->valueBreakdownTopN,
+        );
 
-        if ($this->categoryId !== null) {
-            $baseValueQuery->where('categories.id', '=', $this->categoryId);
-        }
-
-        if ($this->brandId !== null) {
-            $baseValueQuery->where('products.brand_id', '=', $this->brandId);
-        }
-
-        $defaultCurrency = $this->defaultCurrency;
-        $baseDefaultCurrencyQuery = (clone $baseValueQuery)
-            ->where(static function ($query) use ($defaultCurrency): void {
-                $query->where('assets.acquisition_currency', '=', $defaultCurrency)
-                    ->orWhereNull('assets.acquisition_currency');
-            });
-
-        $totalValue = (float) (clone $baseDefaultCurrencyQuery)->sum('assets.acquisition_cost');
-        $this->totalInventoryValue = number_format($totalValue, 2, '.', '');
-
-        // Value breakdown by Category (via Product relationship)
-        /** @var list<object{category_id: int, category_name: string, total_value: string}> $categoryBreakdown */
-        $categoryBreakdown = (clone $baseDefaultCurrencyQuery)
-            ->selectRaw('categories.id as category_id, categories.name as category_name, SUM(assets.acquisition_cost) as total_value')
-            ->groupBy('categories.id', 'categories.name')
-            ->orderByDesc('total_value')
-            ->limit($this->valueBreakdownTopN)
-            ->get()
-            ->all();
-
-        $this->valueByCategory = array_map(static fn (object $row): array => [
-            'name' => (string) $row->category_name,
-            'value' => number_format((float) $row->total_value, 2, '.', ''),
-            'id' => (int) $row->category_id,
-        ], $categoryBreakdown);
-
-        $categoriesCount = (int) (clone $baseDefaultCurrencyQuery)->distinct()->count('categories.id');
-        $sumTopCategories = array_reduce($this->valueByCategory, static fn (float $carry, array $item): float => $carry + (float) $item['value'], 0.0);
-        $otherCategoriesValue = (float) $this->totalInventoryValue - $sumTopCategories;
-        if ($categoriesCount > $this->valueBreakdownTopN && $otherCategoriesValue > 0.004) {
-            $this->valueByCategory[] = [
-                'name' => 'Otros',
-                'value' => number_format($otherCategoriesValue, 2, '.', ''),
-                'id' => null,
-            ];
-        }
-
-        // Value breakdown by Brand (via Product relationship)
-        /** @var list<object{brand_id: int|null, brand_name: string, total_value: string}> $brandBreakdown */
-        $brandBreakdown = (clone $baseDefaultCurrencyQuery)
-            ->selectRaw('brands.id as brand_id, COALESCE(brands.name, \'Sin marca\') as brand_name, SUM(assets.acquisition_cost) as total_value')
-            ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
-            ->groupByRaw('brands.id, COALESCE(brands.name, \'Sin marca\')')
-            ->orderByDesc('total_value')
-            ->limit($this->valueBreakdownTopN)
-            ->get()
-            ->all();
-
-        $this->valueByBrand = array_map(static fn (object $row): array => [
-            'name' => (string) $row->brand_name,
-            'value' => number_format((float) $row->total_value, 2, '.', ''),
-            'id' => $row->brand_id !== null ? (int) $row->brand_id : null,
-        ], $brandBreakdown);
-
-        $brandsCount = (int) (clone $baseDefaultCurrencyQuery)
-            ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
-            ->distinct()
-            ->count(DB::raw('COALESCE(brands.id, 0)'));
-        $sumTopBrands = array_reduce($this->valueByBrand, static fn (float $carry, array $item): float => $carry + (float) $item['value'], 0.0);
-        $otherBrandsValue = (float) $this->totalInventoryValue - $sumTopBrands;
-        if ($brandsCount > $this->valueBreakdownTopN && $otherBrandsValue > 0.004) {
-            $this->valueByBrand[] = [
-                'name' => 'Otros',
-                'value' => number_format($otherBrandsValue, 2, '.', ''),
-                'id' => null,
-            ];
-        }
+        $this->totalInventoryValue = $inventoryValue['totalInventoryValue'];
+        $this->valueByCategory = $inventoryValue['valueByCategory'];
+        $this->valueByBrand = $inventoryValue['valueByBrand'];
     }
 
     private function loadRecentActivity(): void
@@ -864,234 +675,21 @@ class DashboardMetrics extends Component
 
     private function loadCriticalQueuePreview(): void
     {
-        $limit = $this->criticalQueuePreviewLimit > 0 ? $this->criticalQueuePreviewLimit : 10;
         $today = Carbon::today();
         $filters = $this->buildFilterParams();
         $returnTo = '/dashboard'.(count($filters) > 0 ? ('?'.http_build_query($filters)) : '');
 
-        /** @var list<array{priority: int, score: int, type: string, variant: string, icon: string, title: string, subtitle: string|null, detail: string|null, detailHint: string|null, location: string|null, actor: string|null, href: string}> $items */
-        $items = [];
-
-        if ($this->loansOverdueCount > 0) {
-            $assets = $this->applyAssetFilters(
-                Asset::query()
-            )
-                ->with([
-                    'product:id,name',
-                    'location:id,name',
-                    'currentEmployee:id,rpe,name',
-                ])
-                ->where('status', Asset::STATUS_LOANED)
-                ->whereNotNull('loan_due_date')
-                ->where('loan_due_date', '<', $today->toDateString())
-                ->orderBy('loan_due_date')
-                ->orderBy('serial')
-                ->limit(5)
-                ->get([
-                    'id',
-                    'product_id',
-                    'location_id',
-                    'current_employee_id',
-                    'serial',
-                    'asset_tag',
-                    'loan_due_date',
-                ]);
-
-            foreach ($assets as $asset) {
-                $due = $asset->loan_due_date;
-                $days = $due ? (int) $due->diffInDays($today) : null;
-                $title = (string) $asset->serial;
-                if (is_string($asset->asset_tag) && $asset->asset_tag !== '') {
-                    $title = "{$title} ({$asset->asset_tag})";
-                }
-
-                $items[] = [
-                    'priority' => 100,
-                    'score' => $days ?? 0,
-                    'type' => 'Préstamo vencido',
-                    'variant' => 'danger',
-                    'icon' => 'bi-clock-history',
-                    'title' => $title,
-                    'subtitle' => $asset->product?->name,
-                    'detail' => $due?->format('d/m/Y'),
-                    'detailHint' => $days !== null && $days > 0 ? "Hace {$days}d" : null,
-                    'location' => $asset->location?->name,
-                    'actor' => $asset->currentEmployee?->full_name,
-                    'href' => route('inventory.products.assets.show', [
-                        'product' => $asset->product_id,
-                        'asset' => $asset->id,
-                        'returnTo' => $returnTo,
-                    ]),
-                ];
-            }
-        }
-
-        if ($this->warrantiesExpiredCount > 0) {
-            $assets = $this->applyAssetFilters(
-                Asset::query()
-            )
-                ->with([
-                    'product:id,name',
-                    'location:id,name',
-                    'warrantySupplier:id,name',
-                ])
-                ->whereNotNull('warranty_end_date')
-                ->where('status', '!=', Asset::STATUS_RETIRED)
-                ->where('warranty_end_date', '<', $today->toDateString())
-                ->orderBy('warranty_end_date')
-                ->orderBy('serial')
-                ->limit(5)
-                ->get([
-                    'id',
-                    'product_id',
-                    'location_id',
-                    'warranty_supplier_id',
-                    'serial',
-                    'asset_tag',
-                    'warranty_end_date',
-                ]);
-
-            foreach ($assets as $asset) {
-                $due = $asset->warranty_end_date;
-                $days = $due ? (int) $due->diffInDays($today) : null;
-                $title = (string) $asset->serial;
-                if (is_string($asset->asset_tag) && $asset->asset_tag !== '') {
-                    $title = "{$title} ({$asset->asset_tag})";
-                }
-
-                $items[] = [
-                    'priority' => 90,
-                    'score' => $days ?? 0,
-                    'type' => 'Garantía vencida',
-                    'variant' => 'danger',
-                    'icon' => 'bi-shield-x',
-                    'title' => $title,
-                    'subtitle' => $asset->product?->name,
-                    'detail' => $due?->format('d/m/Y'),
-                    'detailHint' => $days !== null && $days > 0 ? "Hace {$days}d" : null,
-                    'location' => $asset->location?->name,
-                    'actor' => $asset->warrantySupplier?->name,
-                    'href' => route('inventory.products.assets.show', [
-                        'product' => $asset->product_id,
-                        'asset' => $asset->id,
-                        'returnTo' => $returnTo,
-                    ]),
-                ];
-            }
-        }
-
-        if ($this->renewalsOverdueCount > 0) {
-            $assets = $this->applyAssetFilters(
-                Asset::query()
-            )
-                ->with([
-                    'product:id,name',
-                    'location:id,name',
-                ])
-                ->whereNotNull('expected_replacement_date')
-                ->where('status', '!=', Asset::STATUS_RETIRED)
-                ->where('expected_replacement_date', '<', $today->toDateString())
-                ->orderBy('expected_replacement_date')
-                ->orderBy('serial')
-                ->limit(5)
-                ->get([
-                    'id',
-                    'product_id',
-                    'location_id',
-                    'serial',
-                    'asset_tag',
-                    'expected_replacement_date',
-                ]);
-
-            foreach ($assets as $asset) {
-                $due = $asset->expected_replacement_date;
-                $days = $due ? (int) $due->diffInDays($today) : null;
-                $title = (string) $asset->serial;
-                if (is_string($asset->asset_tag) && $asset->asset_tag !== '') {
-                    $title = "{$title} ({$asset->asset_tag})";
-                }
-
-                $items[] = [
-                    'priority' => 80,
-                    'score' => $days ?? 0,
-                    'type' => 'Renovación vencida',
-                    'variant' => 'danger',
-                    'icon' => 'bi-arrow-repeat',
-                    'title' => $title,
-                    'subtitle' => $asset->product?->name,
-                    'detail' => $due?->format('d/m/Y'),
-                    'detailHint' => $days !== null && $days > 0 ? "Hace {$days}d" : null,
-                    'location' => $asset->location?->name,
-                    'actor' => null,
-                    'href' => route('inventory.products.assets.show', [
-                        'product' => $asset->product_id,
-                        'asset' => $asset->id,
-                        'returnTo' => $returnTo,
-                    ]),
-                ];
-            }
-        }
-
-        if ($this->lowStockProductsCount > 0) {
-            $products = $this->applyProductFilters(
-                Product::query()
-            )
-                ->with([
-                    'brand:id,name',
-                ])
-                ->lowStockQuantity()
-                ->orderBy('qty_total')
-                ->orderBy('name')
-                ->limit(5)
-                ->get([
-                    'id',
-                    'name',
-                    'brand_id',
-                    'qty_total',
-                    'low_stock_threshold',
-                ]);
-
-            foreach ($products as $product) {
-                $qty = (int) ($product->qty_total ?? 0);
-                $threshold = (int) ($product->low_stock_threshold ?? 0);
-                $gap = $threshold - $qty;
-                $detail = "{$qty} / {$threshold}";
-
-                $items[] = [
-                    'priority' => 70,
-                    'score' => $gap,
-                    'type' => 'Stock bajo',
-                    'variant' => 'warning',
-                    'icon' => 'bi-box-seam',
-                    'title' => (string) $product->name,
-                    'subtitle' => $product->brand?->name,
-                    'detail' => $detail,
-                    'detailHint' => $gap > 0 ? "Faltan {$gap}" : null,
-                    'location' => null,
-                    'actor' => null,
-                    'href' => route('inventory.products.show', [
-                        'product' => $product->id,
-                    ]),
-                ];
-            }
-        }
-
-        usort($items, static function (array $a, array $b): int {
-            $priority = $b['priority'] <=> $a['priority'];
-            if ($priority !== 0) {
-                return $priority;
-            }
-
-            return $b['score'] <=> $a['score'];
-        });
-
-        $normalized = [];
-        foreach (array_slice($items, 0, $limit) as $item) {
-            unset($item['priority'], $item['score']);
-            $normalized[] = $item;
-        }
-
-        $this->criticalQueue = $normalized;
+        $this->criticalQueue = app(CriticalQueuePreviewItemsBuilder::class)->build(
+            assetQuery: $this->applyAssetFilters(Asset::query()),
+            productQuery: $this->applyProductFilters(Product::query()),
+            today: $today,
+            returnTo: $returnTo,
+            limit: $this->criticalQueuePreviewLimit,
+            loansOverdueCount: $this->loansOverdueCount,
+            warrantiesExpiredCount: $this->warrantiesExpiredCount,
+            renewalsOverdueCount: $this->renewalsOverdueCount,
+            lowStockProductsCount: $this->lowStockProductsCount,
+        );
     }
 
     private function loadFilterOptions(): void

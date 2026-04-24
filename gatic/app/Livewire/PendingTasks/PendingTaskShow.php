@@ -3,10 +3,8 @@
 namespace App\Livewire\PendingTasks;
 
 use App\Actions\PendingTasks\AcquirePendingTaskLock;
-use App\Actions\PendingTasks\AddLineToTask;
 use App\Actions\PendingTasks\AddSerializedLinesToTask;
 use App\Actions\PendingTasks\ClearLineError;
-use App\Actions\PendingTasks\Concerns\ValidatesTaskLines;
 use App\Actions\PendingTasks\FinalizePendingTask;
 use App\Actions\PendingTasks\ForceClaimPendingTaskLock;
 use App\Actions\PendingTasks\ForceReleasePendingTaskLock;
@@ -15,31 +13,36 @@ use App\Actions\PendingTasks\MarkTaskAsReady;
 use App\Actions\PendingTasks\ProcessQuickCapturePendingTask;
 use App\Actions\PendingTasks\ReleasePendingTaskLock;
 use App\Actions\PendingTasks\RemoveLineFromTask;
-use App\Actions\PendingTasks\UpdateTaskLine;
 use App\Actions\PendingTasks\ValidatePendingTaskLine;
-use App\Enums\PendingTaskLineStatus;
 use App\Enums\PendingTaskLineType;
 use App\Enums\PendingTaskStatus;
 use App\Enums\UserRole;
 use App\Livewire\Concerns\InteractsWithToasts;
 use App\Models\PendingTask;
-use App\Models\PendingTaskLine;
 use App\Models\Product;
+use App\Support\Errors\ErrorReporter;
+use App\Support\PendingTasks\PendingTaskDraftLineSaver;
+use App\Support\PendingTasks\PendingTaskDraftNewLineSaver;
+use App\Support\PendingTasks\PendingTaskEditableLineResolver;
+use App\Support\PendingTasks\PendingTaskLineEditorStateFactory;
+use App\Support\PendingTasks\PendingTaskLinePayloadNormalizer;
+use App\Support\PendingTasks\PendingTaskLineValidationErrorMapper;
+use App\Support\PendingTasks\PendingTaskProcessLineSaver;
+use App\Support\PendingTasks\SerializedBulkPasteAnalysis;
+use App\Support\PendingTasks\SerializedBulkPasteAnalyzer;
+use DomainException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
 class PendingTaskShow extends Component
 {
     use InteractsWithToasts;
-    use ValidatesTaskLines;
 
     public int $pendingTask;
 
@@ -151,10 +154,7 @@ class PendingTaskShow extends Component
             return false;
         }
 
-        session()->flash('toast', [
-            'type' => 'error',
-            'message' => "Esta tarea fue creada como captura rápida y no permite {$action}.",
-        ]);
+        $this->toast(type: 'error', message: "Esta tarea fue creada como captura rápida y no permite {$action}.");
 
         return true;
     }
@@ -268,7 +268,6 @@ class PendingTaskShow extends Component
         }
 
         $this->resetForm();
-        $this->editingLineId = null;
         $this->showLineModal = true;
     }
 
@@ -282,19 +281,12 @@ class PendingTaskShow extends Component
             return;
         }
 
-        $line = PendingTaskLine::find($lineId);
-        if (! $line || $line->pending_task_id !== $this->pendingTask) {
+        $line = (new PendingTaskEditableLineResolver)->resolveDraftEditorLine($this->pendingTask, $lineId);
+        if (! $line) {
             return;
         }
 
-        $this->editingLineId = $lineId;
-        $this->lineType = $line->line_type->value;
-        $this->productId = $line->product_id;
-        $this->serial = $line->serial ?? '';
-        $this->assetTag = $line->asset_tag ?? '';
-        $this->quantity = $line->quantity !== null ? (string) $line->quantity : null;
-        $this->employeeId = $line->employee_id;
-        $this->note = $line->note;
+        $this->applyState((new PendingTaskLineEditorStateFactory)->hydrateDraftEditor($line));
         $this->showLineModal = true;
     }
 
@@ -306,21 +298,7 @@ class PendingTaskShow extends Component
 
     private function resetForm(): void
     {
-        $this->lineType = '';
-        $this->productId = null;
-        $this->serial = '';
-        $this->assetTag = '';
-        $this->quantity = null;
-        $this->serializedBulkInput = '';
-        $this->serializedBulkPreview = [];
-        $this->serializedBulkCount = 0;
-        $this->serializedBulkOkCount = 0;
-        $this->serializedBulkDuplicateCount = 0;
-        $this->serializedBulkInvalidCount = 0;
-        $this->serializedBulkLimitError = null;
-        $this->employeeId = null;
-        $this->note = '';
-        $this->editingLineId = null;
+        $this->applyState((new PendingTaskLineEditorStateFactory)->resetDraftEditor());
         $this->resetErrorBag();
     }
 
@@ -481,85 +459,74 @@ class PendingTaskShow extends Component
         }
 
         if (! $this->task?->isDraft()) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => 'La tarea no está en estado borrador.',
-            ]);
+            $this->toast(type: 'error', message: 'La tarea no está en estado borrador.');
 
             return;
         }
 
         try {
-            $quantity = null;
-            if ($this->lineType === PendingTaskLineType::Quantity->value) {
-                $validator = Validator::make(
-                    ['quantity' => $this->quantity],
-                    ['quantity' => ['required', 'integer', 'min:1']],
+            $draftLineInput = [
+                'serial' => $this->serial,
+                'asset_tag' => $this->assetTag,
+                'quantity' => $this->quantity,
+                'employee_id' => $this->employeeId,
+                'note' => $this->note,
+            ];
+
+            if ($this->editingLineId) {
+                $result = (new PendingTaskDraftLineSaver)->save(
+                    $this->pendingTask,
+                    $this->editingLineId,
+                    $this->lineType,
+                    $this->productId,
+                    $draftLineInput,
                 );
 
-                if ($validator->fails()) {
-                    $this->addError('quantity', $validator->errors()->first('quantity'));
+                if (! $result) {
+                    return;
+                }
+
+                $message = 'Renglón actualizado.';
+            } elseif ($this->lineType === PendingTaskLineType::Serialized->value) {
+                $linePayload = (new PendingTaskLinePayloadNormalizer)->normalize(
+                    $this->lineType,
+                    $this->productId,
+                    $draftLineInput,
+                );
+
+                $this->rebuildSerializedBulkPreview();
+
+                if ($this->serializedBulkCount < 1) {
+                    $this->addError('serializedBulkInput', 'Pega al menos una serie.');
 
                     return;
                 }
 
-                $quantity = (int) $validator->validated()['quantity'];
-            }
+                if ($this->serializedBulkInvalidCount > 0 || $this->serializedBulkLimitError !== null) {
+                    $this->addError('serializedBulkInput', 'Corrige las líneas inválidas antes de guardar.');
 
-            if ($this->editingLineId) {
-                $action = new UpdateTaskLine;
-                $result = $action->execute($this->editingLineId, [
-                    'line_type' => $this->lineType,
-                    'product_id' => $this->productId,
-                    'serial' => $this->lineType === PendingTaskLineType::Serialized->value ? $this->serial : null,
-                    'asset_tag' => $this->lineType === PendingTaskLineType::Serialized->value ? $this->assetTag : null,
-                    'quantity' => $quantity,
-                    'employee_id' => $this->employeeId,
-                    'note' => $this->note,
+                    return;
+                }
+
+                $action = new AddSerializedLinesToTask;
+                $result = $action->execute([
+                    'pending_task_id' => $this->pendingTask,
+                    'product_id' => $linePayload['product_id'],
+                    'serials' => $this->extractSerializedBulkSerials(),
+                    'employee_id' => $linePayload['employee_id'],
+                    'note' => $linePayload['note'],
                 ]);
 
-                $message = 'Renglón actualizado.';
+                $message = "Renglones añadidos: {$result['lines_created']}.";
             } else {
-                if ($this->lineType === PendingTaskLineType::Serialized->value) {
-                    $this->rebuildSerializedBulkPreview();
+                $result = (new PendingTaskDraftNewLineSaver)->save(
+                    $this->pendingTask,
+                    $this->lineType,
+                    $this->productId,
+                    $draftLineInput,
+                );
 
-                    if ($this->serializedBulkCount < 1) {
-                        $this->addError('serializedBulkInput', 'Pega al menos una serie.');
-
-                        return;
-                    }
-
-                    if ($this->serializedBulkInvalidCount > 0 || $this->serializedBulkLimitError !== null) {
-                        $this->addError('serializedBulkInput', 'Corrige las líneas inválidas antes de guardar.');
-
-                        return;
-                    }
-
-                    $action = new AddSerializedLinesToTask;
-                    $result = $action->execute([
-                        'pending_task_id' => $this->pendingTask,
-                        'product_id' => $this->productId,
-                        'serials' => $this->extractSerializedBulkSerials(),
-                        'employee_id' => $this->employeeId,
-                        'note' => $this->note,
-                    ]);
-
-                    $message = "Renglones añadidos: {$result['lines_created']}.";
-                } else {
-                    $action = new AddLineToTask;
-                    $result = $action->execute([
-                        'pending_task_id' => $this->pendingTask,
-                        'line_type' => $this->lineType,
-                        'product_id' => $this->productId,
-                        'serial' => $this->lineType === PendingTaskLineType::Serialized->value ? $this->serial : null,
-                        'asset_tag' => $this->lineType === PendingTaskLineType::Serialized->value ? $this->assetTag : null,
-                        'quantity' => $quantity,
-                        'employee_id' => $this->employeeId,
-                        'note' => $this->note,
-                    ]);
-
-                    $message = 'Renglón añadido.';
-                }
+                $message = 'Renglón añadido.';
             }
 
             if ($result['has_duplicates'] || $this->serializedBulkDuplicateCount > 0) {
@@ -569,13 +536,10 @@ class PendingTaskShow extends Component
             $this->closeModal();
             $this->loadTask();
 
-            session()->flash('toast', [
-                'type' => 'success',
-                'message' => $message,
-            ]);
+            $this->toast(type: 'success', message: $message);
         } catch (ValidationException $e) {
-            foreach ($e->errors() as $field => $messages) {
-                $this->addError($field === 'serials' ? 'serializedBulkInput' : $field, $messages[0]);
+            foreach ((new PendingTaskLineValidationErrorMapper)->forDraftEditor($e) as $field => $message) {
+                $this->addError($field, $message);
             }
         }
     }
@@ -589,10 +553,7 @@ class PendingTaskShow extends Component
         }
 
         if (! $this->task?->isDraft()) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => 'La tarea no está en estado borrador.',
-            ]);
+            $this->toast(type: 'error', message: 'La tarea no está en estado borrador.');
 
             return;
         }
@@ -603,15 +564,9 @@ class PendingTaskShow extends Component
 
             $this->loadTask();
 
-            session()->flash('toast', [
-                'type' => 'success',
-                'message' => 'Renglón eliminado.',
-            ]);
+            $this->toast(type: 'success', message: 'Renglón eliminado.');
         } catch (ValidationException $e) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => $e->errors()['pending_task_id'][0] ?? $e->getMessage(),
-            ]);
+            $this->toast(type: 'error', message: $e->errors()['pending_task_id'][0] ?? $e->getMessage());
         }
     }
 
@@ -629,15 +584,9 @@ class PendingTaskShow extends Component
 
             $this->loadTask();
 
-            session()->flash('toast', [
-                'type' => 'success',
-                'message' => 'Tarea marcada como lista. Ya no puedes editar renglones.',
-            ]);
+            $this->toast(type: 'success', message: 'Tarea marcada como lista. Ya no puedes editar renglones.');
         } catch (ValidationException $e) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => $e->errors()['lines'][0] ?? $e->errors()['status'][0] ?? $e->getMessage(),
-            ]);
+            $this->toast(type: 'error', message: $e->errors()['lines'][0] ?? $e->errors()['status'][0] ?? $e->getMessage());
         }
     }
 
@@ -688,10 +637,7 @@ class PendingTaskShow extends Component
         }
 
         if (! $this->canProcess()) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => 'La tarea no está en un estado que permita procesarla.',
-            ]);
+            $this->toast(type: 'error', message: 'La tarea no está en un estado que permita procesarla.');
 
             return;
         }
@@ -707,10 +653,7 @@ class PendingTaskShow extends Component
             if (! $result['success']) {
                 // Lock is held by another user
                 $this->loadTask();
-                session()->flash('toast', [
-                    'type' => 'error',
-                    'message' => $result['message'],
-                ]);
+                $this->toast(type: 'error', message: $result['message']);
 
                 return;
             }
@@ -740,10 +683,7 @@ class PendingTaskShow extends Component
                 $this->task->setRelation('lockedBy', Auth::user());
             }
         } catch (ValidationException $e) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => $e->errors()['status'][0] ?? $e->errors()['pending_task_id'][0] ?? $e->getMessage(),
-            ]);
+            $this->toast(type: 'error', message: $e->errors()['status'][0] ?? $e->errors()['pending_task_id'][0] ?? $e->getMessage());
         }
     }
 
@@ -809,15 +749,9 @@ class PendingTaskShow extends Component
             }
 
             if ($this->task?->hasActiveLock()) {
-                session()->flash('toast', [
-                    'type' => 'error',
-                    'message' => 'Has perdido el lock. Otro usuario lo tiene.',
-                ]);
+                $this->toast(type: 'error', message: 'Has perdido el lock. Otro usuario lo tiene.');
             } else {
-                session()->flash('toast', [
-                    'type' => 'error',
-                    'message' => 'Tu lock ya no está activo. Haz clic en "Reintentar claim".',
-                ]);
+                $this->toast(type: 'error', message: 'Tu lock ya no está activo. Haz clic en "Reintentar claim".');
             }
 
             return false;
@@ -849,22 +783,13 @@ class PendingTaskShow extends Component
                 $this->lockLost = false;
                 $this->loadTask();
 
-                session()->flash('toast', [
-                    'type' => 'success',
-                    'message' => 'Lock adquirido. Puedes continuar procesando.',
-                ]);
+                $this->toast(type: 'success', message: 'Lock adquirido. Puedes continuar procesando.');
             } else {
                 $this->loadTask();
-                session()->flash('toast', [
-                    'type' => 'error',
-                    'message' => $result['message'],
-                ]);
+                $this->toast(type: 'error', message: $result['message']);
             }
         } catch (ValidationException $e) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => $e->errors()['pending_task_id'][0] ?? $e->getMessage(),
-            ]);
+            $this->toast(type: 'error', message: $e->errors()['pending_task_id'][0] ?? $e->getMessage());
         }
     }
 
@@ -928,15 +853,9 @@ class PendingTaskShow extends Component
             $this->loadTask();
 
             if ($result['valid']) {
-                session()->flash('toast', [
-                    'type' => 'success',
-                    'message' => 'Renglón validado correctamente.',
-                ]);
+                $this->toast(type: 'success', message: 'Renglón validado correctamente.');
             } else {
-                session()->flash('toast', [
-                    'type' => 'error',
-                    'message' => $result['error_message'] ?? 'Error de validación.',
-                ]);
+                $this->toast(type: 'error', message: $result['error_message'] ?? 'Error de validación.');
             }
         } catch (\Throwable $e) {
             $this->flashUnexpectedError($e, 'validar el renglón');
@@ -965,15 +884,9 @@ class PendingTaskShow extends Component
 
             $this->loadTask();
 
-            session()->flash('toast', [
-                'type' => 'success',
-                'message' => 'Error limpiado. El renglón está pendiente de validación.',
-            ]);
+            $this->toast(type: 'success', message: 'Error limpiado. El renglón está pendiente de validación.');
         } catch (ValidationException $e) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => $e->errors()['line_status'][0] ?? $e->getMessage(),
-            ]);
+            $this->toast(type: 'error', message: $e->errors()['line_status'][0] ?? $e->getMessage());
         }
     }
 
@@ -993,27 +906,19 @@ class PendingTaskShow extends Component
             return;
         }
 
-        $line = PendingTaskLine::find($lineId);
-        if (! $line || $line->pending_task_id !== $this->pendingTask) {
-            return;
-        }
-
-        // Can't edit applied lines
-        if ($line->line_status === PendingTaskLineStatus::Applied) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => 'No se puede editar un renglón ya aplicado.',
-            ]);
+        try {
+            $line = (new PendingTaskEditableLineResolver)->resolveProcessEditorLine($this->pendingTask, $lineId);
+        } catch (DomainException $e) {
+            $this->toast(type: 'error', message: $e->getMessage());
 
             return;
         }
 
-        $this->editingProcessLineId = $lineId;
-        $this->processLineSerial = $line->serial ?? '';
-        $this->processLineAssetTag = $line->asset_tag ?? '';
-        $this->processLineQuantity = $line->quantity !== null ? (string) $line->quantity : null;
-        $this->processLineEmployeeId = $line->employee_id;
-        $this->processLineNote = $line->note;
+        if (! $line) {
+            return;
+        }
+
+        $this->applyState((new PendingTaskLineEditorStateFactory)->hydrateProcessEditor($line));
         $this->showProcessLineModal = true;
     }
 
@@ -1023,13 +928,7 @@ class PendingTaskShow extends Component
     public function closeProcessLineModal(): void
     {
         $this->showProcessLineModal = false;
-        $this->editingProcessLineId = null;
-        $this->processLineSerial = '';
-        $this->processLineAssetTag = '';
-        $this->processLineQuantity = null;
-        $this->processLineEmployeeId = null;
-        $this->processLineNote = '';
-        $this->resetErrorBag();
+        $this->resetProcessLineForm();
     }
 
     /**
@@ -1056,62 +955,37 @@ class PendingTaskShow extends Component
             return;
         }
 
-        $line = PendingTaskLine::find($this->editingProcessLineId);
-        if (! $line || $line->pending_task_id !== $this->pendingTask) {
+        try {
+            $line = (new PendingTaskEditableLineResolver)->resolveProcessEditorLine($this->pendingTask, $this->editingProcessLineId);
+        } catch (DomainException $e) {
+            $this->toast(type: 'error', message: $e->getMessage());
+
+            return;
+        }
+
+        if (! $line) {
             return;
         }
 
         try {
-            $quantity = null;
-            if ($line->line_type === PendingTaskLineType::Quantity) {
-                $validator = Validator::make(
-                    ['quantity' => $this->processLineQuantity],
-                    ['quantity' => ['required', 'integer', 'min:1']],
-                );
-
-                if ($validator->fails()) {
-                    $this->addError('processLineQuantity', $validator->errors()->first('quantity'));
-
-                    return;
-                }
-
-                $quantity = (int) $validator->validated()['quantity'];
-            }
-
-            $action = new UpdateTaskLine;
-            $action->execute($this->editingProcessLineId, [
-                'line_type' => $line->line_type->value,
-                'product_id' => $line->product_id,
-                'serial' => $line->isSerialized() ? $this->processLineSerial : null,
-                'asset_tag' => $line->isSerialized() ? $this->processLineAssetTag : null,
-                'quantity' => $quantity,
-                'employee_id' => $this->processLineEmployeeId,
-                'note' => $this->processLineNote,
-            ]);
-
-            // Clear any previous error and set to pending
-            $line->line_status = PendingTaskLineStatus::Pending;
-            $line->error_message = null;
-            $line->save();
+            (new PendingTaskProcessLineSaver)->save(
+                $line,
+                [
+                    'serial' => $this->processLineSerial,
+                    'asset_tag' => $this->processLineAssetTag,
+                    'quantity' => $this->processLineQuantity,
+                    'employee_id' => $this->processLineEmployeeId,
+                    'note' => $this->processLineNote,
+                ],
+            );
 
             $this->closeProcessLineModal();
             $this->loadTask();
 
-            session()->flash('toast', [
-                'type' => 'success',
-                'message' => 'Renglón actualizado. Re-valida para verificar.',
-            ]);
+            $this->toast(type: 'success', message: 'Renglón actualizado. Re-valida para verificar.');
         } catch (ValidationException $e) {
-            foreach ($e->errors() as $field => $messages) {
-                $mappedField = match ($field) {
-                    'serial' => 'processLineSerial',
-                    'asset_tag' => 'processLineAssetTag',
-                    'quantity' => 'processLineQuantity',
-                    'employee_id' => 'processLineEmployeeId',
-                    'note' => 'processLineNote',
-                    default => $field,
-                };
-                $this->addError($mappedField, $messages[0]);
+            foreach ((new PendingTaskLineValidationErrorMapper)->forProcessEditor($e) as $field => $message) {
+                $this->addError($field, $message);
             }
         }
     }
@@ -1204,16 +1078,10 @@ class PendingTaskShow extends Component
                 $this->isProcessMode = false;
             }
 
-            session()->flash('toast', [
-                'type' => $result['error_count'] > 0 ? 'warning' : 'success',
-                'message' => $message,
-            ]);
+            $this->toast(type: $result['error_count'] > 0 ? 'warning' : 'success', message: $message);
         } catch (ValidationException $e) {
             $firstError = collect($e->errors())->flatten()->first();
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => $firstError ?? 'Error al finalizar la tarea.',
-            ]);
+            $this->toast(type: 'error', message: $firstError ?? 'Error al finalizar la tarea.');
         } catch (\Throwable $e) {
             $this->flashUnexpectedError($e, 'finalizar la tarea');
         }
@@ -1221,14 +1089,7 @@ class PendingTaskShow extends Component
 
     private function flashUnexpectedError(\Throwable $e, string $action): void
     {
-        $errorId = uniqid('ERR-');
-
-        Log::error("PendingTaskShow unexpected error [{$errorId}] ({$action})", [
-            'pending_task_id' => $this->pendingTask,
-            'user_id' => Auth::id(),
-            'exception' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ]);
+        $errorId = app(ErrorReporter::class)->report($e, request());
 
         $message = "Error inesperado al {$action} (ID: {$errorId}). Contacta a soporte.";
 
@@ -1238,10 +1099,7 @@ class PendingTaskShow extends Component
             $message .= ' '.$e->getMessage();
         }
 
-        session()->flash('toast', [
-            'type' => 'error',
-            'message' => $message,
-        ]);
+        $this->toast(type: 'error', message: $message);
     }
 
     /**
@@ -1302,15 +1160,9 @@ class PendingTaskShow extends Component
 
             $this->loadTask();
 
-            session()->flash('toast', [
-                'type' => 'success',
-                'message' => $result['message'],
-            ]);
+            $this->toast(type: 'success', message: $result['message']);
         } catch (ValidationException $e) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => $e->errors()['pending_task_id'][0] ?? $e->getMessage(),
-            ]);
+            $this->toast(type: 'error', message: $e->errors()['pending_task_id'][0] ?? $e->getMessage());
         } catch (\Throwable $e) {
             $this->flashUnexpectedError($e, 'forzar liberacion del lock');
         }
@@ -1343,15 +1195,9 @@ class PendingTaskShow extends Component
             $this->lockLost = false;
             $this->loadTask();
 
-            session()->flash('toast', [
-                'type' => 'success',
-                'message' => $result['message'],
-            ]);
+            $this->toast(type: 'success', message: $result['message']);
         } catch (ValidationException $e) {
-            session()->flash('toast', [
-                'type' => 'error',
-                'message' => $e->errors()['pending_task_id'][0] ?? $e->getMessage(),
-            ]);
+            $this->toast(type: 'error', message: $e->errors()['pending_task_id'][0] ?? $e->getMessage());
         } catch (\Throwable $e) {
             $this->flashUnexpectedError($e, 'forzar reclamo del lock');
         }
@@ -1381,37 +1227,11 @@ class PendingTaskShow extends Component
     }
 
     /**
-     * @return list<array{line: int, value: string}>
-     */
-    private function parseSerializedBulkInput(): array
-    {
-        $lines = preg_split("/\r\n|\n|\r/", $this->serializedBulkInput) ?: [];
-        $parsed = [];
-
-        foreach ($lines as $index => $line) {
-            $value = trim($line);
-            if ($value === '') {
-                continue;
-            }
-
-            $parsed[] = [
-                'line' => $index + 1,
-                'value' => $value,
-            ];
-        }
-
-        return $parsed;
-    }
-
-    /**
      * @return list<string>
      */
     private function extractSerializedBulkSerials(): array
     {
-        return array_map(
-            fn (array $item): string => $item['value'],
-            $this->parseSerializedBulkInput(),
-        );
+        return $this->analyzeSerializedBulkInput()->serials;
     }
 
     private function rebuildSerializedBulkPreview(): void
@@ -1431,94 +1251,51 @@ class PendingTaskShow extends Component
             return;
         }
 
-        $parsed = $this->parseSerializedBulkInput();
-        if ($parsed === []) {
-            return;
-        }
+        $this->applySerializedBulkAnalysis($this->analyzeSerializedBulkInput());
+    }
 
-        $this->serializedBulkCount = count($parsed);
+    private function analyzeSerializedBulkInput(): SerializedBulkPasteAnalysis
+    {
+        $existingSerials = [];
 
-        $max = max(1, $this->serializedBulkMaxLines);
-        if ($this->serializedBulkCount > $max) {
-            $this->serializedBulkLimitError = "Límite máximo: {$max} líneas. Reduce el pegado para poder guardar.";
-        }
-
-        $values = array_map(fn (array $item): string => $item['value'], $parsed);
-        $counts = array_count_values($values);
-
-        $existingSerialsSet = [];
         if ($this->task) {
             foreach ($this->task->lines as $line) {
                 if ($line->serial !== null && $line->serial !== '') {
-                    $existingSerialsSet[$line->serial] = true;
+                    $existingSerials[] = $line->serial;
                 }
             }
         }
 
-        foreach ($parsed as $index => $item) {
-            $value = $item['value'];
-            $status = 'ok';
-            $statusLabel = 'OK';
-            $message = null;
+        return app(SerializedBulkPasteAnalyzer::class)->analyze(
+            input: $this->serializedBulkInput,
+            maxLines: $this->serializedBulkMaxLines,
+            existingSerials: $existingSerials,
+        );
+    }
 
-            if ($index >= $max) {
-                $status = 'invalid';
-                $statusLabel = 'Inválida';
-                $message = "Excede el límite de {$max} líneas.";
-            } else {
-                $validationError = null;
-                $status = 'invalid';
-                $statusLabel = 'Inválida';
+    private function applySerializedBulkAnalysis(SerializedBulkPasteAnalysis $analysis): void
+    {
+        $this->serializedBulkPreview = $analysis->preview;
+        $this->serializedBulkCount = $analysis->count;
+        $this->serializedBulkOkCount = $analysis->okCount;
+        $this->serializedBulkDuplicateCount = $analysis->duplicateCount;
+        $this->serializedBulkInvalidCount = $analysis->invalidCount;
+        $this->serializedBulkLimitError = $analysis->limitError;
+    }
 
-                try {
-                    $this->validateSerializedLine([
-                        'serial' => $value,
-                        'asset_tag' => null,
-                    ]);
-                } catch (ValidationException $e) {
-                    $errors = $e->errors();
-                    $validationError = $errors['serial'][0] ?? $errors['asset_tag'][0] ?? $e->getMessage();
-                }
+    private function resetProcessLineForm(): void
+    {
+        $this->applyState((new PendingTaskLineEditorStateFactory)->resetProcessEditor());
+        $this->resetErrorBag();
+    }
 
-                if ($validationError !== null) {
-                    $message = $validationError;
-                } else {
-                    $status = 'ok';
-                    $statusLabel = 'OK';
-
-                    $duplicateReasons = [];
-
-                    if (($counts[$value] ?? 0) > 1) {
-                        $duplicateReasons[] = 'Repetida en el pegado';
-                    }
-
-                    if (isset($existingSerialsSet[$value])) {
-                        $duplicateReasons[] = 'Ya existe en la tarea';
-                    }
-
-                    if ($duplicateReasons !== []) {
-                        $status = 'duplicate';
-                        $statusLabel = 'Duplicada';
-                        $message = implode(' · ', $duplicateReasons);
-                    }
-                }
-            }
-
-            $this->serializedBulkPreview[] = [
-                'line' => $item['line'],
-                'value' => $value,
-                'status' => $status,
-                'status_label' => $statusLabel,
-                'message' => $message,
-            ];
-
-            if ($status === 'ok') {
-                $this->serializedBulkOkCount++;
-            } elseif ($status === 'duplicate') {
-                $this->serializedBulkDuplicateCount++;
-            } else {
-                $this->serializedBulkInvalidCount++;
-            }
+    /**
+     * @param  array<string, mixed>  $state
+     */
+    private function applyState(array $state): void
+    {
+        foreach ($state as $property => $value) {
+            $this->{$property} = $value;
         }
     }
 }

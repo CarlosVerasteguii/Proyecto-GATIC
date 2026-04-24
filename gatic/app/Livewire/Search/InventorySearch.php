@@ -14,6 +14,9 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Throwable;
 
+/**
+ * @phpstan-import-type SearchInventoryResult from \App\Actions\Search\SearchInventory
+ */
 #[Layout('layouts.app')]
 class InventorySearch extends Component
 {
@@ -84,6 +87,7 @@ class InventorySearch extends Component
         }
 
         try {
+            /** @var SearchInventoryResult $results */
             $results = app(SearchInventory::class)->execute($normalizedSearch);
         } catch (Throwable $exception) {
             $this->errorId = app(ErrorReporter::class)->report($exception, request());

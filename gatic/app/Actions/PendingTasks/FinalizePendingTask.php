@@ -15,8 +15,8 @@ use App\Models\Asset;
 use App\Models\PendingTask;
 use App\Models\PendingTaskLine;
 use App\Models\Product;
+use App\Support\Errors\ErrorReporter;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -241,14 +241,7 @@ class FinalizePendingTask
                 $this->markLineAsError($freshLine, $errorMessage);
             }
         } catch (\Throwable $e) {
-            // Unexpected error - log and provide error_id
-            $errorId = uniqid('ERR-');
-            Log::error("FinalizePendingTask unexpected error [{$errorId}]", [
-                'line_id' => $line->id,
-                'task_id' => $line->pending_task_id,
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            $errorId = app(ErrorReporter::class)->report($e, request());
             $this->markLineAsError($line, "Error inesperado (ID: {$errorId}). Contacta a soporte.");
         }
     }

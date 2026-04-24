@@ -247,4 +247,71 @@ class PendingTaskLockLivewireTest extends TestCase
             ->test(PendingTaskShow::class, ['pendingTask' => $this->task->id])
             ->assertForbidden();
     }
+
+    public function test_save_process_line_maps_quantity_validation_errors_to_process_form_field(): void
+    {
+        $quantityCategory = Category::factory()->create(['is_serialized' => false]);
+        $quantityProduct = Product::factory()->create(['category_id' => $quantityCategory->id]);
+
+        $task = PendingTask::factory()->create([
+            'type' => PendingTaskType::StockOut,
+            'status' => PendingTaskStatus::Ready,
+            'creator_user_id' => $this->userA->id,
+        ]);
+
+        $line = PendingTaskLine::factory()->create([
+            'pending_task_id' => $task->id,
+            'product_id' => $quantityProduct->id,
+            'employee_id' => $this->employee->id,
+            'line_type' => PendingTaskLineType::Quantity,
+            'quantity' => 3,
+            'line_status' => PendingTaskLineStatus::Pending,
+        ]);
+
+        Livewire::actingAs($this->userA)
+            ->test(PendingTaskShow::class, ['pendingTask' => $task->id])
+            ->call('enterProcessMode')
+            ->call('openProcessLineModal', $line->id)
+            ->set('processLineQuantity', '0')
+            ->call('saveProcessLine')
+            ->assertHasErrors(['processLineQuantity']);
+
+        $line->refresh();
+        $this->assertSame(3, $line->quantity);
+    }
+
+    public function test_save_process_line_maps_serial_validation_errors_to_process_form_field(): void
+    {
+        $draftTask = PendingTask::factory()->create([
+            'type' => PendingTaskType::StockOut,
+            'status' => PendingTaskStatus::Draft,
+            'creator_user_id' => $this->userA->id,
+            'locked_by_user_id' => $this->userA->id,
+            'locked_at' => now(),
+            'heartbeat_at' => now(),
+            'expires_at' => now()->addMinutes(3),
+        ]);
+
+        $line = PendingTaskLine::factory()->create([
+            'pending_task_id' => $draftTask->id,
+            'product_id' => $this->product->id,
+            'employee_id' => $this->employee->id,
+            'line_type' => PendingTaskLineType::Serialized,
+            'serial' => 'SER-001',
+            'asset_tag' => null,
+            'line_status' => PendingTaskLineStatus::Pending,
+        ]);
+
+        Livewire::actingAs($this->userA)
+            ->test(PendingTaskShow::class, ['pendingTask' => $draftTask->id])
+            ->set('isProcessMode', true)
+            ->call('openProcessLineModal', $line->id)
+            ->set('processLineSerial', '')
+            ->set('processLineAssetTag', '')
+            ->call('saveProcessLine')
+            ->assertHasErrors(['processLineSerial']);
+
+        $line->refresh();
+        $this->assertSame('SER-001', $line->serial);
+    }
 }

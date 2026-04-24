@@ -7,6 +7,13 @@ use App\Models\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @phpstan-type SearchInventoryResult array{
+ *     products: Collection<int, Product>,
+ *     assets: Collection<int, Asset>,
+ *     exactMatch: Asset|null
+ * }
+ */
 class SearchInventory
 {
     private const FULLTEXT_MIN_TOKEN_CHARS = 4;
@@ -14,7 +21,7 @@ class SearchInventory
     /**
      * Execute unified inventory search.
      *
-     * @return array{products: Collection<int, Product>, assets: Collection<int, Asset>, exactMatch: Asset|null}
+     * @return SearchInventoryResult
      */
     public function execute(string $query): array
     {
@@ -148,7 +155,7 @@ class SearchInventory
         $likePattern = implode('%', $escapedTokens).'%';
 
         return $productsQuery
-            ->whereRaw("name like ? escape '\\\\'", [$likePattern])
+            ->whereRaw("name like ? escape '\\'", [$likePattern])
             ->orderBy('name')
             ->limit(20)
             ->get();
@@ -199,8 +206,8 @@ class SearchInventory
         return Asset::query()
             ->with(['product', 'location', 'currentEmployee'])
             ->where(function ($q) use ($likePattern) {
-                $q->whereRaw("serial like ? escape '\\\\'", [$likePattern])
-                    ->orWhereRaw("asset_tag like ? escape '\\\\'", [$likePattern]);
+                $q->whereRaw("serial like ? escape '\\'", [$likePattern])
+                    ->orWhereRaw("asset_tag like ? escape '\\'", [$likePattern]);
             })
             ->orderBy('serial')
             ->limit(20)

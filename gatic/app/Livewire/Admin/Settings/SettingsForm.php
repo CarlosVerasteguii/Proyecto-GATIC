@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Settings;
 
 use App\Livewire\Concerns\InteractsWithToasts;
 use App\Models\AuditLog;
+use App\Support\Audit\AuditRecorder;
 use App\Support\Settings\SettingsStore;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
@@ -184,18 +185,17 @@ class SettingsForm extends Component
             );
 
             if ($changed !== []) {
-                AuditLog::create([
-                    'created_at' => now(),
-                    'actor_user_id' => $userId,
-                    'action' => AuditLog::ACTION_SETTINGS_UPDATE,
-                    'subject_type' => 'system',
-                    'subject_id' => 0,
-                    'context' => [
+                AuditRecorder::recordSync(
+                    action: AuditLog::ACTION_SETTINGS_UPDATE,
+                    subjectType: 'system',
+                    subjectId: 0,
+                    actorUserId: $userId,
+                    context: [
                         'changed_keys' => array_keys($changed),
                         'old' => array_intersect_key($oldValues, $changed),
                         'new' => $changed,
                     ],
-                ]);
+                );
             }
         } catch (\Throwable $e) {
             Log::warning('Settings: audit log failed (best-effort)', ['error' => $e->getMessage()]);
@@ -215,17 +215,16 @@ class SettingsForm extends Component
         try {
             $overrides = $store->getAllOverrides();
             if ($overrides !== []) {
-                AuditLog::create([
-                    'created_at' => now(),
-                    'actor_user_id' => auth()->id(),
-                    'action' => AuditLog::ACTION_SETTINGS_UPDATE,
-                    'subject_type' => 'system',
-                    'subject_id' => 0,
-                    'context' => [
+                AuditRecorder::recordSync(
+                    action: AuditLog::ACTION_SETTINGS_UPDATE,
+                    subjectType: 'system',
+                    subjectId: 0,
+                    actorUserId: auth()->id(),
+                    context: [
                         'action' => 'restore_defaults',
                         'removed_overrides' => array_keys($overrides),
                     ],
-                ]);
+                );
             }
         } catch (\Throwable $e) {
             Log::warning('Settings: audit log failed (best-effort)', ['error' => $e->getMessage()]);

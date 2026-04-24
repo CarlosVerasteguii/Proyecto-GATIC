@@ -259,6 +259,19 @@ class AssetStatusTransitionsTest extends TestCase
     }
 
     #[Test]
+    #[DataProvider('blockingReasonActionsProvider')]
+    public function get_blocking_reason_for_retired_asset_mentions_retired_status(string $action): void
+    {
+        $reason = AssetStatusTransitions::getBlockingReason(
+            Asset::STATUS_RETIRED,
+            $action
+        );
+
+        $this->assertNotNull($reason);
+        $this->assertStringContainsString('Retirado', $reason);
+    }
+
+    #[Test]
     public function get_blocking_reason_returns_message_for_unknown_action(): void
     {
         $reason = AssetStatusTransitions::getBlockingReason(
@@ -268,5 +281,18 @@ class AssetStatusTransitionsTest extends TestCase
 
         $this->assertNotNull($reason);
         $this->assertStringContainsString('Acción inválida', $reason);
+    }
+
+    /**
+     * @return array<string, array{action: string}>
+     */
+    public static function blockingReasonActionsProvider(): array
+    {
+        return [
+            'assign' => ['action' => 'assign'],
+            'loan' => ['action' => 'loan'],
+            'return' => ['action' => 'return'],
+            'unassign' => ['action' => 'unassign'],
+        ];
     }
 }

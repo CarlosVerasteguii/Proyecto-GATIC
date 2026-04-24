@@ -16,6 +16,31 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Str;
 
 /**
+ * @phpstan-type RecentActivityItem array{
+ *     type: string,
+ *     icon: string,
+ *     label: string,
+ *     title: string,
+ *     summary: string,
+ *     actor: string|null,
+ *     occurred_at: string,
+ *     occurred_at_human: string,
+ *     route: string|null
+ * }
+ * @phpstan-type RecentActivitySortableItem array{
+ *     type: string,
+ *     icon: string,
+ *     label: string,
+ *     title: string,
+ *     summary: string,
+ *     actor: string|null,
+ *     occurred_at: string,
+ *     occurred_at_human: string,
+ *     route: string|null,
+ *     sort_key: string,
+ *     occurred_at_ts: int
+ * }
+ *
  * Builds a global recent activity feed for the dashboard.
  *
  * Queries recent events from multiple domain sources,
@@ -33,7 +58,7 @@ final class RecentActivityBuilder
     ) {}
 
     /**
-     * @return list<array{type: string, icon: string, label: string, title: string, summary: string, actor: string|null, occurred_at: string, occurred_at_human: string, route: string|null}>
+     * @return list<RecentActivityItem>
      */
     public function build(): array
     {
@@ -66,7 +91,7 @@ final class RecentActivityBuilder
     }
 
     /**
-     * @return list<array{type: string, icon: string, label: string, title: string, summary: string, actor: string|null, occurred_at: string, occurred_at_human: string, route: string|null, sort_key: string, occurred_at_ts: int}>
+     * @return list<RecentActivitySortableItem>
      */
     private function assetMovements(): array
     {
@@ -119,7 +144,7 @@ final class RecentActivityBuilder
     }
 
     /**
-     * @return list<array{type: string, icon: string, label: string, title: string, summary: string, actor: string|null, occurred_at: string, occurred_at_human: string, route: string|null, sort_key: string, occurred_at_ts: int}>
+     * @return list<RecentActivitySortableItem>
      */
     private function productQuantityMovements(): array
     {
@@ -161,7 +186,7 @@ final class RecentActivityBuilder
     }
 
     /**
-     * @return list<array{type: string, icon: string, label: string, title: string, summary: string, actor: string|null, occurred_at: string, occurred_at_human: string, route: string|null, sort_key: string, occurred_at_ts: int}>
+     * @return list<RecentActivitySortableItem>
      */
     private function adjustments(): array
     {
@@ -207,7 +232,7 @@ final class RecentActivityBuilder
     }
 
     /**
-     * @return list<array{type: string, icon: string, label: string, title: string, summary: string, actor: string|null, occurred_at: string, occurred_at_human: string, route: string|null, sort_key: string, occurred_at_ts: int}>
+     * @return list<RecentActivitySortableItem>
      */
     private function notes(): array
     {
@@ -245,7 +270,7 @@ final class RecentActivityBuilder
     }
 
     /**
-     * @return list<array{type: string, icon: string, label: string, title: string, summary: string, actor: string|null, occurred_at: string, occurred_at_human: string, route: string|null, sort_key: string, occurred_at_ts: int}>
+     * @return list<RecentActivitySortableItem>
      */
     private function attachments(): array
     {
@@ -285,7 +310,7 @@ final class RecentActivityBuilder
     }
 
     /**
-     * @return list<array{type: string, icon: string, label: string, title: string, summary: string, actor: string|null, occurred_at: string, occurred_at_human: string, route: string|null, sort_key: string, occurred_at_ts: int}>
+     * @return list<RecentActivitySortableItem>
      */
     private function auditLogs(): array
     {
@@ -385,7 +410,7 @@ final class RecentActivityBuilder
     }
 
     /**
-     * @return array{type: string, icon: string, label: string, title: string, summary: string, actor: string|null, occurred_at: string, occurred_at_human: string, route: string|null, sort_key: string, occurred_at_ts: int}
+     * @return RecentActivitySortableItem
      */
     private function makeEvent(
         string $type,

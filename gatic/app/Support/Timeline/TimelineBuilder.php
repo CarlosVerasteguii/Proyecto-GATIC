@@ -202,15 +202,13 @@ final class TimelineBuilder
 
         foreach ($query->get() as $m) {
             /** @var ProductQuantityMovement $m */
-            $type = $m->direction === ProductQuantityMovement::DIRECTION_IN
-                ? TimelineEventType::PRODUCT_QTY_IN
-                : TimelineEventType::PRODUCT_QTY_OUT;
+            $type = ProductQuantityMovementEventTypeMap::eventTypeForDirection($m->direction);
 
             if (! $this->isTypeAllowed($type, $allowedTypes)) {
                 continue;
             }
 
-            $dirLabel = $m->direction === ProductQuantityMovement::DIRECTION_IN ? 'Entrada' : 'Salida';
+            $dirLabel = ProductQuantityMovementEventTypeMap::labelForDirection($m->direction);
             $empLabel = $m->employee ? "{$m->employee->rpe} — {$m->employee->name}" : '—';
 
             $events[] = new TimelineEvent(
@@ -239,12 +237,7 @@ final class TimelineBuilder
      */
     private function assetMovements(?array $allowedTypes): array
     {
-        $relevantTypes = [
-            AssetMovement::TYPE_ASSIGN => TimelineEventType::ASSET_ASSIGN,
-            AssetMovement::TYPE_UNASSIGN => TimelineEventType::ASSET_UNASSIGN,
-            AssetMovement::TYPE_LOAN => TimelineEventType::ASSET_LOAN,
-            AssetMovement::TYPE_RETURN => TimelineEventType::ASSET_RETURN,
-        ];
+        $relevantTypes = AssetMovementEventTypeMap::map();
 
         // Check if any movement type is allowed
         $anyAllowed = false;
@@ -278,12 +271,7 @@ final class TimelineBuilder
      */
     private function assetMovementsForEmployee(?array $allowedTypes): array
     {
-        $relevantTypes = [
-            AssetMovement::TYPE_ASSIGN => TimelineEventType::ASSET_ASSIGN,
-            AssetMovement::TYPE_UNASSIGN => TimelineEventType::ASSET_UNASSIGN,
-            AssetMovement::TYPE_LOAN => TimelineEventType::ASSET_LOAN,
-            AssetMovement::TYPE_RETURN => TimelineEventType::ASSET_RETURN,
-        ];
+        $relevantTypes = AssetMovementEventTypeMap::map();
 
         $anyAllowed = false;
         foreach ($relevantTypes as $eventType) {
@@ -392,15 +380,13 @@ final class TimelineBuilder
 
         foreach ($query->get() as $m) {
             /** @var ProductQuantityMovement $m */
-            $type = $m->direction === ProductQuantityMovement::DIRECTION_IN
-                ? TimelineEventType::PRODUCT_QTY_IN
-                : TimelineEventType::PRODUCT_QTY_OUT;
+            $type = ProductQuantityMovementEventTypeMap::eventTypeForDirection($m->direction);
 
             if (! $this->isTypeAllowed($type, $allowedTypes)) {
                 continue;
             }
 
-            $dirLabel = $m->direction === ProductQuantityMovement::DIRECTION_IN ? 'Entrada' : 'Salida';
+            $dirLabel = ProductQuantityMovementEventTypeMap::labelForDirection($m->direction);
             $productName = $m->product->name ?? '—';
 
             $events[] = new TimelineEvent(
@@ -622,7 +608,7 @@ final class TimelineBuilder
                 : 'Adjunto eliminado';
 
             $events[] = new TimelineEvent(
-                type: TimelineEventType::ATTACHMENT_DELETE,
+                type: AuditLogActionEventTypeMap::eventTypeForAction(AuditLog::ACTION_ATTACHMENT_DELETE),
                 occurredAt: $log->created_at,
                 source: 'audit_log',
                 sourceId: $log->id,
@@ -708,19 +694,26 @@ final class TimelineBuilder
      */
     private function auditActionMap(): array
     {
-        $common = [
-            AuditLog::ACTION_TRASH_SOFT_DELETE => TimelineEventType::AUDIT_TRASH_SOFT_DELETE,
-            AuditLog::ACTION_TRASH_RESTORE => TimelineEventType::AUDIT_TRASH_RESTORE,
-            AuditLog::ACTION_TRASH_PURGE => TimelineEventType::AUDIT_TRASH_PURGE,
+        $commonActions = [
+            AuditLog::ACTION_TRASH_SOFT_DELETE,
+            AuditLog::ACTION_TRASH_RESTORE,
+            AuditLog::ACTION_TRASH_PURGE,
         ];
 
-        return match ($this->entityType) {
-            PendingTask::class => [
-                AuditLog::ACTION_LOCK_FORCE_RELEASE => TimelineEventType::AUDIT_LOCK_FORCE_RELEASE,
-                AuditLog::ACTION_LOCK_FORCE_CLAIM => TimelineEventType::AUDIT_LOCK_FORCE_CLAIM,
-            ] + $common,
-            default => $common,
-        };
+        $actions = $this->entityType === PendingTask::class
+            ? [
+                AuditLog::ACTION_LOCK_FORCE_RELEASE,
+                AuditLog::ACTION_LOCK_FORCE_CLAIM,
+                ...$commonActions,
+            ]
+            : $commonActions;
+
+        $map = [];
+        foreach ($actions as $action) {
+            $map[$action] = AuditLogActionEventTypeMap::eventTypeForAction($action);
+        }
+
+        return $map;
     }
 
     /**

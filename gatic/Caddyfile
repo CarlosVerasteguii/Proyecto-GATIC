@@ -1,0 +1,8 @@
+www.fishytracker.com {
+  redir https://fishytracker.com{uri} permanent
+}
+
+fishytracker.com {
+  encode zstd gzip
+  reverse_proxy app:8000
+}

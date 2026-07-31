@@ -11,6 +11,9 @@ use App\Models\InventoryAdjustmentEntry;
 use App\Models\Note;
 use App\Models\Product;
 use App\Models\ProductQuantityMovement;
+use App\Support\Timeline\AssetMovementEventTypeMap;
+use App\Support\Timeline\AuditLogActionEventTypeMap;
+use App\Support\Timeline\ProductQuantityMovementEventTypeMap;
 use App\Support\Timeline\TimelineEventType;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Str;
@@ -95,12 +98,7 @@ final class RecentActivityBuilder
      */
     private function assetMovements(): array
     {
-        $relevantTypes = [
-            AssetMovement::TYPE_ASSIGN => TimelineEventType::ASSET_ASSIGN,
-            AssetMovement::TYPE_UNASSIGN => TimelineEventType::ASSET_UNASSIGN,
-            AssetMovement::TYPE_LOAN => TimelineEventType::ASSET_LOAN,
-            AssetMovement::TYPE_RETURN => TimelineEventType::ASSET_RETURN,
-        ];
+        $relevantTypes = AssetMovementEventTypeMap::map();
 
         $query = AssetMovement::query()
             ->whereIn('type', array_keys($relevantTypes))
@@ -158,11 +156,8 @@ final class RecentActivityBuilder
 
         foreach ($query->get() as $m) {
             /** @var ProductQuantityMovement $m */
-            $type = $m->direction === ProductQuantityMovement::DIRECTION_IN
-                ? TimelineEventType::PRODUCT_QTY_IN
-                : TimelineEventType::PRODUCT_QTY_OUT;
-
-            $dirLabel = $m->direction === ProductQuantityMovement::DIRECTION_IN ? 'Entrada' : 'Salida';
+            $type = ProductQuantityMovementEventTypeMap::eventTypeForDirection($m->direction);
+            $dirLabel = ProductQuantityMovementEventTypeMap::labelForDirection($m->direction);
             $productName = $m->product->name ?? '—';
             $empLabel = $m->employee ? "{$m->employee->rpe} — {$m->employee->name}" : '—';
 
@@ -338,15 +333,7 @@ final class RecentActivityBuilder
                 continue;
             }
 
-            $type = match ($log->action) {
-                AuditLog::ACTION_LOCK_FORCE_RELEASE => TimelineEventType::AUDIT_LOCK_FORCE_RELEASE,
-                AuditLog::ACTION_LOCK_FORCE_CLAIM => TimelineEventType::AUDIT_LOCK_FORCE_CLAIM,
-                AuditLog::ACTION_TRASH_SOFT_DELETE => TimelineEventType::AUDIT_TRASH_SOFT_DELETE,
-                AuditLog::ACTION_TRASH_RESTORE => TimelineEventType::AUDIT_TRASH_RESTORE,
-                AuditLog::ACTION_TRASH_PURGE => TimelineEventType::AUDIT_TRASH_PURGE,
-                AuditLog::ACTION_ATTACHMENT_DELETE => TimelineEventType::ATTACHMENT_DELETE,
-                default => TimelineEventType::AUDIT_GENERIC,
-            };
+            $type = AuditLogActionEventTypeMap::eventTypeForAction($log->action);
 
             $route = $this->auditSubjectRoute($log);
 
